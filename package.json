@@ -9,20 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.16",
     "@phosphor-icons/react": "^2.1.10",
+    "@tailwindcss/typography": "^0.5.20",
     "@xyflow/react": "^12.11.2",
-    "ai": "^7.0.32",
     "better-sqlite3": "^12.11.1",
+    "dagre": "^0.8.5",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "zustand": "^5.0.14"
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/dagre": "^0.7.54",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
