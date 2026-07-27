@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { PaperPlaneRight } from '@phosphor-icons/react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   PhaseSidebar,
@@ -12,11 +13,13 @@ import {
   NamePromptModal,
   type Message,
 } from '@/components/ui/ChatComponents';
+import { assignMessagePhases, getMaxMessagePhase } from '@/lib/chat-phases';
 
 type InterviewChatProps = {
   onInterviewComplete?: () => void;
   initialSessionId?: string;
   initialMessages?: Message[];
+  initialProjectId?: string | null;
 };
 
 const PHASE_TITLES = [
@@ -27,7 +30,26 @@ const PHASE_TITLES = [
   "Bisnis & Teknis"
 ];
 
-export function InterviewChat({ initialSessionId, initialMessages }: InterviewChatProps) {
+const MAX_MESSAGE_LENGTH = 20_000;
+
+async function getApiError(response: Response, fallback: string) {
+  try {
+    const data: unknown = await response.json();
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      'error' in data &&
+      typeof data.error === 'string'
+    ) {
+      return data.error;
+    }
+  } catch {
+    // The fallback is intentionally used for non-JSON and malformed error responses.
+  }
+  return fallback;
+}
+
+export function InterviewChat({ initialSessionId, initialMessages, initialProjectId }: InterviewChatProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
@@ -40,37 +62,26 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
   const [projectName, setProjectName] = useState('');
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (status === 'generating') {
-      setGenerationProgress(0);
-      interval = setInterval(() => {
-        setGenerationProgress(prev => {
-          if (prev >= 95) return 95;
-          const increment = Math.max(0.5, (95 - prev) * 0.05);
-          return Math.min(95, prev + increment);
-        });
-      }, 500);
-    } else {
-      setGenerationProgress(0);
-    }
+    if (status !== 'generating') return;
+    const interval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 95) return 95;
+        const increment = Math.max(0.5, (95 - prev) * 0.05);
+        return Math.min(95, prev + increment);
+      });
+    }, 500);
     return () => clearInterval(interval);
   }, [status]);
 
   const initialMaxPhase = React.useMemo(() => {
-    let rp = 1;
-    (initialMessages || []).forEach(m => {
-      if (m.role === 'assistant') {
-        const match = m.content.match(/\[(?:FASE|PROGRESS):\s*(\d+)\/(\d+)\]/i);
-        if (match) rp = parseInt(match[1], 10);
-      }
-    });
-    return Math.max(1, rp);
+    return getMaxMessagePhase(initialMessages || []);
   }, [initialMessages]);
 
   const [activePhaseTab, setActivePhaseTab] = useState<number>(initialMaxPhase);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const requestInFlightRef = useRef(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -86,109 +97,186 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
 
   const syncMessage = async (sId: string, msg: Message) => {
     if (msg.id === 'welcome') return;
-    try {
-      await fetch('/api/chat/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: sId, role: msg.role, content: msg.content })
-      });
-    } catch (e) {
-      console.error("Failed to sync message", e);
+    const response = await fetch('/api/chat/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: msg.id, sessionId: sId, role: msg.role, content: msg.content })
+    });
+    if (!response.ok) {
+      throw new Error(await getApiError(response, 'Failed to save the message.'));
     }
   };
 
   const sendMessage = async (content: string) => {
+    const normalizedContent = content.trim();
+    if (
+      !normalizedContent ||
+      normalizedContent.length > MAX_MESSAGE_LENGTH ||
+      status !== 'idle' ||
+      requestInFlightRef.current
+    ) return;
+
+    requestInFlightRef.current = true;
     setShowCustomInput(false);
     const msgId = crypto.randomUUID();
-    const userMessage: Message = { id: msgId, role: 'user', content };
+    const userMessage: Message = { id: msgId, role: 'user', content: normalizedContent };
     setMessages(prev => [...prev, userMessage]);
     setStatus('submitted');
     setError(null);
 
     let currentSessionId = sessionId;
+    let userPersisted = false;
+    let assistantId: string | null = null;
+    let assistantPersisted = false;
+    let createdSession = false;
     try {
       if (!currentSessionId) {
         const res = await fetch('/api/chat/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: content })
+          body: JSON.stringify({})
         });
-        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(await getApiError(res, 'Failed to create a chat session.'));
+        }
+        const data: unknown = await res.json();
+        if (typeof data !== 'object' || data === null || !('id' in data) || typeof data.id !== 'string') {
+          throw new Error('The chat session response was invalid.');
+        }
         currentSessionId = data.id;
+        createdSession = true;
         setSessionId(currentSessionId);
         window.history.replaceState(null, '', `/engine/${currentSessionId}`);
       }
 
       if (currentSessionId) {
         await syncMessage(currentSessionId, userMessage);
+        userPersisted = true;
       }
 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] })
+        body: JSON.stringify({
+          messages: [...messages, userMessage]
+            .filter(message => message.role === 'user' || message.role === 'assistant')
+            .map(({ role, content: messageContent }) => ({ role, content: messageContent }))
+        })
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        throw new Error(await getApiError(response, 'Failed to connect to the AI service.'));
       }
 
-      if (!response.body) throw new Error("No response body");
+      if (!response.body) throw new Error('The AI service returned no response stream.');
 
       setStatus('streaming');
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
 
-      const assistantId = crypto.randomUUID();
-      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+      const generatedAssistantId = crypto.randomUUID();
+      assistantId = generatedAssistantId;
+      setMessages(prev => [...prev, { id: generatedAssistantId, role: 'assistant', content: '' }]);
 
-      let done = false;
       let buffer = '';
-      const state = { currentFinalContent: '' };
+      let finalContent = '';
+      let receivedDone = false;
 
-      while (!done) {
+      const processEvent = (event: string) => {
+        const dataString = event
+          .split(/\r?\n/)
+          .filter(line => line.startsWith('data:'))
+          .map(line => line.slice(5).replace(/^ /, ''))
+          .join('\n')
+          .trim();
+
+        if (!dataString || receivedDone) return;
+        if (dataString === '[DONE]') {
+          receivedDone = true;
+          return;
+        }
+
+        let data: unknown;
+        try {
+          data = JSON.parse(dataString);
+        } catch {
+          throw new Error('The AI service returned a malformed stream.');
+        }
+
+        if (typeof data !== 'object' || data === null || 'error' in data) {
+          throw new Error('The AI service interrupted the response.');
+        }
+
+        const choices = 'choices' in data ? data.choices : undefined;
+        if (!Array.isArray(choices) || choices.length === 0) return;
+        const firstChoice = choices[0];
+        const delta = typeof firstChoice === 'object' && firstChoice !== null && 'delta' in firstChoice
+          ? firstChoice.delta
+          : undefined;
+        const contentChunk = typeof delta === 'object' && delta !== null && 'content' in delta && typeof delta.content === 'string'
+          ? delta.content
+          : '';
+
+        if (contentChunk) {
+          finalContent += contentChunk;
+          setMessages(prev => prev.map(m =>
+            m.id === generatedAssistantId ? { ...m, content: finalContent } : m
+          ));
+        }
+      };
+
+      const processBufferedEvents = (flushFinalEvent = false) => {
+        let boundary = buffer.match(/\r?\n\r?\n/);
+        while (boundary?.index !== undefined) {
+          processEvent(buffer.slice(0, boundary.index));
+          buffer = buffer.slice(boundary.index + boundary[0].length);
+          boundary = buffer.match(/\r?\n\r?\n/);
+        }
+        if (flushFinalEvent && buffer.trim()) {
+          processEvent(buffer);
+          buffer = '';
+        }
+      };
+
+      while (!receivedDone) {
         const { value, done: readerDone } = await reader.read();
-        done = readerDone;
         if (value) {
           buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const dataStr = line.slice(6).trim();
-              if (dataStr === '[DONE]') {
-                done = true;
-                break;
-              }
-              try {
-                const data = JSON.parse(dataStr);
-                const contentChunk = data.choices?.[0]?.delta?.content || '';
-
-                if (contentChunk) {
-                  state.currentFinalContent += contentChunk;
-                  setMessages(prev => prev.map(m =>
-                    m.id === assistantId ? { ...m, content: state.currentFinalContent } : m
-                  ));
-                }
-              } catch (err) {
-                console.warn('Failed to parse SSE data:', dataStr);
-              }
-            }
-          }
+          processBufferedEvents();
+        }
+        if (readerDone) {
+          buffer += decoder.decode();
+          processBufferedEvents(true);
+          break;
         }
       }
-      setStatus('idle');
 
-      if (currentSessionId) {
-        await syncMessage(currentSessionId, { id: assistantId, role: 'assistant', content: state.currentFinalContent });
+      if (receivedDone) {
+        await reader.cancel();
+      } else {
+        throw new Error('The AI response ended before it was complete.');
       }
 
-    } catch (err: any) {
-      console.error('Chat stream error:', err);
-      setError(err.message || 'Failed to connect to AI.');
+      if (!finalContent.trim()) throw new Error('The AI service returned an empty response.');
+
+      if (currentSessionId) {
+        await syncMessage(currentSessionId, { id: generatedAssistantId, role: 'assistant', content: finalContent });
+        assistantPersisted = true;
+      }
       setStatus('idle');
+    } catch (err: unknown) {
+      console.error('Chat stream error:', err);
+      if (!userPersisted) {
+        setMessages(prev => prev.filter(message => message.id !== userMessage.id));
+      }
+      if (assistantId && !assistantPersisted) {
+        setMessages(prev => prev.filter(message => message.id !== assistantId));
+      }
+      setError(err instanceof Error ? err.message : 'Failed to connect to the AI service.');
+      setStatus('idle');
+    } finally {
+      requestInFlightRef.current = false;
+      if (createdSession) router.refresh();
     }
   };
 
@@ -205,18 +293,30 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
 
     if (lastUserIdx === -1) return;
 
-    setMessages(prev => prev.slice(0, lastUserIdx));
-    setShowCustomInput(false);
-    setError(null);
+    if (!sessionId || requestInFlightRef.current) return;
 
-    if (sessionId) {
-      try {
-        await fetch(`/api/chat/message?sessionId=${sessionId}`, {
-          method: 'DELETE'
-        });
-      } catch (err) {
-        console.error("Failed to undo in DB", err);
+    requestInFlightRef.current = true;
+    try {
+      const response = await fetch('/api/chat/message', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          userMessageId: messages[lastUserIdx].id
+        })
+      });
+      if (!response.ok) {
+        throw new Error(await getApiError(response, 'Failed to undo the message.'));
       }
+
+      setMessages(prev => prev.slice(0, lastUserIdx));
+      setShowCustomInput(false);
+      setError(null);
+    } catch (err: unknown) {
+      console.error('Failed to undo the message:', err);
+      setError(err instanceof Error ? err.message : 'Failed to undo the message.');
+    } finally {
+      requestInFlightRef.current = false;
     }
   };
 
@@ -243,6 +343,7 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
       return;
     }
     setShowNamePrompt(false);
+    setGenerationProgress(0);
     setStatus('generating');
     setError(null);
     try {
@@ -251,46 +352,32 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, projectName: projectName.trim() })
       });
-      const data = await res.json();
-      if (res.ok) {
-        router.push('/projects/' + data.projectId);
-      } else {
-        setError(data.error || 'Failed to generate workflow');
-        setStatus('idle');
+      if (!res.ok) {
+        throw new Error(await getApiError(res, 'Failed to generate workflow.'));
       }
-    } catch (e: any) {
-      setError(e.message);
+      const data: unknown = await res.json();
+      if (typeof data !== 'object' || data === null || !('projectId' in data) || typeof data.projectId !== 'string') {
+        throw new Error('The workflow response was invalid.');
+      }
+      router.push('/projects/' + data.projectId);
+    } catch (e: unknown) {
+      console.error('Failed to generate workflow:', e);
+      setError(e instanceof Error ? e.message : 'Failed to generate workflow.');
       setStatus('idle');
     }
   };
 
   const messagesWithPhase = React.useMemo(() => {
-    let runningPhase = 1;
-    return messages.map(m => {
-      let phaseToAssign = runningPhase;
-      if (m.role === 'assistant') {
-        const match = m.content.match(/\[(?:FASE|PROGRESS):\s*(\d+)\/(\d+)\]/i);
-        if (match) {
-          runningPhase = parseInt(match[1], 10);
-          phaseToAssign = runningPhase;
-        }
-      }
-      return { ...m, phase: phaseToAssign };
-    });
+    return assignMessagePhases(messages);
   }, [messages]);
-
-  if (messagesWithPhase.length > 0 && Math.max(...messagesWithPhase.map(m => m.phase)) === 1) {
-    let assistantCount = 0;
-    messagesWithPhase.forEach(m => {
-      if (m.role === 'assistant') assistantCount++;
-      m.phase = Math.min(5, Math.max(1, assistantCount));
-    });
-  }
 
   const maxPhase = Math.max(1, ...messagesWithPhase.map(m => m.phase));
   const activeMessages = messagesWithPhase.filter(m => m.phase === activePhaseTab);
 
-  const lastUserMessageInActive = [...activeMessages].reverse().find(m => m.role === 'user');
+  const latestMessage = messages[messages.length - 1];
+  const latestUserMessage = [...messages].reverse().find(m => m.role === 'user');
+  const actionableAssistantId = latestMessage?.role === 'assistant' ? latestMessage.id : null;
+  const undoableUserId = latestUserMessage?.id;
 
   return (
     <div className="flex h-full w-full bg-transparent overflow-hidden">
@@ -304,13 +391,26 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
 
         {messages.length > 0 && (
           <div className="flex flex-col shrink-0">
-            <div className="bg-brutal-yellow border-b-4 border-brutal-black p-4 flex justify-between items-center">
-              <h2 className="font-sans font-black text-lg md:text-xl uppercase">Fase {activePhaseTab}: {PHASE_TITLES[activePhaseTab - 1]}</h2>
-              {isComplete && activePhaseTab === 5 && (
-                <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status === 'generating'} className={status === 'generating' ? '' : 'animate-pulse'}>
-                  {status === 'generating' ? `${Math.round(generationProgress)}% - Generating PRD...` : 'Generate Workflow'}
-                </Button>
-              )}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-4 border-brutal-black bg-brutal-yellow p-3 md:p-4">
+              <h2 className="min-w-0 flex-1 font-sans text-base font-black uppercase md:text-xl">Fase {activePhaseTab}: {PHASE_TITLES[activePhaseTab - 1]}</h2>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className={`border-2 border-brutal-black px-2 py-1 font-mono text-[10px] font-bold uppercase sm:text-xs ${
+                  initialProjectId ? 'bg-brutal-blue text-brutal-white' : 'bg-brutal-white text-brutal-black'
+                }`}>
+                  {initialProjectId ? 'Generated' : 'Not generated'}
+                </span>
+                {initialProjectId ? (
+                  <Link href={`/projects/${initialProjectId}`}>
+                    <Button variant="secondary" size="sm" className="!border-2 !px-3 !py-1.5 !shadow-[3px_3px_0px_0px_rgba(5,5,5,1)]">
+                      Open Flow &nearr;
+                    </Button>
+                  </Link>
+                ) : isComplete && activePhaseTab === 5 ? (
+                  <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className={status === 'generating' ? '!border-2 !px-3 !py-1.5' : 'animate-pulse !border-2 !px-3 !py-1.5'}>
+                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : 'Generate Flow'}
+                  </Button>
+                ) : null}
+              </div>
             </div>
 
             {status === 'generating' && (
@@ -349,6 +449,11 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
               <p className="text-lg md:text-xl font-mono text-brutal-black max-w-2xl bg-brutal-yellow p-6 border-4 border-brutal-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] leading-relaxed font-bold">
                 System Architect siap untuk menginterogasi Anda. Beritahu saya aplikasi apa yang ingin Anda bangun, dan kita akan merancang PRD yang sempurna bersama.
               </p>
+              {error && (
+                <Card bg="white" className="!p-4 mt-8 border-brutal-red text-brutal-red font-bold uppercase">
+                  Error: {error}
+                </Card>
+              )}
             </div>
           ) : (
             <>
@@ -361,18 +466,16 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
                   onUndo={handleUndo}
                   showCustomInput={showCustomInput}
                   onShowCustom={() => setShowCustomInput(true)}
-                  isLastUserMessage={m.id === lastUserMessageInActive?.id}
+                  isActionable={m.id === actionableAssistantId && activePhaseTab === maxPhase}
+                  canUndo={m.id === undoableUserId}
                 />
               ))}
 
               {activePhaseTab < maxPhase && (
                 <div className="mt-8 mb-4 border-4 border-brutal-black bg-brutal-yellow p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] rotate-[-1deg] animate-in slide-in-from-bottom-4 duration-500 max-w-lg mx-auto w-full flex flex-col gap-4 text-center">
                   <h3 className="font-sans font-black text-2xl uppercase">Fase {activePhaseTab} Selesai!</h3>
-                  <p className="font-mono text-sm font-bold opacity-80">Apakah ada ide atau catatan tambahan yang ingin Anda berikan untuk fase ini?</p>
+                  <p className="font-mono text-sm font-bold opacity-80">Fase ini ditampilkan sebagai riwayat dan tidak dapat diubah dari sini.</p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center mt-2">
-                    <Button variant="secondary" onClick={() => { setShowCustomInput(true); inputRef.current?.focus(); }}>
-                      Tambahkan Ide
-                    </Button>
                     <Button variant="primary" onClick={() => setActivePhaseTab(activePhaseTab + 1)}>
                       Lanjut Fase {activePhaseTab + 1} &rarr;
                     </Button>
@@ -409,8 +512,8 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
 
           let shouldShowInput = false;
           if (messages.length === 0) shouldShowInput = true;
-          else if (isViewingHistory) shouldShowInput = showCustomInput;
-          else shouldShowInput = !hasOptions || showCustomInput || status !== 'idle';
+          else if (isViewingHistory) shouldShowInput = false;
+          else shouldShowInput = showNamePrompt || !hasOptions || showCustomInput || status !== 'idle';
 
           if (!shouldShowInput) return null;
 
@@ -424,6 +527,7 @@ export function InterviewChat({ initialSessionId, initialMessages }: InterviewCh
                   placeholder="Ketik ide aplikasi Anda di sini..."
                   className="flex-1 !py-6 !text-lg !rounded-none !border-4 !border-brutal-black !shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] !px-6 focus:!translate-y-1 focus:!translate-x-1 focus:!shadow-none transition-all"
                   disabled={status !== 'idle'}
+                  maxLength={MAX_MESSAGE_LENGTH}
                 />
                 <Button
                   type="submit"

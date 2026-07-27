@@ -1,4 +1,4 @@
-export function safeString(val: any): string {
+export function safeString(val: unknown): string {
   if (typeof val === 'string') return val;
   if (Array.isArray(val)) return val.map(v => typeof v === 'string' ? `- ${v}` : JSON.stringify(v)).join('\n');
   if (val === null || val === undefined) return '';
@@ -13,8 +13,5 @@ export function getApiKeys(): string[] {
     process.env.QWEN_API_KEY_3,
   ].filter(Boolean) as string[];
 
-  if (keys.length === 0) {
-    return ['9router'];
-  }
   return keys;
 }

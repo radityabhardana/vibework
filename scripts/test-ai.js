@@ -2,9 +2,15 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
 (async () => {
+  const apiKey = process.env.AI_API_KEY;
+  const baseURL = process.env.OPENAI_BASE_URL;
+  if (!apiKey || !baseURL) {
+    throw new Error('AI_API_KEY and OPENAI_BASE_URL are required.');
+  }
+
   const qwen = createOpenAI({
-    apiKey: "sk-ws-H.YHMDMY.TDIR.MEQCIHYCKkQ1UM_aAXYFDd6spXKXEHgsVI4QnuXdwn2k_lTfAiA_d1r-iAWXX6-mafXoNZ4j3oueiHVD_KWLWmdxZFEbQg",
-    baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    apiKey,
+    baseURL,
   });
 
   const result = await streamText({

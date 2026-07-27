@@ -41,6 +41,7 @@ export function LearningDrawer({
   const [submitted, setSubmitted] = useState(false);
   const [scoreResult, setScoreResult] = useState<{ score: number; passed: boolean } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleOptionSelect = (qIdx: number, oIdx: number) => {
     if (submitted) return;
@@ -54,16 +55,7 @@ export function LearningDrawer({
     }
 
     setLoading(true);
-    let correctCount = 0;
-    const questions = node.quizData || [];
-
-    questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctAnswerIndex) {
-        correctCount++;
-      }
-    });
-
-    const calculatedScore = Math.round((correctCount / questions.length) * 100);
+    setSubmitError(null);
 
     try {
       const res = await fetch(`/api/learn/${roadmapId}/submit-quiz`, {
@@ -71,20 +63,27 @@ export function LearningDrawer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dbNodeId: node.dbNodeId,
-          score: calculatedScore,
           answers: selectedAnswers,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({})) as { error?: string; passed?: boolean; score?: number };
+      if (!res.ok) {
+        throw new Error(data.error || t('Gagal mengirim jawaban kuis', 'Failed to submit quiz'));
+      }
+      if (typeof data.passed !== 'boolean' || typeof data.score !== 'number') {
+        throw new Error(t('Respons penilaian tidak valid', 'Invalid grading response'));
+      }
+
       setSubmitted(true);
-      setScoreResult({ score: calculatedScore, passed: data.passed });
+      setScoreResult({ score: data.score, passed: data.passed });
 
       if (data.passed) {
         onQuizCompleted();
       }
-    } catch (e: any) {
-      alert(e.message || t('Gagal mengirim jawaban kuis', 'Failed to submit quiz'));
+    } catch (error: unknown) {
+      setSubmitted(false);
+      setSubmitError(error instanceof Error ? error.message : t('Gagal mengirim jawaban kuis', 'Failed to submit quiz'));
     } finally {
       setLoading(false);
     }
@@ -171,6 +170,12 @@ export function LearningDrawer({
                     </div>
                   )}
 
+                  {submitError && (
+                    <div className="p-4 border-4 border-brutal-black bg-red-100 font-mono font-bold text-center">
+                      {submitError} {t('Silakan coba lagi.', 'Please try again.')}
+                    </div>
+                  )}
+
                   {(node.quizData || []).map((q, qIdx) => (
                     <div key={q.id || qIdx} className="bg-brutal-white border-4 border-brutal-black p-5 shadow-brutal-sm">
                       <div className="font-mono font-bold text-sm text-gray-500 uppercase mb-1">
@@ -214,12 +219,27 @@ export function LearningDrawer({
                     </div>
                   ))}
 
+                  {submitted && scoreResult && !scoreResult.passed && (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={() => {
+                        setSubmitted(false);
+                        setScoreResult(null);
+                        setSelectedAnswers({});
+                      }}
+                      className="mt-2 w-full font-black uppercase text-base"
+                    >
+                      {t('Coba Kuis Lagi', 'Retry Quiz')}
+                    </Button>
+                  )}
+
                   {!submitted && (
                     <Button
                       variant="primary"
                       size="md"
                       onClick={handleSubmitQuiz}
-                      disabled={loading || Object.keys(selectedAnswers).length < (node.quizData || []).length}
+                      disabled={loading || !node.quizData?.length || Object.keys(selectedAnswers).length < node.quizData.length}
                       className="mt-2 w-full font-black uppercase text-base"
                     >
                       {loading ? t('Menevaluasi...', 'Evaluating...') : t('Kirim Jawaban Kuis', 'Submit Quiz Answers')}

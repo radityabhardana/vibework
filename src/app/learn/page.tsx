@@ -17,8 +17,8 @@ export default function LearnHubPage() {
   const [showGrillModal, setShowGrillModal] = useState(false);
 
   // Quick Grill form state
-  const [familiarity, setFamiliarity] = useState('');
-  const [goals, setGoals] = useState<string[]>([]);
+  const [familiarity, setFamiliarity] = useState(0);
+  const [goals, setGoals] = useState<number[]>([0]);
   const [focusText, setFocusText] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -51,17 +51,7 @@ export default function LearnHubPage() {
     'Sudah Berpengalaman / Level Advanced',
   ];
 
-  // Set default initial state based on language
-  useEffect(() => {
-    if (!familiarity) {
-      setFamiliarity(availableFamiliarity[0]);
-    }
-    if (goals.length === 0) {
-      setGoals([availableGoals[0]]);
-    }
-  }, [language]);
-
-  const toggleGoal = (goalToToggle: string) => {
+  const toggleGoal = (goalToToggle: number) => {
     setGoals(prev => {
       if (prev.includes(goalToToggle)) {
         if (prev.length === 1) return prev; // Keep at least one goal
@@ -135,8 +125,8 @@ export default function LearnHubPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: topic.trim(),
-          familiarity,
-          goals,
+          familiarity: availableFamiliarity[familiarity],
+          goals: goals.map(goal => availableGoals[goal]),
           focusText: focusText.trim(),
           language,
         }),
@@ -226,6 +216,7 @@ export default function LearnHubPage() {
               placeholder={t('Contoh: Machine Learning, Blockchain, Python Backend...', 'e.g. Machine Learning, Blockchain, Python Backend...')}
               value={topic}
               onChange={e => setTopic(e.target.value)}
+              maxLength={120}
               disabled={loading}
               className="flex-1 px-4 py-3 border-4 border-brutal-black font-mono text-base font-bold bg-brutal-white focus:outline-none shadow-brutal-sm"
             />
@@ -347,16 +338,16 @@ export default function LearnHubPage() {
                   {t('1. Bagaimana kondisi pemahaman awal kamu dalam topik ini?', '1. What is your current familiarity with this topic?')}
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availableFamiliarity.map((fam) => (
+                  {availableFamiliarity.map((fam, index) => (
                     <button
                       key={fam}
                       type="button"
-                      onClick={() => setFamiliarity(fam)}
+                      onClick={() => setFamiliarity(index)}
                       className={`p-3 border-2 border-brutal-black font-bold text-xs text-left transition-all ${
-                        familiarity === fam ? 'bg-brutal-yellow shadow-brutal-sm scale-[1.01]' : 'bg-white hover:bg-gray-100'
+                        familiarity === index ? 'bg-brutal-yellow shadow-brutal-sm scale-[1.01]' : 'bg-white hover:bg-gray-100'
                       }`}
                     >
-                      {familiarity === fam ? '👉 ' : ''}{fam}
+                      {familiarity === index ? '👉 ' : ''}{fam}
                     </button>
                   ))}
                 </div>
@@ -373,13 +364,13 @@ export default function LearnHubPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availableGoals.map((g) => {
-                    const isSelected = goals.includes(g);
+                  {availableGoals.map((g, index) => {
+                    const isSelected = goals.includes(index);
                     return (
                       <button
                         key={g}
                         type="button"
-                        onClick={() => toggleGoal(g)}
+                        onClick={() => toggleGoal(index)}
                         className={`p-3 border-2 border-brutal-black font-bold text-xs text-left flex items-center justify-between transition-all ${
                           isSelected ? 'bg-brutal-blue text-white shadow-brutal-sm scale-[1.01]' : 'bg-white text-brutal-black hover:bg-gray-100'
                         }`}
@@ -412,6 +403,7 @@ export default function LearnHubPage() {
                   )}
                   value={focusText}
                   onChange={e => setFocusText(e.target.value)}
+                  maxLength={500}
                   className="w-full px-3 py-2 border-2 border-brutal-black font-mono text-sm bg-white focus:outline-none"
                 />
               </div>

@@ -54,7 +54,7 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
   return (
     <div className="hidden md:flex flex-col w-72 shrink-0 overflow-y-auto overflow-x-hidden border-r-4 border-brutal-black bg-brutal-white">
       <h2 className="font-sans font-black text-2xl uppercase text-brutal-white px-6 py-5 bg-brutal-black tracking-widest shrink-0">
-        The Grill
+        Interview Flow
       </h2>
       <div className="flex flex-col w-full">
         {[1, 2, 3, 4, 5].map(p => (
@@ -127,6 +127,7 @@ export function MessageOptions({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {options.map((opt, i) => (
             <button
+              type="button"
               key={i}
               className="text-left w-full h-full p-4 border-4 border-brutal-black bg-brutal-white hover:bg-brutal-yellow hover:-translate-y-1 hover:shadow-brutal transition-all disabled:opacity-50 disabled:pointer-events-none group"
               onClick={() => onSend(opt)}
@@ -144,6 +145,7 @@ export function MessageOptions({
           ))}
           {!hideCustom && (
             <button
+              type="button"
               className="text-left w-full h-full p-4 border-4 border-brutal-black bg-brutal-white hover:bg-brutal-yellow hover:-translate-y-1 hover:shadow-brutal transition-all disabled:opacity-50 disabled:pointer-events-none"
               onClick={onCustom}
               disabled={disabled}
@@ -175,6 +177,7 @@ export function MessageOptions({
           const isSelected = selected.has(i);
           return (
             <button
+              type="button"
               key={i}
               className={`text-left w-full h-full p-4 border-4 border-brutal-black transition-all disabled:opacity-50 disabled:pointer-events-none ${isSelected ? 'bg-brutal-blue text-brutal-white shadow-brutal translate-x-1 -translate-y-1' : 'bg-brutal-white hover:bg-brutal-yellow'}`}
               onClick={() => toggleSelect(i)}
@@ -193,6 +196,7 @@ export function MessageOptions({
         })}
         {!hideCustom && (
           <button
+            type="button"
             className="text-left w-full h-full p-4 border-4 border-brutal-black bg-brutal-white hover:bg-brutal-yellow transition-all disabled:opacity-50 disabled:pointer-events-none"
             onClick={onCustom}
             disabled={disabled}
@@ -209,6 +213,7 @@ export function MessageOptions({
         )}
       </div>
       <Button
+        type="button"
         variant="primary"
         disabled={disabled || selected.size === 0}
         onClick={handleSend}
@@ -220,14 +225,15 @@ export function MessageOptions({
   );
 }
 
-export function MessageBubble({ message, status, onSend, onUndo, showCustomInput, onShowCustom, isLastUserMessage }: {
+export function MessageBubble({ message, status, onSend, onUndo, showCustomInput, onShowCustom, isActionable, canUndo }: {
   message: Message;
   status: string;
   onSend: (val: string) => void;
   onUndo: () => void;
   showCustomInput: boolean;
   onShowCustom: () => void;
-  isLastUserMessage: boolean;
+  isActionable: boolean;
+  canUndo: boolean;
 }) {
   let cleanText = message.content;
   cleanText = cleanText.replace(/\[(?:FASE|PROGRESS):\s*\d+\/\d+\]/gi, '').trim();
@@ -268,7 +274,7 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
             <ReactMarkdown>{cleanText}</ReactMarkdown>
           </div>
 
-          {message.role === 'assistant' && options.length > 0 && (
+          {message.role === 'assistant' && options.length > 0 && isActionable && (
             <MessageOptions
               options={options}
               isMultiSelect={isMultiSelect}
@@ -281,8 +287,9 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
           )}
         </div>
       </Card>
-      {message.role === 'user' && isLastUserMessage && status === 'idle' && (
+      {message.role === 'user' && canUndo && status === 'idle' && (
         <button
+          type="button"
           onClick={onUndo}
           className="group flex items-center gap-1.5 mt-1 mr-2 px-3 py-1 border-2 border-brutal-black bg-brutal-white hover:bg-brutal-yellow hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_rgba(0,0,0,1)] transition-all text-xs font-mono font-bold text-brutal-black cursor-pointer"
         >

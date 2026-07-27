@@ -1,10 +1,65 @@
 import { getApiKeys } from '@/lib/utils';
 
-// Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
+const MAX_MESSAGES = 100;
+const MAX_MESSAGE_LENGTH = 20_000;
+const MAX_TOTAL_LENGTH = 200_000;
+const MAX_REQUEST_BYTES = 250_000;
+const UPSTREAM_TIMEOUT_MS = 25_000;
+
+type ChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function validateMessages(value: unknown): ChatMessage[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_MESSAGES) return null;
+
+  let totalLength = 0;
+  const messages: ChatMessage[] = [];
+  for (const message of value) {
+    if (
+      !isRecord(message) ||
+      Object.keys(message).some(key => key !== 'role' && key !== 'content') ||
+      (message.role !== 'user' && message.role !== 'assistant') ||
+      typeof message.content !== 'string' ||
+      !message.content.trim() ||
+      message.content.length > MAX_MESSAGE_LENGTH
+    ) return null;
+
+    totalLength += message.content.length;
+    if (totalLength > MAX_TOTAL_LENGTH) return null;
+    messages.push({ role: message.role, content: message.content });
+  }
+
+  return messages.at(-1)?.role === 'user' ? messages : null;
+}
+
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const contentLength = Number(req.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+    return Response.json({ error: 'Chat request is too large.' }, { status: 413 });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'Invalid chat request.' }, { status: 400 });
+  }
+
+  if (!isRecord(body) || Object.keys(body).some(key => key !== 'messages')) {
+    return Response.json({ error: 'Invalid chat request.' }, { status: 400 });
+  }
+  const messages = validateMessages(body.messages);
+  if (!messages) {
+    return Response.json({ error: 'Invalid chat messages.' }, { status: 400 });
+  }
 
   const systemPrompt = `Anda adalah seorang System Architect dan Product Manager elit yang sangat ramah, suportif, dan pandai merangkum konsep teknis menjadi sangat sederhana.
 Tugas Anda adalah memandu pengguna merancang website/aplikasi yang ingin mereka bangun melalui percakapan yang santai, bersahabat, dan sangat mudah dipahami (user-friendly). Anda WAJIB menggunakan Bahasa Indonesia sehari-hari yang natural dan menghindari jargon teknis yang membingungkan. 
@@ -37,13 +92,15 @@ Tujuan Anda adalah mengumpulkan informasi yang cukup sehingga Anda nantinya dapa
 Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (mencapai tahap 5 dan semuanya jelas), sampaikan kepada pengguna secara eksplisit: "REQUIREMENTS COMPLETE. Klik tombol Generate Workflow untuk melanjutkan."`;
 
   const apiKeys = getApiKeys();
-
-  if (apiKeys.length === 0) {
-    return new Response(JSON.stringify({ error: "No API keys configured." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  const baseUrl = process.env.OPENAI_BASE_URL;
+  const model = process.env.AI_MODEL_NAME;
+  if (apiKeys.length === 0 || !baseUrl || !model) {
+    console.error('Chat AI configuration is incomplete.');
+    return Response.json({ error: 'Chat service is not configured.' }, { status: 500 });
   }
 
   const payload = {
-    model: 'qwen-plus',
+    model,
     messages: [
       { role: 'system', content: systemPrompt },
       ...messages
@@ -51,52 +108,75 @@ Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (men
     stream: true,
   };
 
-  let lastError: any;
-
+  const deadline = Date.now() + UPSTREAM_TIMEOUT_MS;
   for (const apiKey of apiKeys) {
+    const remainingTime = deadline - Date.now();
+    if (remainingTime <= 0) break;
+
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), remainingTime);
+    const abortFromClient = () => abortController.abort();
+    req.signal.addEventListener('abort', abortFromClient, { once: true });
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      req.signal.removeEventListener('abort', abortFromClient);
+    };
+
     try {
-      // Direct raw fetch to Dashscope's Chat Completions API
-      const response = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: abortController.signal
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP Error ${response.status}: ${errorText}`);
-      }
-
-      // Check for Dashscope's quirk where they return 200 OK but send a JSON error instead of an event stream
-      // We check if the content-type is application/json. If it is, it's definitely an error because we requested a stream.
       const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const errorData = await response.json();
-        throw new Error(`Dashscope API Error: ${JSON.stringify(errorData)}`);
+      if (!response.ok || !contentType.toLowerCase().includes('text/event-stream') || !response.body) {
+        console.warn(`Chat upstream rejected a request with status ${response.status}.`);
+        await response.body?.cancel();
+        cleanup();
+        continue;
       }
 
-      // If we got here, it's a valid stream. Proxy the response body directly to the client.
-      // We must create a new Response object to ensure Next.js handles the readable stream properly.
-      return new Response(response.body, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+      const reader = response.body.getReader();
+      const stream = new ReadableStream<Uint8Array>({
+        async pull(controller) {
+          try {
+            const { value, done } = await reader.read();
+            if (done) {
+              cleanup();
+              controller.close();
+            } else {
+              controller.enqueue(value);
+            }
+          } catch (error: unknown) {
+            cleanup();
+            console.error('Chat upstream stream failed:', error);
+            controller.error(new Error('Upstream chat stream failed.'));
+          }
+        },
+        async cancel(reason) {
+          cleanup();
+          await reader.cancel(reason);
         }
       });
-    } catch (err: any) {
-      console.warn("API Key failed, falling back...", err.message || err);
-      lastError = err;
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          'X-Content-Type-Options': 'nosniff',
+        }
+      });
+    } catch (error: unknown) {
+      cleanup();
+      console.warn('Chat upstream request failed:', error);
     }
   }
 
-  // If we reach here, all keys failed
-  return new Response(
-    JSON.stringify({ error: 'All API keys failed.', details: lastError?.message || 'Unknown error' }),
-    { status: 500, headers: { 'Content-Type': 'application/json' } }
-  );
+  return Response.json({ error: 'Chat service is temporarily unavailable.' }, { status: 502 });
 }

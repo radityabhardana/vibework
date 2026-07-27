@@ -2,7 +2,7 @@ import React from 'react';
 import { InterviewChat } from '@/components/ui/InterviewChat';
 import { db } from '@/lib/db';
 import { chatSessions, chatMessages } from '@/lib/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, sql } from 'drizzle-orm';
 
 async function fetchSessionData(id: string) {
 
@@ -15,7 +15,7 @@ async function fetchSessionData(id: string) {
   const messages = await db.select()
     .from(chatMessages)
     .where(eq(chatMessages.sessionId, id))
-    .orderBy(asc(chatMessages.createdAt));
+    .orderBy(asc(chatMessages.createdAt), sql`rowid`);
 
   return { session, messages };
 }
@@ -33,7 +33,7 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
   }
 
   // Format messages for InterviewChat
-  const initialMessages = data.messages.map((m: any) => ({
+  const initialMessages = data.messages.map(m => ({
     id: m.id,
     role: m.role as 'user' | 'assistant' | 'system',
     content: m.content
@@ -46,9 +46,10 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
       <div className="flex-1 w-full flex overflow-hidden">
         <div className="flex-1 flex justify-center items-center bg-brutal-white">
           {/* We must wrap InterviewChat in a client-side friendly way. It's a "use client" component. */}
-          <InterviewChat 
-            initialSessionId={id} 
-            initialMessages={initialMessages} 
+          <InterviewChat
+            initialSessionId={id}
+            initialMessages={initialMessages}
+            initialProjectId={data.session.projectId}
           />
         </div>
       </div>

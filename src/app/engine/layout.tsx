@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DeleteSessionButton } from '@/components/ui/DeleteSessionButton';
 import { db } from '@/lib/db';
-import { chatSessions } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { chatSessions, projects } from '@/lib/db/schema';
+import { desc, eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,50 +15,79 @@ export default async function EngineLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const sessions = await db.select().from(chatSessions).orderBy(desc(chatSessions.createdAt));
+  const sessions = await db.select({
+    id: chatSessions.id,
+    title: chatSessions.title,
+    projectId: chatSessions.projectId,
+    projectName: projects.name,
+  })
+    .from(chatSessions)
+    .leftJoin(projects, eq(chatSessions.projectId, projects.id))
+    .orderBy(desc(chatSessions.updatedAt));
 
   return (
-    <div className="flex w-full h-full">
-      {/* Secondary Sidebar for Engine (Chat History) */}
-      <aside className="w-64 h-full border-r-4 border-brutal-black bg-brutal-white flex flex-col shrink-0">
-        <div className="p-4 border-b-4 border-brutal-black flex flex-col gap-2">
-          <Link href="/">
-            <Button variant="secondary" className="w-full flex items-center justify-center gap-2">
-              <House weight="bold" />
-              Dashboard
-            </Button>
-          </Link>
-          <Link href="/engine">
-            <Button variant="primary" className="w-full flex items-center justify-center gap-2 mt-2">
-              <Plus weight="bold" />
-              New Chat
-            </Button>
-          </Link>
+    <div className="flex h-full w-full flex-col lg:flex-row">
+      <aside className="flex max-h-[13rem] w-full shrink-0 flex-col border-b-4 border-brutal-black bg-brutal-white lg:h-full lg:max-h-none lg:w-72 lg:border-r-4 lg:border-b-0">
+        <div className="flex flex-col gap-3 border-b-4 border-brutal-black bg-brutal-black p-3 text-brutal-white lg:p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="font-sans text-xl font-black uppercase tracking-wider">The Grill</h1>
+              <p className="font-mono text-[10px] font-bold uppercase opacity-60">Projects + history</p>
+            </div>
+            <span className="border-2 border-brutal-white px-2 py-1 font-mono text-xs font-bold tabular-nums">
+              {sessions.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/">
+              <Button variant="secondary" size="sm" className="w-full gap-2 !border-2 !shadow-none">
+                <House weight="bold" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/engine">
+              <Button variant="primary" size="sm" className="w-full gap-2 !border-2 !shadow-none">
+                <Plus weight="bold" />
+                New Project
+              </Button>
+            </Link>
+          </div>
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+
+        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto lg:p-4">
           {sessions.length === 0 ? (
-            <p className="font-mono text-sm opacity-50 text-center mt-4">No history yet.</p>
+            <div className="flex min-h-20 w-full items-center justify-center border-2 border-dashed border-brutal-black/30 px-4 text-center">
+              <p className="font-mono text-xs font-bold uppercase opacity-50">No projects yet.</p>
+            </div>
           ) : (
             sessions.map(s => (
-              <Link key={s.id} href={`/engine/${s.id}`}>
-                <Card bg="white" className="p-3 hover:bg-brutal-yellow hover:-translate-y-1 transition-all cursor-pointer">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 truncate overflow-hidden">
-                      <ChatCircle weight="bold" className="shrink-0" />
-                      <span className="font-mono text-sm font-bold truncate">{s.title}</span>
+              <Card key={s.id} bg="white" noPadding className="relative min-w-60 shrink-0 !shadow-[3px_3px_0px_0px_rgba(5,5,5,1)] lg:min-w-0">
+                <Link href={`/engine/${s.id}`} className="block p-3 pr-10 transition-colors hover:bg-brutal-yellow focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-brutal-blue">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <ChatCircle weight="bold" className="mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-mono text-sm font-bold">{s.projectName || s.title}</p>
+                      {s.projectName && (
+                        <p className="mt-0.5 truncate font-mono text-[10px] opacity-50">{s.title}</p>
+                      )}
+                      <span className={`mt-2 inline-block border-2 border-brutal-black px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase ${
+                        s.projectId ? 'bg-brutal-blue text-brutal-white' : 'bg-brutal-yellow text-brutal-black'
+                      }`}>
+                        {s.projectId ? 'Generated' : 'Not generated'}
+                      </span>
                     </div>
-                    <DeleteSessionButton sessionId={s.id} />
                   </div>
-                </Card>
-              </Link>
+                </Link>
+                <div className="absolute right-2 top-2">
+                  <DeleteSessionButton sessionId={s.id} />
+                </div>
+              </Card>
             ))
           )}
         </div>
       </aside>
 
-      {/* Engine Main Area */}
-      <main className="flex-1 h-full relative overflow-hidden">
+      <main className="relative min-h-0 flex-1 overflow-hidden">
         {children}
       </main>
     </div>

@@ -55,10 +55,9 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
   let lastError: any;
 
   for (const apiKey of apiKeys) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // Includes response body download/parsing.
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s max timeout for fast response
-
       const response = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -68,8 +67,6 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
@@ -95,6 +92,8 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
     } catch (err: any) {
       console.warn("API Key failed, falling back...", err.message || err);
       lastError = err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -189,13 +188,23 @@ The JSON must have this exact schema:
   return callQwen(systemPrompt, `PRD:\n${prdContent}`);
 }
 
-function createFallbackRoadmap(topic: string) {
-  const cleanTopic = topic.trim();
-  const lower = cleanTopic.toLowerCase();
-  const capTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
-  const slug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+export function isMachineLearningTopic(topic: string) {
+  const normalized = topic.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return /\b(?:machine learning|data science|ml|mlops)\b/.test(normalized);
+}
 
-  if (lower.includes('machine learning') || lower.includes('ml') || lower.includes('data science')) {
+export function createRoadmapSlug(topic: string) {
+  return topic.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 80) || 'topic';
+}
+
+function createFallbackRoadmap(topic: string, language: string) {
+  const cleanTopic = topic.trim();
+  const capTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
+  const slug = createRoadmapSlug(cleanTopic);
+  const isIndonesian = language !== 'en';
+  const localize = (indonesian: string, english: string) => isIndonesian ? indonesian : english;
+
+  if (!isIndonesian && isMachineLearningTopic(cleanTopic)) {
     return {
       title: "Machine Learning & AI Engineering Roadmap",
       description: "Complete, step-by-step roadmap from absolute basics (Math & Python) to Supervised Learning, Deep Learning, Transformers, and MLOps Production.",
@@ -608,168 +617,137 @@ function createFallbackRoadmap(topic: string) {
   }
 
   return {
-    title: `${capTopic} Developer Roadmap`,
-    description: `Complete step-by-step learning roadmap for ${capTopic} from absolute basics to production mastery.`,
+    title: localize(`Roadmap Pembelajaran ${capTopic}`, `${capTopic} Learning Roadmap`),
+    description: localize(
+      `Roadmap bertahap untuk mempelajari ${capTopic} dari konsep dasar hingga penerapan produksi.`,
+      `A step-by-step roadmap for learning ${capTopic}, from core concepts to production use.`
+    ),
     sections: [
       {
-        sectionName: `1. Introduction to ${capTopic}`,
+        sectionName: localize(`1. Pengenalan ${capTopic}`, `1. Introduction to ${capTopic}`),
         order: 1,
-        groups: [
-          {
-            groupName: "Basics & Overview",
-            side: "left",
-            topics: [
-              {
-                nodeId: `${slug}_what_is`,
-                title: `What is ${capTopic}?`,
-                description: `Core concepts, fundamental principles, and overview of ${cleanTopic}.`,
-                category: "required",
-                prerequisites: [],
-                contentMarkdown: `# What is ${capTopic}?\n\n${capTopic} is a fundamental technology in modern software engineering.\n\n### Key Concepts:\n- **Core Definition**: Understanding the primary purpose and mechanics.\n- **Use Cases**: Real-world applications and business value.\n- **Prerequisites**: Key skills needed before mastering advanced topics.`,
-                quiz: [
-                  {
-                    id: "q1",
-                    question: `What is the main objective of learning ${capTopic}?`,
-                    options: [
-                      `Building a solid foundational understanding of ${cleanTopic} and its practical applications`,
-                      "Memorizing theory without hands-on practice",
-                      "Only focusing on deprecated legacy systems",
-                      "Avoiding software design principles"
-                    ],
-                    correctAnswerIndex: 0,
-                    explanation: `Mastering ${cleanTopic} starts with building strong conceptual foundations and practical skills.`
-                  }
-                ]
-              },
-              {
-                nodeId: `${slug}_why_matters`,
-                title: "Why It Matters & Key Benefits",
-                description: "Industry relevance, architectural advantages, and practical applications.",
-                category: "required",
-                prerequisites: [],
-                contentMarkdown: `# Why ${capTopic} Matters\n\nDiscover why ${cleanTopic} is essential for modern software architecture.\n\n### Benefits:\n- **Efficiency & Scalability**: Streamlining operations.\n- **Industry Demand**: High career relevance and engineering adoption.`,
-                quiz: [
-                  {
-                    id: "q2",
-                    question: `Why is ${capTopic} widely adopted in the industry?`,
-                    options: [
-                      "It provides scalable, effective solutions to complex engineering challenges",
-                      "It has no practical application",
-                      "It is completely obsolete",
-                      "It cannot be deployed to servers"
-                    ],
-                    correctAnswerIndex: 0,
-                    explanation: `${capTopic} is adopted because it solves real engineering challenges efficiently.`
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        groups: [{
+          groupName: localize('Dasar dan Gambaran Umum', 'Foundations and Overview'),
+          side: 'left',
+          topics: [{
+            nodeId: `${slug}_foundations`,
+            title: localize(`Dasar-Dasar ${capTopic}`, `${capTopic} Foundations`),
+            description: localize(`Definisi, tujuan, dan penggunaan utama ${cleanTopic}.`, `The definition, purpose, and primary uses of ${cleanTopic}.`),
+            category: 'required',
+            prerequisites: [],
+            contentMarkdown: localize(
+              `# Dasar-Dasar ${capTopic}\n\nMulailah dengan memahami tujuan, istilah utama, dan masalah yang diselesaikan oleh ${cleanTopic}. Hubungkan konsep tersebut dengan contoh nyata agar pembelajaran tidak berhenti pada teori.\n\n### Fokus utama\n- Definisi dan ruang lingkup\n- Kasus penggunaan umum\n- Istilah dan prasyarat penting`,
+              `# ${capTopic} Foundations\n\nStart by understanding the purpose, core vocabulary, and problems solved by ${cleanTopic}. Connect each concept to a real example so learning goes beyond theory.\n\n### Key focus\n- Definition and scope\n- Common use cases\n- Essential terms and prerequisites`
+            ),
+            quiz: [{
+              id: 'q1',
+              question: localize(`Apa langkah awal terbaik untuk mempelajari ${capTopic}?`, `What is the best first step when learning ${capTopic}?`),
+              options: [
+                localize('Memahami konsep inti dan menghubungkannya dengan contoh nyata', 'Understand the core concepts and connect them to real examples'),
+                localize('Menghafal istilah tanpa praktik', 'Memorize terms without practice'),
+                localize('Langsung melewati semua dasar', 'Skip every foundational topic'),
+                localize('Menghindari dokumentasi', 'Avoid documentation'),
+              ],
+              correctAnswerIndex: 0,
+              explanation: localize('Dasar yang kuat membuat praktik dan materi lanjutan lebih mudah dipahami.', 'Strong foundations make practice and advanced material easier to understand.'),
+            }],
+          }],
+        }],
       },
       {
-        sectionName: `2. Core Building Blocks & Mechanics`,
+        sectionName: localize('2. Konsep Inti', '2. Core Concepts'),
         order: 2,
-        groups: [
-          {
-            groupName: "System Architecture",
-            side: "right",
-            topics: [
-              {
-                nodeId: `${slug}_architecture`,
-                title: "System Architecture & Mechanics",
-                description: "Deep dive into underlying mechanisms, components, and data flow.",
-                category: "required",
-                prerequisites: [`${slug}_what_is`],
-                contentMarkdown: `# Core System Architecture\n\nLearn how ${cleanTopic} operates internally.\n\n### Key Topics:\n- Data structures and state flow\n- Internal component interaction\n- Standard design patterns`,
-                quiz: [
-                  {
-                    id: "q3",
-                    question: "What is crucial when designing system architecture?",
-                    options: [
-                      "Ensuring clear component interaction and state management",
-                      "Ignoring data flow and error handling",
-                      "Hardcoding configurations",
-                      "Bypassing modular design"
-                    ],
-                    correctAnswerIndex: 0,
-                    explanation: "Clear component interfaces and state management are essential for good architecture."
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        groups: [{
+          groupName: localize('Mekanisme Utama', 'Core Mechanics'),
+          side: 'right',
+          topics: [{
+            nodeId: `${slug}_core`,
+            title: localize('Komponen dan Cara Kerja', 'Components and Mechanics'),
+            description: localize('Pelajari komponen utama, interaksi, dan alur kerjanya.', 'Learn the main components, interactions, and workflow.'),
+            category: 'required',
+            prerequisites: [`${slug}_foundations`],
+            contentMarkdown: localize(
+              `# Komponen dan Cara Kerja\n\nUraikan ${cleanTopic} menjadi komponen yang lebih kecil. Pelajari tanggung jawab setiap komponen, bagaimana data bergerak, serta batas antarkomponen.\n\n### Latihan\n- Gambar alur sederhana\n- Jelaskan setiap komponen dengan kata-kata sendiri\n- Identifikasi kegagalan yang mungkin terjadi`,
+              `# Components and Mechanics\n\nBreak ${cleanTopic} into smaller components. Learn each component's responsibility, how data moves, and where boundaries exist.\n\n### Practice\n- Draw a simple flow\n- Explain each component in your own words\n- Identify likely failure modes`
+            ),
+            quiz: [{
+              id: 'q2',
+              question: localize('Apa yang paling membantu memahami sebuah sistem?', 'What most helps when learning how a system works?'),
+              options: [
+                localize('Memahami tanggung jawab dan interaksi setiap komponen', 'Understand each component responsibility and interaction'),
+                localize('Mengabaikan aliran data', 'Ignore data flow'),
+                localize('Menghapus semua batas komponen', 'Remove every component boundary'),
+                localize('Menghindari penanganan kesalahan', 'Avoid error handling'),
+              ],
+              correctAnswerIndex: 0,
+              explanation: localize('Interaksi dan batas komponen menjelaskan perilaku sistem secara keseluruhan.', 'Component interactions and boundaries explain the behavior of the whole system.'),
+            }],
+          }],
+        }],
       },
       {
-        sectionName: `3. Tooling & Ecosystem`,
+        sectionName: localize('3. Praktik Terarah', '3. Guided Practice'),
         order: 3,
-        groups: [
-          {
-            groupName: "Developer Tooling",
-            side: "left",
-            topics: [
-              {
-                nodeId: `${slug}_tooling`,
-                title: "Frameworks, Libraries & IDEs",
-                description: "Essential developer tools, SDKs, and workflow environments.",
-                category: "recommended",
-                prerequisites: [`${slug}_architecture`],
-                contentMarkdown: `# Tooling & Ecosystem\n\nExplore popular developer tooling for ${cleanTopic}.\n\n### Essential Tools:\n- Frameworks and SDKs\n- Testing and debugging environments\n- Version control & package management`,
-                quiz: [
-                  {
-                    id: "q4",
-                    question: "Why utilize modern developer tooling?",
-                    options: [
-                      "It accelerates development and enforces standard best practices",
-                      "It makes testing impossible",
-                      "It reduces code maintainability",
-                      "It forces manual deployments"
-                    ],
-                    correctAnswerIndex: 0,
-                    explanation: "Modern developer tools automate repetitive tasks and enforce quality standards."
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        groups: [{
+          groupName: localize('Proyek Kecil', 'Small Project'),
+          side: 'left',
+          topics: [{
+            nodeId: `${slug}_practice`,
+            title: localize('Bangun Proyek Pertama', 'Build a First Project'),
+            description: localize('Terapkan konsep inti dalam proyek kecil yang dapat diuji.', 'Apply the core concepts in a small, testable project.'),
+            category: 'required',
+            prerequisites: [`${slug}_core`],
+            contentMarkdown: localize(
+              `# Proyek Pertama\n\nPilih satu masalah kecil yang dapat diselesaikan dengan ${cleanTopic}. Tentukan hasil yang terukur, bangun versi paling sederhana, lalu uji dan perbaiki secara bertahap.\n\n### Langkah\n- Batasi ruang lingkup\n- Buat hasil minimum yang berfungsi\n- Tambahkan pengujian dan catatan`,
+              `# First Project\n\nChoose one small problem that ${cleanTopic} can solve. Define a measurable result, build the simplest version, then test and improve it incrementally.\n\n### Steps\n- Limit the scope\n- Produce a minimum working result\n- Add tests and notes`
+            ),
+            quiz: [{
+              id: 'q3',
+              question: localize('Bagaimana memulai proyek belajar yang efektif?', 'How should an effective learning project begin?'),
+              options: [
+                localize('Dengan ruang lingkup kecil dan hasil yang dapat diuji', 'With a small scope and a testable result'),
+                localize('Dengan semua fitur sekaligus', 'With every feature at once'),
+                localize('Tanpa tujuan yang jelas', 'Without a clear goal'),
+                localize('Tanpa menguji hasil', 'Without testing the result'),
+              ],
+              correctAnswerIndex: 0,
+              explanation: localize('Ruang lingkup kecil mempercepat umpan balik dan memperjelas kemajuan.', 'A small scope accelerates feedback and makes progress visible.'),
+            }],
+          }],
+        }],
       },
       {
-        sectionName: `4. Security & Production Deployment`,
+        sectionName: localize('4. Kesiapan Produksi', '4. Production Readiness'),
         order: 4,
-        groups: [
-          {
-            groupName: "Production Best Practices",
-            side: "right",
-            topics: [
-              {
-                nodeId: `${slug}_security`,
-                title: "Security Auditing & Scaling",
-                description: "Performance optimization, vulnerability checks, and production deployment.",
-                category: "recommended",
-                prerequisites: [`${slug}_tooling`],
-                contentMarkdown: `# Production & Security Best Practices\n\nPrepare your ${cleanTopic} applications for production deployment.\n\n### Key Practices:\n- Automated testing & code coverage\n- Vulnerability checks and security hardening\n- Monitoring and performance tuning`,
-                quiz: [
-                  {
-                    id: "q5",
-                    question: "What is a mandatory requirement before production deployment?",
-                    options: [
-                      "Thorough testing, security auditing, and monitoring setup",
-                      "Deploying without code review",
-                      "Disabling logs and metrics",
-                      "Exposing sensitive API credentials"
-                    ],
-                    correctAnswerIndex: 0,
-                    explanation: "Production deployment requires rigorous testing, security checks, and monitoring."
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
+        groups: [{
+          groupName: localize('Kualitas dan Operasional', 'Quality and Operations'),
+          side: 'right',
+          topics: [{
+            nodeId: `${slug}_production`,
+            title: localize('Keamanan, Pengujian, dan Pemantauan', 'Security, Testing, and Monitoring'),
+            description: localize('Siapkan solusi yang aman, teruji, dan dapat dipantau.', 'Prepare a secure, tested, and observable solution.'),
+            category: 'recommended',
+            prerequisites: [`${slug}_practice`],
+            contentMarkdown: localize(
+              `# Kesiapan Produksi\n\nSebelum digunakan secara nyata, solusi ${cleanTopic} perlu diuji, diamankan, dan dipantau. Dokumentasikan cara penerapan dan pemulihan agar perubahan dapat dilakukan dengan aman.\n\n### Daftar periksa\n- Pengujian otomatis\n- Pemeriksaan keamanan\n- Log, metrik, dan rencana pemulihan`,
+              `# Production Readiness\n\nBefore real use, a ${cleanTopic} solution must be tested, secured, and monitored. Document deployment and recovery so changes can be made safely.\n\n### Checklist\n- Automated tests\n- Security checks\n- Logs, metrics, and a recovery plan`
+            ),
+            quiz: [{
+              id: 'q4',
+              question: localize('Apa yang wajib dilakukan sebelum penerapan produksi?', 'What is required before a production deployment?'),
+              options: [
+                localize('Pengujian, pemeriksaan keamanan, dan pemantauan', 'Testing, security checks, and monitoring'),
+                localize('Menonaktifkan semua log', 'Disable all logs'),
+                localize('Membuka kredensial rahasia', 'Expose secret credentials'),
+                localize('Melewati tinjauan perubahan', 'Skip change review'),
+              ],
+              correctAnswerIndex: 0,
+              explanation: localize('Ketiga hal tersebut mengurangi risiko dan membantu mendeteksi masalah.', 'These controls reduce risk and help detect problems.'),
+            }],
+          }],
+        }],
+      },
+    ],
   };
 }
 
@@ -854,11 +832,8 @@ The JSON schema MUST be:
     return await callQwen(systemPrompt, `Generate a complete, granular roadmap.sh style learning roadmap for: ${topic}`);
   } catch (err: any) {
     console.warn("AI generation failed or quota exceeded, using intelligent fallback roadmap:", err.message || err);
-    return createFallbackRoadmap(topic);
+    return createFallbackRoadmap(topic, language);
   }
 }
-
-
-
 
 
