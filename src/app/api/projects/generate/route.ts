@@ -75,7 +75,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Chat session not found' }, { status: 404 });
     }
 
-    if (session.projectId) {
+    const forceRegenerate = body.regenerate === true;
+    if (session.projectId && !forceRegenerate) {
       const existingProject = db.select().from(projects).where(eq(projects.id, session.projectId)).get();
       const existingPrd = db.select().from(prds).where(eq(prds.projectId, session.projectId)).get();
       if (existingProject && existingPrd) {

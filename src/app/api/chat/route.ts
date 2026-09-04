@@ -92,7 +92,8 @@ Tujuan Anda adalah mengumpulkan informasi yang cukup sehingga Anda nantinya dapa
 Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (mencapai tahap 5 dan semuanya jelas), sampaikan kepada pengguna secara eksplisit: "REQUIREMENTS COMPLETE. Klik tombol Generate Workflow untuk melanjutkan."`;
 
   const apiKeys = getApiKeys();
-  const baseUrl = process.env.OPENAI_BASE_URL;
+  const rawBaseUrl = process.env.OPENAI_BASE_URL;
+  const baseUrl = rawBaseUrl?.replace(/\/+$/, '');
   const model = process.env.CHAT_MODEL_NAME || process.env.AI_MODEL_NAME;
   if (apiKeys.length === 0 || !baseUrl || !model) {
     console.error('Chat AI configuration is incomplete.');

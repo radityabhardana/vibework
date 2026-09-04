@@ -65,13 +65,14 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
     stream: false,
   };
 
+  const baseUrl = (process.env.OPENAI_BASE_URL || '').replace(/\/+$/, '');
   let lastError: Error | null = null;
 
   for (const apiKey of apiKeys) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
     try {
-      const response = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -108,8 +109,14 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
       } catch {
         const repaired = cleanText
           .replace(/,\s*([}\]])/g, '$1')
-          .replace(/[\u0000-\u001F]+/g, ' ');
-        return JSON.parse(repaired);
+          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]+/g, ' ');
+        try {
+          return JSON.parse(repaired);
+        } catch {
+          // If unescaped newlines within string values caused the error, escape them
+          const escaped = repaired.replace(/(?<=:\s*"[^"]*)\r?\n(?=[^"]*")/g, '\\n');
+          return JSON.parse(escaped);
+        }
       }
     } catch (error: unknown) {
       const normalizedError = error instanceof Error ? error : new Error(String(error));
@@ -121,8 +128,7 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
   }
 
   if (lastError instanceof AiGenerationTimeoutError) throw lastError;
-  const baseUrl = process.env.OPENAI_BASE_URL || 'unknown endpoint';
-  throw new Error(`Gagal memanggil AI Service (${lastError?.message || 'Connection error'}). Periksa apakah gateway di ${baseUrl} sudah aktif.`);
+  throw new Error(`Gagal memanggil AI Service (${lastError?.message || 'Connection error'}). Periksa apakah gateway di ${baseUrl || 'endpoint'} sudah aktif.`);
 }
 
 

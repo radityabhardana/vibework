@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { projects } from '@/lib/db/schema';
+import { projects, chatSessions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
@@ -11,8 +11,15 @@ export async function deleteProjectAction(id: string) {
   if (!UUID_PATTERN.test(id)) throw new Error('Invalid project ID');
 
   try {
-    db.delete(projects).where(eq(projects.id, id)).run();
+    db.transaction((tx) => {
+      tx.update(chatSessions)
+        .set({ projectId: null })
+        .where(eq(chatSessions.projectId, id))
+        .run();
+      tx.delete(projects).where(eq(projects.id, id)).run();
+    });
     revalidatePath('/projects');
+    revalidatePath('/engine');
     revalidatePath('/');
   } catch (error: unknown) {
     console.error('Delete Project Error:', error);

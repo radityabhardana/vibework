@@ -9,6 +9,8 @@ const globalForDb = globalThis as unknown as {
 };
 
 const sqlite = globalForDb.sqlite ?? new Database(path.join(process.cwd(), 'vibework.db'));
+sqlite.pragma('foreign_keys = ON;');
+sqlite.pragma('journal_mode = WAL;');
 if (process.env.NODE_ENV !== 'production') {
   globalForDb.sqlite = sqlite;
 }

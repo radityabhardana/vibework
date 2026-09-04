@@ -14,12 +14,16 @@ export type Message = {
 };
 
 export function extractMaxLimit(text: string): number | null {
-  const match = text.toLowerCase().match(/(?:maksimal|maks|max|tepat|hingga|tidak lebih dari|tidak boleh lebih dari|maksimum)\s+(\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)/);
+  const lower = text.toLowerCase();
+  // If the text explicitly mentions "atau lebih" or "minimal", don't treat "pilih 1" as an upper bound
+  const hasOpenEnded = /(?:atau lebih|minimal|sekurang-kurangnya)/.test(lower);
+
+  const match = lower.match(/(?:maksimal|maks|max|tepat|hingga|tidak lebih dari|tidak boleh lebih dari|maksimum)\s+(\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)/);
   let numStr = null;
   if (match) {
     numStr = match[1];
-  } else {
-    const match2 = text.toLowerCase().match(/pilih\s+(?:tepat\s+)?(\d+|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)/);
+  } else if (!hasOpenEnded) {
+    const match2 = lower.match(/pilih\s+(?:tepat\s+)?(\d+|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)(?!\s+(?:atau\s+lebih|ke\s+atas))/);
     if (match2) {
       numStr = match2[1];
     }
@@ -246,14 +250,14 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
     while ((match = optionRegex.exec(message.content)) !== null) {
       options.push(match[1].trim());
     }
-    cleanText = message.content.replace(/-\s*\[OPTION\]\s*.+/g, '').trim();
+    cleanText = cleanText.replace(/-\s*\[OPTION\]\s*.+/g, '').trim();
   }
 
   const detectedMax = extractMaxLimit(cleanText);
-  const isMultiSelect = cleanText.includes('[MULTI_SELECT]') || (detectedMax !== null && detectedMax > 1);
+  const isMultiSelect = /\[MULTI_SELECT\]/i.test(cleanText) || cleanText.toLowerCase().includes('atau lebih') || (detectedMax !== null && detectedMax > 1);
 
-  if (cleanText.includes('[MULTI_SELECT]')) {
-    cleanText = cleanText.replace(/\[MULTI_SELECT\]/g, '').trim();
+  if (/\[MULTI_SELECT\]/i.test(cleanText)) {
+    cleanText = cleanText.replace(/\[MULTI_SELECT\]/gi, '').trim();
   }
 
   return (

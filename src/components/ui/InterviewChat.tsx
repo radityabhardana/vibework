@@ -78,6 +78,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
   }, [initialMessages]);
 
   const [activePhaseTab, setActivePhaseTab] = useState<number>(initialMaxPhase);
+  const prevMaxPhaseRef = useRef(initialMaxPhase);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -345,7 +346,9 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
     setLocalInput('');
   };
 
-  const isComplete = messages.some(m => m.role === 'assistant' && m.content.includes('REQUIREMENTS COMPLETE'));
+  const isComplete = messages.some(
+    m => m.role === 'assistant' && /(?:REQUIREMENTS?\s+COMPLETE|PERSYARATAN\s+LENGKAP)/i.test(m.content)
+  );
 
   const initiateGenerateWorkflow = () => {
     if (!sessionId) return;
@@ -366,7 +369,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       const res = await fetch('/api/projects/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, projectName: projectName.trim() })
+        body: JSON.stringify({ sessionId, projectName: projectName.trim(), regenerate: true })
       });
       if (!res.ok) {
         throw new Error(await getApiError(res, 'Failed to generate workflow.'));
@@ -387,6 +390,20 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
   }, [messages]);
 
   const maxPhase = Math.max(1, ...messagesWithPhase.map(m => m.phase));
+
+  // Automatically advance to the new phase if the user was currently on the active phase
+  useEffect(() => {
+    if (maxPhase > prevMaxPhaseRef.current) {
+      if (activePhaseTab === prevMaxPhaseRef.current) {
+        setActivePhaseTab(maxPhase);
+      }
+      prevMaxPhaseRef.current = maxPhase;
+    }
+  }, [maxPhase, activePhaseTab]);
+
+  const hasPhase5UserResponse = messagesWithPhase.some(m => m.role === 'user' && m.phase === 5);
+  const canForceComplete = maxPhase === 5 && hasPhase5UserResponse;
+
   const activeMessages = messagesWithPhase.filter(m => m.phase === activePhaseTab);
 
   const latestMessage = messages[messages.length - 1];
@@ -420,9 +437,13 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                       Open Flow &nearr;
                     </Button>
                   </Link>
-                ) : isComplete && activePhaseTab === 5 ? (
+                ) : isComplete ? (
                   <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className={status === 'generating' ? '!border-2 !px-3 !py-1.5' : 'animate-pulse !border-2 !px-3 !py-1.5'}>
                     {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : 'Generate Flow'}
+                  </Button>
+                ) : canForceComplete ? (
+                  <Button variant="secondary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className="!border-2 !px-3 !py-1.5" title="Selesaikan wawancara & buat alur kerja">
+                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : 'Selesai & Generate'}
                   </Button>
                 ) : null}
               </div>

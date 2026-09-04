@@ -79,7 +79,7 @@ export default async function EngineLayout({
                         </span>
                         {s.updatedAt && (
                           <span className="font-mono text-[10px] opacity-60">
-                            {new Date(s.updatedAt.includes('T') ? s.updatedAt : s.updatedAt + 'Z').toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(s.updatedAt.replace(' ', 'T') + (s.updatedAt.endsWith('Z') ? '' : 'Z')).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
