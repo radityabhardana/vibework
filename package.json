@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 20130",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
     "test": "tsx --test tests/**/*.test.ts",

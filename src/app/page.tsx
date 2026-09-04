@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Robot, GraduationCap, Waveform } from '@phosphor-icons/react';
+import { Robot, GraduationCap, Waveform, WarningCircle } from '@phosphor-icons/react';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
@@ -78,14 +78,31 @@ export default function DashboardPage() {
             </Link>
 
             <Link href="/voice" className="md:col-span-2 xl:col-span-1">
-              <Card bg="blue" className="p-6 cursor-pointer hover:-translate-y-2 hover:shadow-brutal transition-all h-full flex flex-col justify-between border-4 border-brutal-black">
+              <Card bg="blue" className="p-6 cursor-pointer hover:-translate-y-2 hover:shadow-brutal transition-all h-full flex flex-col justify-between border-4 border-brutal-black relative">
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Waveform weight="bold" className="w-8 h-8" />
-                    <h3 className="font-sans font-black text-xl uppercase">
-                      {t('Gudang & Studio Suara', 'Voice Warehouse & Studio')}
-                    </h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-3">
+                      <Waveform weight="bold" className="w-8 h-8" />
+                      <h3 className="font-sans font-black text-xl uppercase">
+                        {t('Gudang & Studio Suara', 'Voice Warehouse & Studio')}
+                      </h3>
+                    </div>
+                    <span className="shrink-0 font-mono text-[10px] sm:text-xs font-black uppercase px-2.5 py-1 bg-brutal-yellow text-brutal-black border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(5,5,5,1)] flex items-center gap-1.5">
+                      <WarningCircle weight="fill" className="w-4 h-4 text-brutal-black shrink-0" />
+                      <span>UNDER CONSTRUCTION</span>
+                    </span>
                   </div>
+
+                  <div className="mb-4 p-3 bg-brutal-yellow text-brutal-black border-2 border-brutal-black font-mono text-xs font-bold flex items-start gap-2 shadow-[2px_2px_0px_0px_rgba(5,5,5,1)]">
+                    <WarningCircle weight="bold" className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>
+                      {t(
+                        'Peringatan: Modul studio suara masih dalam tahap pengembangan (Under Construction).',
+                        'Warning: Voice studio module is currently under construction.'
+                      )}
+                    </span>
+                  </div>
+
                   <p className="font-mono font-bold opacity-80 text-sm">
                     {t(
                       'Pilih voice dari gudang suara, tulis teks, lalu generate narasi dengan karakter suara yang konsisten.',
