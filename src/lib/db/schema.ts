@@ -105,3 +105,33 @@ export const userQuizAttempts = sqliteTable('user_quiz_attempts', {
   completedAt: text('completed_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const voiceProfiles = sqliteTable('voice_profiles', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  kind: text('kind').notNull(), // clone | designed
+  language: text('language').notNull().default('id-ID'),
+  provider: text('provider').notNull().default('modelstudio'),
+  providerVoiceId: text('provider_voice_id'),
+  targetModel: text('target_model').notNull().default('qwen-audio-3.0-tts-flash'),
+  voicePrompt: text('voice_prompt'),
+  settings: text('settings', { mode: 'json' }),
+  referenceAudioPath: text('reference_audio_path'),
+  previewAudioPath: text('preview_audio_path'),
+  status: text('status').notNull().default('enrolling'),
+  errorMessage: text('error_message'),
+  consentAt: text('consent_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const voiceGenerations = sqliteTable('voice_generations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  voiceId: text('voice_id').notNull().references(() => voiceProfiles.id, { onDelete: 'cascade' }),
+  text: text('text').notNull(),
+  instruction: text('instruction'),
+  model: text('model').notNull(),
+  outputAudioPath: text('output_audio_path'),
+  status: text('status').notNull().default('processing'),
+  errorMessage: text('error_message'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});

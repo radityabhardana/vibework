@@ -3,10 +3,11 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { adrs, appFlowcharts, atomicPrompts, chatMessages, chatSessions, projects, prds, schemas } from '@/lib/db/schema';
 import { eq, asc, sql } from 'drizzle-orm';
-import { generatePRD } from '@/lib/engine/prompt-chaining';
+import { AiGenerationTimeoutError, generatePRD } from '@/lib/engine/prompt-chaining';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const maxDuration = 90;
 
 type PrdData = {
   name: string;
@@ -26,15 +27,35 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function isPrdData(value: unknown): value is PrdData {
-  return isRecord(value)
-    && isNonEmptyString(value.name)
-    && isNonEmptyString(value.description)
-    && isNonEmptyString(value.targetUser)
-    && isNonEmptyString(value.coreFeatures)
-    && isNonEmptyString(value.mvpConstraints)
-    && isNonEmptyString(value.monetizationModel)
-    && isNonEmptyString(value.documentContent);
+function normalizeListText(value: unknown) {
+  if (isNonEmptyString(value)) return value.trim();
+  if (Array.isArray(value) && value.length > 0 && value.every(isNonEmptyString)) {
+    return value.map(item => `- ${item.trim()}`).join('\n');
+  }
+  return null;
+}
+
+function normalizePrdData(value: unknown): PrdData | null {
+  if (!isRecord(value)
+    || !isNonEmptyString(value.name)
+    || !isNonEmptyString(value.description)
+    || !isNonEmptyString(value.targetUser)
+    || !isNonEmptyString(value.monetizationModel)
+    || !isNonEmptyString(value.documentContent)) {
+    return null;
+  }
+  const coreFeatures = normalizeListText(value.coreFeatures);
+  const mvpConstraints = normalizeListText(value.mvpConstraints);
+  if (!coreFeatures || !mvpConstraints) return null;
+  return {
+    name: value.name,
+    description: value.description,
+    targetUser: value.targetUser,
+    coreFeatures,
+    mvpConstraints,
+    monetizationModel: value.monetizationModel,
+    documentContent: value.documentContent,
+  };
 }
 
 export async function POST(req: Request) {
@@ -74,8 +95,8 @@ export async function POST(req: Request) {
 
     const chatHistory = messages.map(m => `${m.role === 'user' ? 'User' : 'System Architect'}: ${m.content}`).join('\n\n');
 
-    const prdData: unknown = await generatePRD(chatHistory);
-    if (!isPrdData(prdData)) {
+    const prdData = normalizePrdData(await generatePRD(chatHistory));
+    if (!prdData) {
       return NextResponse.json({ error: 'The generated PRD was incomplete' }, { status: 502 });
     }
 
@@ -152,9 +173,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ projectId });
   } catch (error: unknown) {
     console.error('Generate Workflow Error:', error);
+    if (error instanceof AiGenerationTimeoutError) {
+      return NextResponse.json({ error: error.message }, { status: 504 });
+    }
     if (error instanceof GenerationSourceChangedError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    return NextResponse.json({ error: 'Unable to generate the project' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to generate the project' }, { status: 500 });
   }
 }

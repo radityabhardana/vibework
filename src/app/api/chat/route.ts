@@ -93,7 +93,7 @@ Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (men
 
   const apiKeys = getApiKeys();
   const baseUrl = process.env.OPENAI_BASE_URL;
-  const model = process.env.AI_MODEL_NAME;
+  const model = process.env.CHAT_MODEL_NAME || process.env.AI_MODEL_NAME;
   if (apiKeys.length === 0 || !baseUrl || !model) {
     console.error('Chat AI configuration is incomplete.');
     return Response.json({ error: 'Chat service is not configured.' }, { status: 500 });
@@ -109,6 +109,7 @@ Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (men
   };
 
   const deadline = Date.now() + UPSTREAM_TIMEOUT_MS;
+  let lastErrorReason: string | null = null;
   for (const apiKey of apiKeys) {
     const remainingTime = deadline - Date.now();
     if (remainingTime <= 0) break;
@@ -136,12 +137,16 @@ Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (men
 
       const contentType = response.headers.get('content-type') || '';
       if (!response.ok || !contentType.toLowerCase().includes('text/event-stream') || !response.body) {
-        console.warn(`Chat upstream rejected a request with status ${response.status}.`);
+        const errorText = await response.text().catch(() => '');
+        lastErrorReason = `Upstream HTTP ${response.status}: ${errorText.slice(0, 150) || 'Invalid stream'}`;
+        console.warn(`Chat upstream rejected request with status ${response.status}:`, errorText);
         await response.body?.cancel();
         cleanup();
         continue;
       }
 
+      // The deadline protects connection setup, not a healthy response stream.
+      clearTimeout(timeoutId);
       const reader = response.body.getReader();
       const stream = new ReadableStream<Uint8Array>({
         async pull(controller) {
@@ -174,9 +179,15 @@ Setelah Anda merasa telah mengumpulkan serangkaian persyaratan yang lengkap (men
       });
     } catch (error: unknown) {
       cleanup();
+      const msg = error instanceof Error ? error.message : String(error);
+      lastErrorReason = msg;
       console.warn('Chat upstream request failed:', error);
     }
   }
 
-  return Response.json({ error: 'Chat service is temporarily unavailable.' }, { status: 502 });
+  const detailedError = lastErrorReason 
+    ? `Gagal terhubung ke AI (${lastErrorReason}). Periksa ${baseUrl} atau konfigurasi .env.local.`
+    : `Chat service di ${baseUrl} tidak dapat dihubungi. Pastikan gateway aktif.`;
+
+  return Response.json({ error: detailedError }, { status: 502 });
 }

@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prds, adrs, schemas, atomicPrompts, projects } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateAtomicPrompts } from '@/lib/engine/prompt-chaining';
+import { AiGenerationTimeoutError, generateAtomicPrompts } from '@/lib/engine/prompt-chaining';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const maxDuration = 90;
 
 type AtomicPromptData = {
   title: string;
@@ -118,6 +119,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, count: promptValues.length });
   } catch (error: unknown) {
     console.error('Generate Prompts Error:', error);
+    if (error instanceof AiGenerationTimeoutError) {
+      return NextResponse.json({ error: error.message }, { status: 504 });
+    }
     if (error instanceof GenerationSourceChangedError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

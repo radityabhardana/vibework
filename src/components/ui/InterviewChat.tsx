@@ -154,15 +154,24 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         userPersisted = true;
       }
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [...messages, userMessage]
-            .filter(message => message.role === 'user' || message.role === 'assistant')
-            .map(({ role, content: messageContent }) => ({ role, content: messageContent }))
-        })
-      });
+      const chatAbortController = new AbortController();
+      const chatTimeout = setTimeout(() => chatAbortController.abort(), 35_000);
+
+      let response: Response;
+      try {
+        response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [...messages, userMessage]
+              .filter(message => message.role === 'user' || message.role === 'assistant')
+              .map(({ role, content: messageContent }) => ({ role, content: messageContent }))
+          }),
+          signal: chatAbortController.signal
+        });
+      } finally {
+        clearTimeout(chatTimeout);
+      }
 
       if (!response.ok) {
         throw new Error(await getApiError(response, 'Failed to connect to the AI service.'));
@@ -200,7 +209,8 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         try {
           data = JSON.parse(dataString);
         } catch {
-          throw new Error('The AI service returned a malformed stream.');
+          // Ignore non-JSON keep-alive or comment chunks
+          return;
         }
 
         if (typeof data !== 'object' || data === null || 'error' in data) {
@@ -210,18 +220,23 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         const choices = 'choices' in data ? data.choices : undefined;
         if (!Array.isArray(choices) || choices.length === 0) return;
         const firstChoice = choices[0];
-        const delta = typeof firstChoice === 'object' && firstChoice !== null && 'delta' in firstChoice
-          ? firstChoice.delta
-          : undefined;
-        const contentChunk = typeof delta === 'object' && delta !== null && 'content' in delta && typeof delta.content === 'string'
-          ? delta.content
-          : '';
+        if (typeof firstChoice === 'object' && firstChoice !== null) {
+          if ('finish_reason' in firstChoice && firstChoice.finish_reason === 'stop') {
+            receivedDone = true;
+          }
+          const delta = 'delta' in firstChoice && typeof firstChoice.delta === 'object' && firstChoice.delta !== null
+            ? firstChoice.delta
+            : undefined;
+          const contentChunk = typeof delta === 'object' && delta !== null && 'content' in delta && typeof delta.content === 'string'
+            ? delta.content
+            : '';
 
-        if (contentChunk) {
-          finalContent += contentChunk;
-          setMessages(prev => prev.map(m =>
-            m.id === generatedAssistantId ? { ...m, content: finalContent } : m
-          ));
+          if (contentChunk) {
+            finalContent += contentChunk;
+            setMessages(prev => prev.map(m =>
+              m.id === generatedAssistantId ? { ...m, content: finalContent } : m
+            ));
+          }
         }
       };
 
@@ -238,7 +253,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         }
       };
 
-      while (!receivedDone) {
+      while (true) {
         const { value, done: readerDone } = await reader.read();
         if (value) {
           buffer += decoder.decode(value, { stream: true });
@@ -249,12 +264,15 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           processBufferedEvents(true);
           break;
         }
+        if (receivedDone) {
+          break;
+        }
       }
 
-      if (receivedDone) {
+      try {
         await reader.cancel();
-      } else {
-        throw new Error('The AI response ended before it was complete.');
+      } catch {
+        // Stream already closed
       }
 
       if (!finalContent.trim()) throw new Error('The AI service returned an empty response.');
@@ -265,7 +283,6 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       }
       setStatus('idle');
     } catch (err: unknown) {
-      console.error('Chat stream error:', err);
       if (!userPersisted) {
         setMessages(prev => prev.filter(message => message.id !== userMessage.id));
       }
@@ -313,7 +330,6 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       setShowCustomInput(false);
       setError(null);
     } catch (err: unknown) {
-      console.error('Failed to undo the message:', err);
       setError(err instanceof Error ? err.message : 'Failed to undo the message.');
     } finally {
       requestInFlightRef.current = false;
@@ -361,7 +377,6 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       }
       router.push('/projects/' + data.projectId);
     } catch (e: unknown) {
-      console.error('Failed to generate workflow:', e);
       setError(e instanceof Error ? e.message : 'Failed to generate workflow.');
       setStatus('idle');
     }

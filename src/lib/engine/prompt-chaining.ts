@@ -1,5 +1,17 @@
 import { getApiKeys } from '@/lib/utils';
 
+const configuredTimeout = Number(process.env.AI_GENERATION_TIMEOUT_MS);
+const GENERATION_TIMEOUT_MS = Number.isFinite(configuredTimeout)
+  ? Math.min(120_000, Math.max(10_000, configuredTimeout))
+  : 60_000;
+
+export class AiGenerationTimeoutError extends Error {
+  constructor() {
+    super('AI generation timed out. Please retry.');
+    this.name = 'AiGenerationTimeoutError';
+  }
+}
+
 function extractFirstJsonObject(str: string): string {
   const startIdx = str.indexOf('{');
   if (startIdx === -1) return str;
@@ -45,18 +57,19 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
   }
 
   const payload = {
-    model: process.env.AI_MODEL_NAME || 'alims-intl/deepseek-v4-flash',
+    model: process.env.WORKFLOW_MODEL_NAME || process.env.AI_MODEL_NAME || 'alims-intl/deepseek-v4-flash',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ]
+    ],
+    stream: false,
   };
 
-  let lastError: any;
+  let lastError: Error | null = null;
 
   for (const apiKey of apiKeys) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // Includes response body download/parsing.
+    const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
     try {
       const response = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
         method: 'POST',
@@ -72,32 +85,44 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
         throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
       }
 
-      const data = await response.json();
-      let textContent = data.choices[0].message.content || '';
-      if (!textContent && data.choices[0].message.reasoning_content) {
-        textContent = data.choices[0].message.reasoning_content;
+      const data: unknown = await response.json();
+      if (!data || typeof data !== 'object' || !('choices' in data) || !Array.isArray(data.choices)) {
+        throw new Error('AI provider returned an invalid response.');
       }
+      const choice = data.choices[0];
+      if (!choice || typeof choice !== 'object' || !('message' in choice) || !choice.message || typeof choice.message !== 'object') {
+        throw new Error('AI provider returned no message.');
+      }
+      const message = choice.message as Record<string, unknown>;
+      let textContent = typeof message.content === 'string' ? message.content : '';
+      if (!textContent && typeof message.reasoning_content === 'string') {
+        textContent = message.reasoning_content;
+      }
+      if (!textContent.trim()) throw new Error('AI provider returned an empty message.');
       
       // Extract exact JSON object
       const cleanText = extractFirstJsonObject(textContent.trim());
 
       try {
         return JSON.parse(cleanText);
-      } catch (parseErr) {
+      } catch {
         const repaired = cleanText
           .replace(/,\s*([}\]])/g, '$1')
           .replace(/[\u0000-\u001F]+/g, ' ');
         return JSON.parse(repaired);
       }
-    } catch (err: any) {
-      console.warn("API Key failed, falling back...", err.message || err);
-      lastError = err;
+    } catch (error: unknown) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      lastError = normalizedError.name === 'AbortError' ? new AiGenerationTimeoutError() : normalizedError;
+      console.warn('API key failed, falling back...', lastError.message);
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  throw new Error(`All API keys failed. Last error: ${lastError?.message}`);
+  if (lastError instanceof AiGenerationTimeoutError) throw lastError;
+  const baseUrl = process.env.OPENAI_BASE_URL || 'unknown endpoint';
+  throw new Error(`Gagal memanggil AI Service (${lastError?.message || 'Connection error'}). Periksa apakah gateway di ${baseUrl} sudah aktif.`);
 }
 
 
@@ -110,8 +135,8 @@ The JSON object must follow this exact schema:
   "name": "A short, catchy name for the project (max 3 words)",
   "description": "A 1-sentence punchy description",
   "targetUser": "Who this is for",
-  "coreFeatures": "Bullet points of MVP features",
-  "mvpConstraints": "Technical or scope constraints",
+  "coreFeatures": "A Markdown bullet-list STRING of MVP features (must be a string, not a JSON array)",
+  "mvpConstraints": "A Markdown bullet-list STRING of technical or scope constraints (must be a string, not a JSON array)",
   "monetizationModel": "How it makes money (or if it's free)",
   "documentContent": "A detailed Markdown PRD document covering all the above and any architecture notes. Make it comprehensive."
 }`;
@@ -830,10 +855,9 @@ The JSON schema MUST be:
 
   try {
     return await callQwen(systemPrompt, `Generate a complete, granular roadmap.sh style learning roadmap for: ${topic}`);
-  } catch (err: any) {
-    console.warn("AI generation failed or quota exceeded, using intelligent fallback roadmap:", err.message || err);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('AI generation failed or quota exceeded, using intelligent fallback roadmap:', message);
     return createFallbackRoadmap(topic, language);
   }
 }
-
-

@@ -20,6 +20,7 @@ export default async function EngineLayout({
     title: chatSessions.title,
     projectId: chatSessions.projectId,
     projectName: projects.name,
+    updatedAt: chatSessions.updatedAt,
   })
     .from(chatSessions)
     .leftJoin(projects, eq(chatSessions.projectId, projects.id))
@@ -70,11 +71,18 @@ export default async function EngineLayout({
                       {s.projectName && (
                         <p className="mt-0.5 truncate font-mono text-[10px] opacity-50">{s.title}</p>
                       )}
-                      <span className={`mt-2 inline-block border-2 border-brutal-black px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase ${
-                        s.projectId ? 'bg-brutal-blue text-brutal-white' : 'bg-brutal-yellow text-brutal-black'
-                      }`}>
-                        {s.projectId ? 'Generated' : 'Not generated'}
-                      </span>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className={`border-2 border-brutal-black px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase ${
+                          s.projectId ? 'bg-brutal-blue text-brutal-white' : 'bg-brutal-yellow text-brutal-black'
+                        }`}>
+                          {s.projectId ? 'Generated' : 'Not generated'}
+                        </span>
+                        {s.updatedAt && (
+                          <span className="font-mono text-[10px] opacity-60">
+                            {new Date(s.updatedAt.includes('T') ? s.updatedAt : s.updatedAt + 'Z').toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>

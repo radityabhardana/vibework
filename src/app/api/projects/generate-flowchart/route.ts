@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prds, appFlowcharts, projects } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateAppFlowchart } from '@/lib/engine/prompt-chaining';
+import { AiGenerationTimeoutError, generateAppFlowchart } from '@/lib/engine/prompt-chaining';
 import { isValidAppFlowchart } from '@/lib/flowchart';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const maxDuration = 90;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -60,6 +61,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, flowchart: flowchartObj });
   } catch (error: unknown) {
     console.error('Error generating app flowchart:', error);
+    if (error instanceof AiGenerationTimeoutError) {
+      return NextResponse.json({ error: error.message }, { status: 504 });
+    }
     if (error instanceof GenerationSourceChangedError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
