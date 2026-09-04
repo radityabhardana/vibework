@@ -33,3 +33,19 @@ test('uses assistant order only for legacy conversations without valid tags', ()
 
   assert.deepEqual(assignMessagePhases(messages).map(message => message.phase), [1, 1, 2]);
 });
+
+test('correctly reduces max phase when conversation is undone', () => {
+  const messages = [
+    { role: 'assistant', content: '[FASE: 1/5]\nQuestion 1' },
+    { role: 'user', content: 'Answer 1' },
+    { role: 'assistant', content: '[FASE: 2/5]\nQuestion 2' },
+    { role: 'user', content: 'Answer 2' },
+    { role: 'assistant', content: '[FASE: 3/5]\nQuestion 3' },
+  ];
+
+  assert.equal(getMaxMessagePhase(messages), 3);
+
+  // User undid back to Phase 1
+  const rolledBack = messages.slice(0, 2);
+  assert.equal(getMaxMessagePhase(rolledBack), 1);
+});

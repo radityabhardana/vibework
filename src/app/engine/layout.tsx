@@ -77,11 +77,19 @@ export default async function EngineLayout({
                         }`}>
                           {s.projectId ? 'Generated' : 'Not generated'}
                         </span>
-                        {s.updatedAt && (
-                          <span className="font-mono text-[10px] opacity-60">
-                            {new Date(s.updatedAt.replace(' ', 'T') + (s.updatedAt.endsWith('Z') ? '' : 'Z')).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        )}
+                        {s.updatedAt && (() => {
+                          try {
+                            const d = new Date(s.updatedAt.replace(' ', 'T') + (s.updatedAt.endsWith('Z') ? '' : 'Z'));
+                            if (isNaN(d.getTime())) return null;
+                            return (
+                              <span className="font-mono text-[10px] opacity-60">
+                                {d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            );
+                          } catch {
+                            return null;
+                          }
+                        })()}
                       </div>
                     </div>
                   </div>

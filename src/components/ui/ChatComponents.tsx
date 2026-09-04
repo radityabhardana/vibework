@@ -229,6 +229,22 @@ export function MessageOptions({
   );
 }
 
+export function parseMessageOptions(content: string): { options: string[]; cleanText: string } {
+  const options: string[] = [];
+  const optionRegex = /(?:^|\n)\s*(?:[-*•]|\d+\.)?\s*\[OPTION\]\s*(.+)/gi;
+  let match;
+  while ((match = optionRegex.exec(content)) !== null) {
+    options.push(match[1].trim());
+  }
+  const cleanText = content.replace(/(?:^|\n)\s*(?:[-*•]|\d+\.)?\s*\[OPTION\]\s*.+/gi, '').trim();
+  return { options, cleanText };
+}
+
+export function isMultiSelectPrompt(text: string): boolean {
+  const detectedMax = extractMaxLimit(text);
+  return /\[MULTI[_\s-]SELECT\]/i.test(text) || text.toLowerCase().includes('atau lebih') || (detectedMax !== null && detectedMax > 1);
+}
+
 export function MessageBubble({ message, status, onSend, onUndo, showCustomInput, onShowCustom, isActionable, canUndo }: {
   message: Message;
   status: string;
@@ -245,19 +261,16 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
   const options: string[] = [];
 
   if (message.role === 'assistant') {
-    const optionRegex = /-\s*\[OPTION\]\s*(.+)/g;
-    let match;
-    while ((match = optionRegex.exec(message.content)) !== null) {
-      options.push(match[1].trim());
-    }
-    cleanText = cleanText.replace(/-\s*\[OPTION\]\s*.+/g, '').trim();
+    const parsed = parseMessageOptions(cleanText);
+    options.push(...parsed.options);
+    cleanText = parsed.cleanText;
   }
 
   const detectedMax = extractMaxLimit(cleanText);
-  const isMultiSelect = /\[MULTI_SELECT\]/i.test(cleanText) || cleanText.toLowerCase().includes('atau lebih') || (detectedMax !== null && detectedMax > 1);
+  const isMultiSelect = isMultiSelectPrompt(cleanText);
 
-  if (/\[MULTI_SELECT\]/i.test(cleanText)) {
-    cleanText = cleanText.replace(/\[MULTI_SELECT\]/gi, '').trim();
+  if (/\[MULTI[_\s-]SELECT\]/i.test(cleanText)) {
+    cleanText = cleanText.replace(/\[MULTI[_\s-]SELECT\]/gi, '').trim();
   }
 
   return (
@@ -320,6 +333,7 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
         </div>
         <Input
           autoFocus
+          required
           value={projectName}
           onChange={e => onNameChange(e.target.value)}
           placeholder="Contoh: Aplikasi Kasir Super"
@@ -329,7 +343,7 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
           <Button type="button" variant="secondary" onClick={onCancel}>
             Batal
           </Button>
-          <Button type="submit" variant="primary">
+          <Button type="submit" variant="primary" disabled={!projectName.trim()}>
             Lanjut Generate &rarr;
           </Button>
         </div>

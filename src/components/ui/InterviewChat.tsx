@@ -391,14 +391,18 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
 
   const maxPhase = Math.max(1, ...messagesWithPhase.map(m => m.phase));
 
-  // Automatically advance to the new phase if the user was currently on the active phase
+  // Automatically advance to the new phase if the user was currently on the active phase,
+  // and safely clamp activePhaseTab if maxPhase decreases (e.g. after undo)
   useEffect(() => {
+    if (activePhaseTab > maxPhase) {
+      setActivePhaseTab(maxPhase);
+    }
     if (maxPhase > prevMaxPhaseRef.current) {
       if (activePhaseTab === prevMaxPhaseRef.current) {
         setActivePhaseTab(maxPhase);
       }
-      prevMaxPhaseRef.current = maxPhase;
     }
+    prevMaxPhaseRef.current = maxPhase;
   }, [maxPhase, activePhaseTab]);
 
   const hasPhase5UserResponse = messagesWithPhase.some(m => m.role === 'user' && m.phase === 5);
@@ -431,19 +435,20 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                 }`}>
                   {initialProjectId ? 'Generated' : 'Not generated'}
                 </span>
-                {initialProjectId ? (
+                {initialProjectId && (
                   <Link href={`/projects/${initialProjectId}`}>
                     <Button variant="secondary" size="sm" className="!border-2 !px-3 !py-1.5 !shadow-[3px_3px_0px_0px_rgba(5,5,5,1)]">
                       Open Flow &nearr;
                     </Button>
                   </Link>
-                ) : isComplete ? (
+                )}
+                {isComplete ? (
                   <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className={status === 'generating' ? '!border-2 !px-3 !py-1.5' : 'animate-pulse !border-2 !px-3 !py-1.5'}>
-                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : 'Generate Flow'}
+                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : initialProjectId ? 'Regenerate Flow' : 'Generate Flow'}
                   </Button>
                 ) : canForceComplete ? (
                   <Button variant="secondary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className="!border-2 !px-3 !py-1.5" title="Selesaikan wawancara & buat alur kerja">
-                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : 'Selesai & Generate'}
+                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : initialProjectId ? 'Regenerate Flow' : 'Selesai & Generate'}
                   </Button>
                 ) : null}
               </div>
@@ -542,14 +547,14 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           const isViewingHistory = activePhaseTab < maxPhase;
 
           let hasOptions = false;
-          if (lastMessage?.role === 'assistant' && /-\s*\[OPTION\]/.test(lastMessage.content)) {
+          if (lastMessage?.role === 'assistant' && /(?:[-*•]|\d+\.)?\s*\[OPTION\]/i.test(lastMessage.content)) {
             hasOptions = true;
           }
 
           let shouldShowInput = false;
           if (messages.length === 0) shouldShowInput = true;
           else if (isViewingHistory) shouldShowInput = false;
-          else shouldShowInput = showNamePrompt || !hasOptions || showCustomInput || status !== 'idle';
+          else shouldShowInput = !hasOptions || showCustomInput || status !== 'idle';
 
           if (!shouldShowInput) return null;
 
@@ -560,7 +565,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   ref={inputRef}
                   value={localInput}
                   onChange={(e) => setLocalInput(e.target.value)}
-                  placeholder="Ketik ide aplikasi Anda di sini..."
+                  placeholder={messages.length === 0 ? "Ketik ide aplikasi Anda di sini..." : "Ketik jawaban Anda di sini..."}
                   className="flex-1 !py-6 !text-lg !rounded-none !border-4 !border-brutal-black !shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] !px-6 focus:!translate-y-1 focus:!translate-x-1 focus:!shadow-none transition-all"
                   disabled={status !== 'idle'}
                   maxLength={MAX_MESSAGE_LENGTH}
@@ -574,18 +579,18 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   <PaperPlaneRight weight="bold" className="w-8 h-8" />
                 </Button>
               </form>
-
-              {showNamePrompt && (
-                <NamePromptModal
-                  projectName={projectName}
-                  onNameChange={setProjectName}
-                  onSubmit={executeGenerateWorkflow}
-                  onCancel={() => setShowNamePrompt(false)}
-                />
-              )}
             </div>
           );
         })()}
+
+        {showNamePrompt && (
+          <NamePromptModal
+            projectName={projectName}
+            onNameChange={setProjectName}
+            onSubmit={executeGenerateWorkflow}
+            onCancel={() => setShowNamePrompt(false)}
+          />
+        )}
       </div>
     </div>
   );

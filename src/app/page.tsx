@@ -87,13 +87,13 @@ export default function DashboardPage() {
                         {t('Gudang & Studio Suara', 'Voice Warehouse & Studio')}
                       </h3>
                     </div>
-                    <span className="shrink-0 font-mono text-[10px] sm:text-xs font-black uppercase px-2.5 py-1 bg-brutal-yellow text-brutal-black border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(5,5,5,1)] flex items-center gap-1.5">
-                      <WarningCircle weight="fill" className="w-4 h-4 text-brutal-black shrink-0" />
+                    <span className="shrink-0 font-mono text-[10px] sm:text-xs font-black uppercase px-2.5 py-1 bg-brutal-red text-brutal-white border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(5,5,5,1)] flex items-center gap-1.5">
+                      <WarningCircle weight="fill" className="w-4 h-4 text-brutal-white shrink-0" />
                       <span>UNDER CONSTRUCTION</span>
                     </span>
                   </div>
 
-                  <div className="mb-4 p-3 bg-brutal-yellow text-brutal-black border-2 border-brutal-black font-mono text-xs font-bold flex items-start gap-2 shadow-[2px_2px_0px_0px_rgba(5,5,5,1)]">
+                  <div className="mb-4 p-3 bg-brutal-red text-brutal-white border-2 border-brutal-black font-mono text-xs font-bold flex items-start gap-2 shadow-[2px_2px_0px_0px_rgba(5,5,5,1)]">
                     <WarningCircle weight="bold" className="w-4 h-4 shrink-0 mt-0.5" />
                     <span>
                       {t(
