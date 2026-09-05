@@ -6,6 +6,8 @@ export const projects = sqliteTable('projects', {
   name: text('name').notNull(),
   description: text('description'),
   status: text('status').default('draft'), 
+  agentsDocument: text('agents_document'),
+  promptDocument: text('prompt_document'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });

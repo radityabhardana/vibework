@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prds, adrs, schemas, atomicPrompts, projects } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { AiGenerationTimeoutError, generateAtomicPrompts } from '@/lib/engine/prompt-chaining';
+import { AiGenerationTimeoutError, generateAtomicPrompts, compileMasterPromptMd } from '@/lib/engine/prompt-chaining';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -108,9 +108,20 @@ export async function POST(req: Request) {
         throw new GenerationSourceChangedError();
       }
 
+      const masterPrompt = compileMasterPromptMd({
+        projectName: project.name,
+        prdContent: prd.documentContent,
+        adrContent: adr.adrDocument,
+        dbSchema: schemaObj.dbSchema,
+        apiContract: schemaObj.apiContract,
+        agentsDocument: project.agentsDocument || undefined,
+        prompts: promptValues,
+      });
+
       tx.delete(atomicPrompts).where(eq(atomicPrompts.projectId, projectId)).run();
       tx.insert(atomicPrompts).values(promptValues).run();
       tx.update(projects).set({
+        promptDocument: masterPrompt,
         status: 'Prompts Generated',
         updatedAt: new Date().toISOString(),
       }).where(eq(projects.id, projectId)).run();

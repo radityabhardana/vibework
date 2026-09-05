@@ -11,6 +11,20 @@ const globalForDb = globalThis as unknown as {
 const sqlite = globalForDb.sqlite ?? new Database(path.join(process.cwd(), 'vibework.db'));
 sqlite.pragma('foreign_keys = ON;');
 sqlite.pragma('journal_mode = WAL;');
+
+try {
+  const pragma = sqlite.pragma('table_info(projects)') as Array<{ name: string }>;
+  const columnNames = new Set(pragma.map(col => col.name));
+  if (!columnNames.has('agents_document')) {
+    sqlite.exec('ALTER TABLE projects ADD COLUMN agents_document TEXT;');
+  }
+  if (!columnNames.has('prompt_document')) {
+    sqlite.exec('ALTER TABLE projects ADD COLUMN prompt_document TEXT;');
+  }
+} catch (e) {
+  console.warn('DB column check note:', e);
+}
+
 if (process.env.NODE_ENV !== 'production') {
   globalForDb.sqlite = sqlite;
 }
