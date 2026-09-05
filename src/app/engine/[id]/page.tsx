@@ -1,11 +1,10 @@
 import React from 'react';
-import { InterviewChat } from '@/components/ui/InterviewChat';
+import { IdeaStudio } from '@/components/ui/IdeaStudio';
 import { db } from '@/lib/db';
 import { chatSessions, chatMessages } from '@/lib/db/schema';
 import { eq, asc, sql } from 'drizzle-orm';
 
 async function fetchSessionData(id: string) {
-
   const session = await db.select().from(chatSessions).where(eq(chatSessions.id, id)).get();
   
   if (!session) {
@@ -32,27 +31,15 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
     );
   }
 
-  // Format messages for InterviewChat
-  const initialMessages = data.messages.map(m => ({
-    id: m.id,
-    role: m.role as 'user' | 'assistant' | 'system',
-    content: m.content
-  }));
-
-  // Remove default welcome message injection so the chat starts empty
+  const initialIdea = data.messages.find(m => m.role === 'user')?.content || '';
 
   return (
-    <div className="w-full h-full flex flex-col bg-brutal-white overflow-hidden">
-      <div className="flex-1 w-full flex overflow-hidden">
-        <div className="flex-1 flex justify-center items-center bg-brutal-white">
-          {/* We must wrap InterviewChat in a client-side friendly way. It's a "use client" component. */}
-          <InterviewChat
-            initialSessionId={id}
-            initialMessages={initialMessages}
-            initialProjectId={data.session.projectId}
-          />
-        </div>
-      </div>
+    <div className="w-full h-full flex flex-col bg-[#f4f4f0] overflow-hidden">
+      <IdeaStudio
+        initialSessionId={id}
+        initialIdea={initialIdea}
+        initialProjectId={data.session.projectId}
+      />
     </div>
   );
 }
