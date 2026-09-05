@@ -16,13 +16,21 @@ try {
   const pragma = sqlite.pragma('table_info(projects)') as Array<{ name: string }>;
   const columnNames = new Set(pragma.map(col => col.name));
   if (!columnNames.has('agents_document')) {
-    sqlite.exec('ALTER TABLE projects ADD COLUMN agents_document TEXT;');
+    try {
+      sqlite.exec('ALTER TABLE projects ADD COLUMN agents_document TEXT;');
+    } catch {
+      // Column may have been added concurrently by another worker
+    }
   }
   if (!columnNames.has('prompt_document')) {
-    sqlite.exec('ALTER TABLE projects ADD COLUMN prompt_document TEXT;');
+    try {
+      sqlite.exec('ALTER TABLE projects ADD COLUMN prompt_document TEXT;');
+    } catch {
+      // Column may have been added concurrently by another worker
+    }
   }
-} catch (e) {
-  console.warn('DB column check note:', e);
+} catch {
+  // Pragma or table might not exist yet
 }
 
 if (process.env.NODE_ENV !== 'production') {
