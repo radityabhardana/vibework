@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { chatSessions, chatMessages } from '@/lib/db/schema';
 import { eq, asc, sql } from 'drizzle-orm';
@@ -52,6 +53,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (!deleted) {
       return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
     }
+
+    revalidatePath('/engine', 'layout');
+    revalidatePath('/engine');
+    revalidatePath('/');
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

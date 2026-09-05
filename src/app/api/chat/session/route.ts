@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { chatSessions } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
@@ -42,6 +43,9 @@ export async function POST(req: Request) {
       title: 'New Chat',
       projectId: typeof body.projectId === 'string' ? body.projectId : null,
     }).returning();
+
+    revalidatePath('/engine', 'layout');
+    revalidatePath('/engine');
 
     return NextResponse.json(result[0], { status: 201 });
   } catch (error: unknown) {
