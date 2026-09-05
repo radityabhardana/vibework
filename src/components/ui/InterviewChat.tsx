@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { PaperPlaneRight } from '@phosphor-icons/react';
+import { PaperPlaneRight, Lightning } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -78,7 +78,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
   }, [initialMessages]);
 
   const [activePhaseTab, setActivePhaseTab] = useState<number>(initialMaxPhase);
-  const prevMaxPhaseRef = useRef(initialMaxPhase);
+  const [prevMaxPhase, setPrevMaxPhase] = useState<number>(initialMaxPhase);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -352,6 +352,13 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
 
   const initiateGenerateWorkflow = () => {
     if (!sessionId) return;
+    if (!projectName.trim()) {
+      const firstUserMsg = messages.find(m => m.role === 'user')?.content.trim() || '';
+      if (firstUserMsg) {
+        const words = firstUserMsg.split(/\s+/).slice(0, 4).join(' ');
+        setProjectName(words.slice(0, 35));
+      }
+    }
     setShowNamePrompt(true);
   };
 
@@ -393,20 +400,14 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
 
   // Automatically advance to the new phase if the user was currently on the active phase,
   // and safely clamp activePhaseTab if maxPhase decreases (e.g. after undo)
-  useEffect(() => {
-    if (activePhaseTab > maxPhase) {
+  if (prevMaxPhase !== maxPhase) {
+    setPrevMaxPhase(maxPhase);
+    if (activePhaseTab > maxPhase || activePhaseTab === prevMaxPhase) {
       setActivePhaseTab(maxPhase);
     }
-    if (maxPhase > prevMaxPhaseRef.current) {
-      if (activePhaseTab === prevMaxPhaseRef.current) {
-        setActivePhaseTab(maxPhase);
-      }
-    }
-    prevMaxPhaseRef.current = maxPhase;
-  }, [maxPhase, activePhaseTab]);
+  }
 
-  const hasPhase5UserResponse = messagesWithPhase.some(m => m.role === 'user' && m.phase === 5);
-  const canForceComplete = maxPhase === 5 && hasPhase5UserResponse;
+  const hasUserResponse = messagesWithPhase.some(m => m.role === 'user');
 
   const activeMessages = messagesWithPhase.filter(m => m.phase === activePhaseTab);
 
@@ -446,9 +447,17 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className={status === 'generating' ? '!border-2 !px-3 !py-1.5' : 'animate-pulse !border-2 !px-3 !py-1.5'}>
                     {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : initialProjectId ? 'Regenerate Flow' : 'Generate Flow'}
                   </Button>
-                ) : canForceComplete ? (
-                  <Button variant="secondary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className="!border-2 !px-3 !py-1.5" title="Selesaikan wawancara & buat alur kerja">
-                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : initialProjectId ? 'Regenerate Flow' : 'Selesai & Generate'}
+                ) : hasUserResponse ? (
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={initiateGenerateWorkflow} 
+                    disabled={status !== 'idle'} 
+                    className="!border-2 !px-3 !py-1.5 !bg-brutal-white hover:!bg-amber-50 gap-1.5 !shadow-[3px_3px_0px_0px_rgba(5,5,5,1)] text-xs md:text-sm font-black" 
+                    title="Buat PRD & Flow sekarang (AI akan otomatis melengkapi sisa asumsi)"
+                  >
+                    <Lightning weight="fill" className="w-4 h-4 text-amber-600 shrink-0" />
+                    {status === 'generating' ? `${Math.round(generationProgress)}%...` : initialProjectId ? 'Regenerate Flow' : '⚡ Express Generate'}
                   </Button>
                 ) : null}
               </div>
@@ -542,6 +551,23 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           )}
         </div>
 
+        {hasUserResponse && !isComplete && status === 'idle' && (
+          <div className="bg-amber-50 border-t-4 border-brutal-black px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2 font-mono text-xs font-bold text-brutal-black">
+              <Lightning weight="fill" className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Sudah cukup dengan informasi saat ini?</span>
+            </div>
+            <button
+              type="button"
+              onClick={initiateGenerateWorkflow}
+              className="inline-flex items-center gap-1.5 font-mono font-bold text-xs uppercase px-3 py-1.5 bg-brutal-yellow hover:bg-yellow-400 text-brutal-black border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 cursor-pointer transition-transform"
+            >
+              <Lightning weight="bold" className="w-3.5 h-3.5" />
+              Generate Sekarang (AI Lengkapi Sisanya)
+            </button>
+          </div>
+        )}
+
         {(() => {
           const lastMessage = activeMessages[activeMessages.length - 1];
           const isViewingHistory = activePhaseTab < maxPhase;
@@ -565,7 +591,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   ref={inputRef}
                   value={localInput}
                   onChange={(e) => setLocalInput(e.target.value)}
-                  placeholder={messages.length === 0 ? "Ketik ide aplikasi Anda di sini..." : "Ketik jawaban Anda di sini..."}
+                  placeholder={messages.length === 0 ? "Ketik ide aplikasi Anda di sini..." : "Ketik jawaban Anda (atau klik 'Generate Sekarang')..."}
                   className="flex-1 !py-6 !text-lg !rounded-none !border-4 !border-brutal-black !shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] !px-6 focus:!translate-y-1 focus:!translate-x-1 focus:!shadow-none transition-all"
                   disabled={status !== 'idle'}
                   maxLength={MAX_MESSAGE_LENGTH}

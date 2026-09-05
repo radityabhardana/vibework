@@ -134,17 +134,19 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
 
 export async function generatePRD(chatHistory: string) {
   const systemPrompt = `You are an expert Product Manager and System Architect. 
-Your task is to analyze the provided interview transcript and generate a structured Product Requirements Document (PRD).
+Your task is to analyze the provided interview transcript and generate a structured, production-ready Product Requirements Document (PRD).
+CRITICAL RULE: If the interview transcript is brief or if the user generated early without answering every single question, you MUST use your senior architectural expertise to intelligently fill in sensible, industry-standard assumptions, best practices, user personas, MVP features, database needs, and edge cases. Never generate a shallow or incomplete document.
+
 You MUST return ONLY a valid JSON object. Do not include markdown \`\`\`json codeblocks, just the raw JSON object starting with { and ending with }.
 The JSON object must follow this exact schema:
 {
   "name": "A short, catchy name for the project (max 3 words)",
   "description": "A 1-sentence punchy description",
-  "targetUser": "Who this is for",
-  "coreFeatures": "A Markdown bullet-list STRING of MVP features (must be a string, not a JSON array)",
+  "targetUser": "Who this is for (detailed target audience)",
+  "coreFeatures": "A Markdown bullet-list STRING of MVP features with specifications (must be a string, not a JSON array)",
   "mvpConstraints": "A Markdown bullet-list STRING of technical or scope constraints (must be a string, not a JSON array)",
-  "monetizationModel": "How it makes money (or if it's free)",
-  "documentContent": "A detailed Markdown PRD document covering all the above and any architecture notes. Make it comprehensive."
+  "monetizationModel": "How it makes money (or operating model if free/internal)",
+  "documentContent": "A detailed Markdown PRD document covering overview, user personas, user stories, architecture requirements, security, and edge cases. Make it comprehensive and professional."
 }`;
 
   return callQwen(systemPrompt, chatHistory);
