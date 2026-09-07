@@ -518,78 +518,78 @@ export function ProjectWorkspace({
   ]);
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-background relative">
+    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#030303] text-white relative">
       {/* Top Workspace Tab Switcher Bar */}
-      <div className="bg-zinc-950/80 border-b border-white/10 px-3 py-2 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 backdrop-blur-md">
+      <div className="bg-[#030303]/90 border-b border-white/10 px-3 py-2.5 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 backdrop-blur-md">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1">
           <button
             type="button"
             onClick={() => setActiveTab('tree')}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
               activeTab === 'tree'
-                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
+                ? 'bg-white text-black border-transparent shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <TreeStructure weight="bold" className="w-4 h-4 text-cyan-400" />
+            <TreeStructure weight="bold" className="w-4 h-4" />
             <span>Interactive Tree</span>
-            {appFlowchart && <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
+            {appFlowchart && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'tree' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('prd')}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
               activeTab === 'prd'
-                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
+                ? 'bg-white text-black border-transparent shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Article weight="bold" className="w-4 h-4 text-violet-400" />
+            <Article weight="bold" className="w-4 h-4" />
             <span>PRD</span>
-            {prd && <span className="text-[10px] bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
+            {prd && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'prd' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('agents')}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
               activeTab === 'agents'
-                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
+                ? 'bg-white text-black border-transparent shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Robot weight="bold" className="w-4 h-4 text-cyan-400" />
+            <Robot weight="bold" className="w-4 h-4" />
             <span>AGENTS.md</span>
-            {project.agentsDocument && <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
+            {project.agentsDocument && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'agents' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('architecture')}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
               activeTab === 'architecture'
-                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
+                ? 'bg-white text-black border-transparent shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Cpu weight="bold" className="w-4 h-4 text-amber-400" />
+            <Cpu weight="bold" className="w-4 h-4" />
             <span>Architecture & Schema</span>
-            {adr && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
+            {adr && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'architecture' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('prompts')}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
               activeTab === 'prompts'
-                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
+                ? 'bg-white text-black border-transparent shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Lightning weight="bold" className="w-4 h-4 text-emerald-400" />
+            <Lightning weight="bold" className="w-4 h-4" />
             <span>Prompt.md</span>
-            {effectivePromptMd && <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
+            {effectivePromptMd && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'prompts' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
           </button>
         </div>
 
@@ -597,7 +597,7 @@ export function ProjectWorkspace({
         <button
           type="button"
           onClick={handleExportAll}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-zinc-950 hover:bg-zinc-200 font-sans text-xs font-semibold rounded-lg shadow-sm transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/[0.04] ring ring-white/30 hover:bg-white/10 text-white font-mono text-xs font-medium rounded-lg transition-all duration-300 cursor-pointer shrink-0"
           title="Download semua spesifikasi menjadi file Markdown lengkap"
         >
           <DownloadSimple weight="bold" className="w-3.5 h-3.5" />

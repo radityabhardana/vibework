@@ -9,15 +9,15 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className = '', bg = 'white', noPadding = false, children, ...props }, ref) => {
     
     const bgStyles = {
-      white: 'bg-zinc-900/70 border-white/10 text-zinc-100 hover:border-white/20',
-      yellow: 'bg-zinc-900/80 border-amber-500/20 text-zinc-100 hover:border-amber-500/40 hover:shadow-[0_0_25px_-5px_rgba(245,158,11,0.15)]',
-      blue: 'bg-zinc-900/80 border-cyan-500/20 text-zinc-100 hover:border-cyan-500/40 hover:shadow-[0_0_25px_-5px_rgba(6,182,212,0.15)]',
-      red: 'bg-zinc-900/80 border-rose-500/20 text-zinc-100 hover:border-rose-500/40 hover:shadow-[0_0_25px_-5px_rgba(244,63,94,0.15)]',
-      black: 'bg-zinc-950/90 border-white/[0.08] text-zinc-100 hover:border-white/15'
+      white: 'bg-white/[0.03] border-white/10 text-white hover:border-white/25 hover:bg-white/[0.05]',
+      yellow: 'bg-white/[0.03] border-amber-500/20 text-white hover:border-amber-500/40 hover:bg-amber-500/[0.03]',
+      blue: 'bg-white/[0.03] border-blue-500/20 text-white hover:border-blue-500/40 hover:bg-blue-500/[0.03]',
+      red: 'bg-white/[0.03] border-rose-500/20 text-white hover:border-rose-500/40 hover:bg-rose-500/[0.03]',
+      black: 'bg-black/60 border-white/[0.08] text-white hover:border-white/20'
     };
 
     const classes = [
-      'border rounded-2xl backdrop-blur-md shadow-lg overflow-hidden transition-all duration-200',
+      'border rounded-2xl backdrop-blur-md shadow-2xl overflow-hidden transition-all duration-300',
       !noPadding ? 'p-6 md:p-8' : '',
       bgStyles[bg],
       className
