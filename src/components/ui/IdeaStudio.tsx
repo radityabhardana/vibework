@@ -3,11 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
 import {
   Lightning,
   Sparkle,
-  ArrowRight,
+  ArrowUp,
   DeviceMobile,
   Globe,
   Robot,
@@ -15,7 +14,8 @@ import {
   Kanban,
   CheckCircle,
   WarningCircle,
-  Gear
+  Gear,
+  ArrowRight
 } from '@phosphor-icons/react';
 
 type IdeaStudioProps = {
@@ -30,6 +30,33 @@ const QUICK_TAGS = [
   { label: 'AI Agent', icon: Robot, snippet: 'Automasi AI Agent & Workflow Pintar' },
   { label: 'Marketplace', icon: Storefront, snippet: 'Marketplace & E-Commerce terintegrasi' },
   { label: 'Internal Tool', icon: Kanban, snippet: 'Internal Tool & Admin Dashboard' },
+];
+
+const STARTER_PROMPTS = [
+  {
+    icon: '🏢',
+    title: 'Manajemen Kos & Tagihan Otomatis',
+    desc: 'Pencatatan kamar, tagihan WhatsApp otomatis, scan meteran listrik AI.',
+    prompt: 'Buat aplikasi manajemen kos-kosan otomatis. Fiturnya meliputi pencatatan kamar dan penghuni, tagihan bulanan otomatis yang mengirim notifikasi via WhatsApp, sistem scan foto meteran listrik AI untuk hitung beban per kamar, dan dashboard ringkasan keuangan bulanan bagi pemilik kos.'
+  },
+  {
+    icon: '🤖',
+    title: 'AI Customer Support Agent',
+    desc: 'Integrasi WhatsApp, auto-reply knowledge base dokumen, eskalasi agen manusia.',
+    prompt: 'Bangun platform AI Customer Support multi-channel (WhatsApp, Webchat, Telegram). Fitur utama: bot cerdas yang dilatih dengan dokumen SOP & FAQ internal perusahaan, auto-resolve tiket keluhan, dan tombol handover instan ke customer service manusia saat problem butuh eskalasi.'
+  },
+  {
+    icon: '📊',
+    title: 'B2B Subscription & Billing Portal',
+    desc: 'Integrasi Stripe/Midtrans, tiered pricing, invoice PDF, tim multi-role.',
+    prompt: 'Rancang platform SaaS B2B untuk billing & subscription. Fitur: registrasi organisasi, manajemen tim multi-role (Owner, Admin, Member), tier langganan (Free, Pro, Enterprise), integrasi payment gateway dengan generate invoice PDF otomatis, dan analitik pendapatan bulanan (MRR/ARR).'
+  },
+  {
+    icon: '📦',
+    title: 'Inventory & Logistik Gudang',
+    desc: 'Scan barcode stock opname, notifikasi stok menipis, laporan keluar masuk.',
+    prompt: 'Buat sistem manajemen pergudangan (WMS) berbasis web dan mobile. Fitur: scan barcode kamera untuk barang masuk/keluar, pelacakan multi-gudang secara real-time, notifikasi otomatis jika stok di bawah threshold, serta export laporan inventaris mingguan dan bulanan.'
+  }
 ];
 
 const GENERATION_STEPS = [
@@ -93,6 +120,13 @@ export function IdeaStudio({
     });
     if (textareaRef.current) {
       textareaRef.current.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleGenerate();
     }
   };
 
@@ -172,253 +206,200 @@ export function IdeaStudio({
   };
 
   return (
-    <div className="flex-1 w-full h-full overflow-y-auto bg-[#030303] text-white p-4 sm:p-6 md:p-10 flex flex-col items-center relative selection:bg-white selection:text-black">
-      {/* Subtle WriteMate Radial Gradient Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[850px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.08),transparent_70%)] pointer-events-none" />
+    <div className="flex-1 w-full h-full overflow-y-auto bg-[#030304] text-white p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start relative selection:bg-white selection:text-black">
+      {/* Subtle Radial Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
 
-      <div className="w-full max-w-4xl flex flex-col gap-6 z-0">
+      <div className="w-full max-w-3xl flex flex-col items-center gap-6 z-0 pt-2 sm:pt-6">
+        
         {/* Existing Project Banner */}
         {projectId && (
-          <div className="bg-white/[0.03] border border-white/20 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
-                <CheckCircle weight="fill" className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="font-mono font-bold text-sm text-white">
-                  Proyek ini telah memiliki Tree & Dokumen Spesifikasi
-                </p>
-                <p className="font-sans text-xs text-zinc-400">
-                  Kamu bisa langsung membuka workspace atau mengedit ide di bawah untuk regenerate ulang.
-                </p>
-              </div>
+          <div className="w-full bg-white/[0.03] border border-white/15 rounded-xl px-4 py-3 flex items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="text-xs font-sans text-zinc-300 truncate">
+                Proyek ini telah memiliki dokumen spesifikasi & tree.
+              </span>
             </div>
-            <Link href={`/projects/${projectId}`}>
-              <Button
-                variant="primary"
-                size="sm"
-                className="gap-1.5 whitespace-nowrap text-xs !py-2.5"
-              >
-                <span>Buka Workspace Tree &rarr;</span>
-              </Button>
+            <Link href={`/projects/${projectId}`} className="shrink-0">
+              <span className="text-xs font-mono font-medium text-white hover:underline flex items-center gap-1">
+                Buka Workspace &rarr;
+              </span>
             </Link>
           </div>
         )}
 
-        {/* Hero Header */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md relative overflow-hidden">
-          <div className="relative z-10 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-white/20 bg-white/5 font-mono text-xs text-white -tracking-[0.2px]">
-                <Sparkle weight="fill" className="w-3.5 h-3.5" />
-                Prompt & Spec Studio
-              </span>
-              <span className="font-mono text-xs text-zinc-500 hidden sm:inline">
-                Tree &bull; PRD &bull; AGENTS.md &bull; Architecture &bull; Prompt.md
-              </span>
-            </div>
-            <h1 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl tracking-tight text-white">
-              Tuangkan Ide Aplikasi
-            </h1>
-            <p className="font-sans text-sm sm:text-base text-zinc-400 leading-relaxed max-w-2xl">
-              Tulis konsep, problem, atau fitur apa saja yang ingin kamu bangun. AI akan langsung memetakannya ke dalam <strong>Interactive Tree</strong> dan menyusun seluruh dokumen spesifikasi teknis siap pakai.
-            </p>
+        {/* Minimal Hero Header */}
+        <div className="flex flex-col items-center text-center gap-2.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300">
+            <Sparkle weight="fill" className="w-3.5 h-3.5" />
+            <span>AI Architecture & Spec Studio</span>
           </div>
+          <h1 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl tracking-tight text-white">
+            Tuangkan Ide Aplikasi Anda
+          </h1>
+          <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
+            Deskripsikan aplikasi, alur kerja, atau problem yang ingin diselesaikan. AI akan merancang arsitektur visual, PRD, dan kode secara otomatis.
+          </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="bg-rose-950/40 text-rose-200 border border-rose-500/40 rounded-xl p-4 shadow-lg flex items-center gap-3">
-            <WarningCircle weight="bold" className="w-5 h-5 text-rose-400 shrink-0" />
-            <span className="font-mono text-xs font-medium">{error}</span>
+          <div className="w-full bg-rose-950/40 text-rose-200 border border-rose-500/30 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs">
+            <WarningCircle weight="bold" className="w-4 h-4 text-rose-400 shrink-0" />
+            <span className="font-mono">{error}</span>
           </div>
         )}
 
-        {/* Main Idea Input Card */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-2xl flex flex-col gap-6">
-          {/* Quick Preset Chips */}
-          <div className="flex flex-col gap-2.5">
-            <label className="font-mono font-medium text-xs text-zinc-400 flex items-center gap-1.5">
-              <Sparkle weight="fill" className="w-3.5 h-3.5 text-white" />
-              Inspirasi / Kategori Cepat:
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_TAGS.map((tag) => {
-                const IconComponent = tag.icon;
-                return (
+        {/* Unified AI Prompt Studio Box (v0 / Lovable style) */}
+        <div className="w-full rounded-2xl border border-white/15 bg-[#09090c] focus-within:border-white/40 focus-within:ring-2 focus-within:ring-white/10 shadow-[0_10px_35px_-5px_rgba(0,0,0,0.8)] transition-all duration-200 overflow-hidden">
+          
+          {/* Main Textarea */}
+          <div className="p-4 sm:p-5">
+            <textarea
+              ref={textareaRef}
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={status === 'generating'}
+              rows={4}
+              placeholder="Jelaskan aplikasi yang ingin Anda bangun... (Tekan Cmd+Enter / Ctrl+Enter untuk kirim)"
+              className="w-full bg-transparent text-sm sm:text-base text-white placeholder:text-zinc-600 focus:outline-none resize-none leading-relaxed font-sans"
+            />
+          </div>
+
+          {/* Optional Preferences Drawer inside Box */}
+          {showAdvanced && (
+            <div className="mx-4 mb-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
+              <div>
+                <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
+                  Target Pengguna
+                </label>
+                <input
+                  type="text"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  disabled={status === 'generating'}
+                  placeholder="Misal: Pemilik kos, mahasiswa, UMKM"
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                />
+              </div>
+              <div>
+                <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
+                  Tech Stack Preferensi
+                </label>
+                <input
+                  type="text"
+                  value={techStack}
+                  onChange={(e) => setTechStack(e.target.value)}
+                  disabled={status === 'generating'}
+                  placeholder="Misal: Next.js, Supabase, Tailwind, WhatsApp API"
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Integrated Action Toolbar */}
+          <div className="px-4 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-[#050507]">
+            {/* Left Controls */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  showAdvanced
+                    ? 'bg-white/10 border-white/30 text-white'
+                    : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Gear weight="bold" className="w-3.5 h-3.5" />
+                <span>Preferensi</span>
+              </button>
+
+              <div className="hidden md:flex items-center gap-1 pl-1">
+                {QUICK_TAGS.slice(0, 3).map((tag) => (
                   <button
                     key={tag.label}
                     type="button"
                     onClick={() => handleAddTag(tag.snippet)}
                     disabled={status === 'generating'}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 font-mono text-xs text-zinc-300 hover:text-white transition-all duration-300 cursor-pointer disabled:opacity-50"
+                    className="px-2 py-1 rounded-md text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
                   >
-                    <IconComponent weight="bold" className="w-3.5 h-3.5 text-white" />
-                    <span>{tag.label}</span>
+                    +{tag.label}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Large Idea Textarea */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="idea-input" className="font-mono font-medium text-xs text-zinc-300">
-              Deskripsi Ide / Problem / Fitur Utama:
-            </label>
-            <div className="relative">
-              <textarea
-                id="idea-input"
-                ref={textareaRef}
-                value={idea}
-                onChange={(e) => setIdea(e.target.value)}
-                disabled={status === 'generating'}
-                rows={7}
-                placeholder="Contoh: Buat aplikasi manajemen kos-kosan otomatis. Fiturnya meliputi pencatatan kamar dan penghuni, tagihan bulanan otomatis yang mengirim notifikasi via WhatsApp, sistem scan foto meteran listrik AI untuk hitung beban per kamar, dan dashboard ringkasan keuangan bulanan bagi pemilik..."
-                className="w-full p-4 md:p-5 font-mono text-sm rounded-xl border border-white/15 bg-white/[0.02] text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/20 shadow-inner resize-y leading-relaxed disabled:opacity-50 transition-all duration-300"
-              />
-              <div className="flex justify-between items-center mt-2 px-1">
-                <span className="font-mono text-xs text-zinc-500">
-                  {idea.trim().length > 0 ? `${idea.trim().length} karakter` : 'Minimal beberapa kalimat untuk hasil terbaik'}
-                </span>
-                {idea.trim().length > 0 && (
-                  <span className="font-mono text-xs font-medium text-white bg-white/10 border border-white/20 px-2.5 py-0.5 rounded-full">
-                    ✓ Ide Siap Diproses
-                  </span>
-                )}
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Optional Advanced Settings Toggle */}
-          <div className="border-t border-white/10 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="inline-flex items-center gap-2 font-mono text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <Gear weight="bold" className="w-3.5 h-3.5" />
-              <span>{showAdvanced ? '[-] Sembunyikan Preferensi Opsional' : '[+] Tambah Preferensi Teknis / Target User (Opsional)'}</span>
-            </button>
+            {/* Right Controls */}
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[10px] text-zinc-500">
+                {idea.trim().length > 0 ? `${idea.trim().length} chars` : ''}
+              </span>
 
-            {showAdvanced && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 p-4 bg-white/[0.02] rounded-xl border border-white/10 animate-in fade-in">
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-mono text-xs text-zinc-400">
-                    Target User Spesifik:
-                  </label>
-                  <input
-                    type="text"
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
-                    disabled={status === 'generating'}
-                    placeholder="Misal: Pemilik kos usia 30-55 tahun, Mahasiswa"
-                    className="p-2.5 font-mono text-xs rounded-lg border border-white/15 bg-white/[0.03] text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/50"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-mono text-xs text-zinc-400">
-                    Tech Stack Preferensi (Opsional):
-                  </label>
-                  <input
-                    type="text"
-                    value={techStack}
-                    onChange={(e) => setTechStack(e.target.value)}
-                    disabled={status === 'generating'}
-                    placeholder="Misal: Next.js, Supabase, Tailwind, WhatsApp API"
-                    className="p-2.5 font-mono text-xs rounded-lg border border-white/15 bg-white/[0.03] text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/50"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Generation Progress Display */}
-          {status === 'generating' && (
-            <div className="mt-2 p-5 bg-white/[0.04] rounded-xl border border-white/20 shadow-2xl flex flex-col gap-3 animate-in fade-in">
-              <div className="flex items-center justify-between font-mono text-xs font-medium">
-                <div className="flex items-center gap-2">
-                  <Lightning weight="fill" className="w-4 h-4 text-white animate-bounce" />
-                  <span className="text-zinc-200">{GENERATION_STEPS[progressStepIndex]}</span>
-                </div>
-                <span className="font-mono font-bold text-sm text-white">{Math.round(progressPercent)}%</span>
-              </div>
-
-              {/* WriteMate Sleek Progress Bar */}
-              <div className="w-full h-2 bg-white/10 rounded-full border border-white/15 relative overflow-hidden">
-                <div
-                  className="h-full bg-white rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-
-              <div className="flex justify-between font-mono text-[10px] text-zinc-500 px-1">
-                <span>Langkah {progressStepIndex + 1} dari {GENERATION_STEPS.length}</span>
-                <span>Menyiapkan Tree & Spesifikasi Lengkap...</span>
-              </div>
-            </div>
-          )}
-
-          {/* Action Bar */}
-          {status !== 'generating' && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <p className="font-mono text-xs text-zinc-500 order-2 sm:order-1 text-center sm:text-left">
-                💡 AI akan otomatis melengkapi asumsi arsitektur, database, dan security.
-              </p>
-              <Button
+              <button
                 type="button"
-                variant="primary"
-                size="lg"
                 onClick={handleGenerate}
-                disabled={!idea.trim()}
-                className="w-full sm:w-auto order-1 sm:order-2 gap-2 !px-8 !py-3.5 shrink-0"
+                disabled={!idea.trim() || status === 'generating'}
+                className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 disabled:opacity-30 disabled:hover:bg-white font-sans font-semibold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md cursor-pointer disabled:pointer-events-none"
               >
-                <Lightning weight="fill" className="w-4 h-4" />
-                <span>{projectId ? 'Regenerate Tree & Spec' : 'Generate Tree & Spec'}</span>
-                <ArrowRight weight="bold" className="w-4 h-4" />
-              </Button>
+                <span>{status === 'generating' ? 'Drafting Spec...' : projectId ? 'Regenerate' : 'Generate Spec'}</span>
+                <ArrowUp weight="bold" className="w-3.5 h-3.5" />
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* Feature Highlights Footer */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-            <div className="font-mono font-semibold text-xs text-white flex items-center gap-1.5">
-              <span>🌳 Interactive Tree</span>
-            </div>
-            <p className="font-sans text-xs text-zinc-400 mt-1">
-              Peta alur modul, screen, dan user journey secara visual.
-            </p>
-          </div>
-
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-            <div className="font-mono font-semibold text-xs text-white flex items-center gap-1.5">
-              <span>📄 PRD Lengkap</span>
-            </div>
-            <p className="font-sans text-xs text-zinc-400 mt-1">
-              Spesifikasi MVP, batasan teknis, target persona, dan use cases.
-            </p>
-          </div>
-
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-            <div className="font-mono font-semibold text-xs text-white flex items-center gap-1.5">
-              <span>🤖 AGENTS.md</span>
-            </div>
-            <p className="font-sans text-xs text-zinc-400 mt-1">
-              Pedoman aturan, guardrails, dan instruksi untuk AI coding agent.
-            </p>
-          </div>
-
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-            <div className="font-mono font-semibold text-xs text-white flex items-center gap-1.5">
-              <span>⚡ Prompt.md</span>
-            </div>
-            <p className="font-sans text-xs text-zinc-400 mt-1">
-              Master atomic prompt step-by-step siap disalin ke editor/agent.
-            </p>
           </div>
         </div>
+
+        {/* Progress State while Generating */}
+        {status === 'generating' && (
+          <div className="w-full p-4 rounded-xl bg-white/[0.03] border border-white/15 shadow-xl flex flex-col gap-2.5 animate-in fade-in">
+            <div className="flex items-center justify-between font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <Lightning weight="fill" className="w-3.5 h-3.5 text-white animate-bounce" />
+                <span className="text-zinc-200">{GENERATION_STEPS[progressStepIndex]}</span>
+              </div>
+              <span className="font-bold text-white">{Math.round(progressPercent)}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Clickable Starter Prompt Cards */}
+        {status !== 'generating' && (
+          <div className="w-full flex flex-col gap-2.5 mt-2">
+            <div className="text-[11px] font-mono text-zinc-500 px-1 uppercase tracking-wider">
+              Atau coba ide siap pakai:
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {STARTER_PROMPTS.map((ex) => (
+                <button
+                  key={ex.title}
+                  type="button"
+                  onClick={() => setIdea(ex.prompt)}
+                  className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/25 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                >
+                  <span className="text-xl shrink-0 mt-0.5">{ex.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors flex items-center justify-between">
+                      <span>{ex.title}</span>
+                      <ArrowRight weight="bold" className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div className="text-[11px] text-zinc-400 truncate mt-0.5 leading-relaxed">
+                      {ex.desc}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
