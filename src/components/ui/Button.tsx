@@ -9,25 +9,23 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className = '', variant = 'primary', size = 'md', fullWidth, children, ...props }, ref) => {
     
-    const baseStyles = 'font-sans uppercase font-black inline-flex items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5 active:shadow-brutal-active focus:outline-none focus-visible:ring-4 focus-visible:ring-brutal-blue';
-    const borderStyles = 'border-4 border-brutal-black shadow-brutal';
+    const baseStyles = 'font-sans font-semibold inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 cursor-pointer select-none';
     
     const variants = {
-      primary: 'bg-brutal-yellow text-brutal-black hover:bg-yellow-400',
-      secondary: 'bg-brutal-white text-brutal-black hover:bg-gray-100',
-      danger: 'bg-brutal-red text-brutal-white hover:bg-red-600',
-      ghost: 'bg-transparent text-brutal-black border-transparent shadow-none hover:bg-gray-100 active:translate-x-0 active:translate-y-0 active:shadow-none'
+      primary: 'bg-white text-zinc-950 hover:bg-zinc-200 border border-white/20 shadow-[0_1px_3px_rgba(0,0,0,0.4),0_0_12px_rgba(255,255,255,0.12)]',
+      secondary: 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-white/10 hover:border-white/20 shadow-sm',
+      danger: 'bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-500/30 hover:border-rose-500/50',
+      ghost: 'bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.06] border border-transparent'
     };
 
     const sizes = {
-      sm: 'px-4 py-2 text-sm',
-      md: 'px-6 py-3 text-base',
-      lg: 'px-8 py-4 text-lg md:text-xl',
+      sm: 'px-3 py-1.5 text-xs',
+      md: 'px-4 py-2 text-sm',
+      lg: 'px-5 py-2.5 text-base',
     };
 
     const classes = [
       baseStyles,
-      variant !== 'ghost' ? borderStyles : '',
       variants[variant],
       sizes[size],
       fullWidth ? 'w-full' : '',

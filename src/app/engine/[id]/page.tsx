@@ -25,8 +25,8 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
 
   if (!data) {
     return (
-      <div className="flex-1 w-full flex overflow-hidden items-center justify-center bg-[#e5e5f7]">
-        <div className="font-mono text-xl">Session Not Found</div>
+      <div className="flex-1 w-full flex overflow-hidden items-center justify-center bg-background text-zinc-400 font-sans text-sm">
+        Session Not Found
       </div>
     );
   }
@@ -34,7 +34,7 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
   const initialIdea = data.messages.find(m => m.role === 'user')?.content || '';
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#f4f4f0] overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-background overflow-hidden">
       <IdeaStudio
         initialSessionId={id}
         initialIdea={initialIdea}

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Archivo_Black, IBM_Plex_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 import "./globals.css";
 
-const archivoBlack = Archivo_Black({
-  weight: "400",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -21,17 +22,14 @@ export const metadata: Metadata = {
   description: "Platform Orkestrasi Vibe Coding Sistemis",
 };
 
-import { LanguageProvider } from "@/context/LanguageContext";
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${archivoBlack.variable} ${ibmPlexMono.variable} antialiased h-screen w-screen flex overflow-hidden bg-brutal-white`}>
-
+    <html lang="en" className="dark">
+      <body className={`${plusJakartaSans.variable} ${ibmPlexMono.variable} antialiased h-screen w-screen flex overflow-hidden bg-background text-foreground selection:bg-cyan-500/20 selection:text-cyan-200`}>
         {/* Main Content Area */}
         <div className="flex-1 h-full w-full flex flex-col relative overflow-hidden">
           <ErrorBoundary>

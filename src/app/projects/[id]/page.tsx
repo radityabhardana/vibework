@@ -40,26 +40,30 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!data) notFound();
 
   return (
-    <div className="w-full h-full flex flex-col bg-brutal-white overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
       {/* Header */}
-      <header className="z-10 flex min-h-20 w-full shrink-0 items-center justify-between gap-3 border-b-4 border-brutal-black bg-brutal-white px-3 py-3 sm:px-6">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-          <h1 className="truncate font-sans text-lg font-black uppercase tracking-tight sm:text-2xl">{data.project.name}</h1>
-          <span className="font-mono text-xs font-bold uppercase px-2 py-1 bg-brutal-yellow border-2 border-brutal-black">
+      <header className="z-10 flex min-h-16 w-full shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <Link href="/" className="font-mono text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+            ← Dashboard
+          </Link>
+          <div className="h-4 w-[1px] bg-white/10" />
+          <h1 className="truncate font-sans text-base font-bold text-zinc-100 sm:text-lg">{data.project.name}</h1>
+          <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-cyan-400">
             {data.project.status}
           </span>
         </div>
         <Link href={data.chatSession ? `/engine/${data.chatSession.id}` : '/engine'}>
-          <Button variant="primary" size="sm" className="flex shrink-0 items-center gap-2 !px-3 sm:!px-4">
+          <Button variant="secondary" size="sm" className="flex shrink-0 items-center gap-2 text-xs">
             <ChatCircle weight="bold" />
-            <span className="hidden sm:inline">Edit Ide di Studio</span>
+            <span className="hidden sm:inline">Edit di Studio</span>
             <span className="sm:hidden">Studio</span>
           </Button>
         </Link>
       </header>
 
-      {/* Main Workspace (ReactFlow) */}
-      <div className="flex-1 w-full overflow-hidden bg-[#e5e5f7]">
+      {/* Main Workspace (ReactFlow & Tabs) */}
+      <div className="flex-1 w-full overflow-hidden bg-background relative">
         <ProjectWorkspace project={data.project} prd={data.prd} adr={data.adr} schema={data.schema} prompts={data.prompts} appFlowchart={data.appFlowchart} />
       </div>
     </div>

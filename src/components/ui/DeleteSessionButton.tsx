@@ -88,38 +88,40 @@ export function DeleteSessionButton({
       <button 
         type="button"
         onClick={handleOpenModal}
-        className="p-1 hover:bg-brutal-red hover:text-brutal-white rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brutal-black cursor-pointer"
+        className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-rose-500/50 cursor-pointer"
         title="Hapus Histori Sesi"
         aria-label="Hapus histori sesi"
       >
-        <Trash weight="bold" />
+        <Trash weight="bold" className="w-3.5 h-3.5" />
       </button>
 
       {isOpen && mounted && createPortal(
         <div 
-          className="fixed inset-0 z-[999] flex items-center justify-center bg-brutal-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150"
           onClick={handleCloseModal}
         >
           <div 
-            className="bg-brutal-white border-4 border-brutal-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-md w-full flex flex-col animate-in zoom-in-95 duration-150 overflow-hidden text-brutal-black"
+            className="bg-zinc-900 border border-white/10 shadow-2xl rounded-xl max-w-md w-full flex flex-col animate-in zoom-in-95 duration-150 overflow-hidden text-zinc-100"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby={`delete-title-${sessionId}`}
           >
             {/* Modal Header */}
-            <div className="bg-brutal-red text-brutal-white border-b-4 border-brutal-black p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Warning weight="fill" className="w-5 h-5 text-brutal-white" />
-                <h3 id={`delete-title-${sessionId}`} className="font-sans font-black text-lg uppercase tracking-wide">
-                  Peringatan Hapus
+            <div className="bg-zinc-950/70 border-b border-white/10 px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <Warning weight="fill" className="w-4 h-4" />
+                </div>
+                <h3 id={`delete-title-${sessionId}`} className="font-sans font-semibold text-base text-zinc-100">
+                  Hapus Histori Proyek
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={handleCloseModal}
                 disabled={isDeleting}
-                className="font-mono font-bold text-xs px-2.5 py-1 bg-brutal-white text-brutal-black border-2 border-brutal-black hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.06] rounded-md transition-colors disabled:opacity-50 cursor-pointer"
                 title="Tutup"
               >
                 ✕
@@ -128,14 +130,14 @@ export function DeleteSessionButton({
 
             {/* Modal Content */}
             <div className="p-6 flex flex-col gap-4">
-              <p className="font-mono text-sm leading-relaxed text-brutal-black">
-                Apakah Anda yakin ingin menghapus histori <strong>The Grill</strong> ini? Tindakan ini bersifat permanen dan tidak dapat dibatalkan.
+              <p className="font-sans text-sm leading-relaxed text-zinc-300">
+                Apakah Anda yakin ingin menghapus histori <strong>The Grill</strong> ini? Sesi dan data terkait akan dihapus secara permanen.
               </p>
 
               {sessionTitle && (
-                <div className="border-2 border-brutal-black bg-brutal-yellow/20 p-3 font-mono text-xs">
-                  <span className="font-bold block text-[10px] uppercase opacity-70 mb-1">Target Histori:</span>
-                  <span className="font-bold text-sm text-brutal-black break-words line-clamp-2">
+                <div className="border border-white/10 bg-zinc-950/60 rounded-lg p-3 font-mono text-xs">
+                  <span className="font-semibold block text-[10px] uppercase text-zinc-500 mb-1">Target Proyek:</span>
+                  <span className="font-medium text-sm text-zinc-200 break-words line-clamp-2">
                     {sessionTitle}
                   </span>
                 </div>
@@ -149,7 +151,6 @@ export function DeleteSessionButton({
                   size="sm" 
                   onClick={handleCloseModal}
                   disabled={isDeleting}
-                  className="!border-2 !shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
                 >
                   Batal
                 </Button>
@@ -159,7 +160,7 @@ export function DeleteSessionButton({
                   size="sm" 
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
-                  className="gap-2 !border-2 !shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                  className="gap-2"
                 >
                   <Trash weight="bold" />
                   {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}

@@ -518,78 +518,78 @@ export function ProjectWorkspace({
   ]);
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-brutal-white relative">
+    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-background relative">
       {/* Top Workspace Tab Switcher Bar */}
-      <div className="bg-brutal-white border-b-4 border-brutal-black px-3 py-2 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20">
+      <div className="bg-zinc-950/80 border-b border-white/10 px-3 py-2 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 backdrop-blur-md">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1">
           <button
             type="button"
             onClick={() => setActiveTab('tree')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs md:text-sm font-black uppercase border-2 border-brutal-black shadow-brutal-active transition-all ${
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
               activeTab === 'tree'
-                ? 'bg-brutal-yellow text-brutal-black -translate-y-0.5'
-                : 'bg-white hover:bg-gray-100 text-gray-800'
+                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <TreeStructure weight="bold" className="w-4 h-4" />
+            <TreeStructure weight="bold" className="w-4 h-4 text-cyan-400" />
             <span>Interactive Tree</span>
-            {appFlowchart && <span className="text-[10px] bg-brutal-black text-white px-1.5 py-0.2">✓</span>}
+            {appFlowchart && <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('prd')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs md:text-sm font-black uppercase border-2 border-brutal-black shadow-brutal-active transition-all ${
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
               activeTab === 'prd'
-                ? 'bg-brutal-yellow text-brutal-black -translate-y-0.5'
-                : 'bg-white hover:bg-gray-100 text-gray-800'
+                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Article weight="bold" className="w-4 h-4" />
+            <Article weight="bold" className="w-4 h-4 text-violet-400" />
             <span>PRD</span>
-            {prd && <span className="text-[10px] bg-brutal-black text-white px-1.5 py-0.2">✓</span>}
+            {prd && <span className="text-[10px] bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('agents')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs md:text-sm font-black uppercase border-2 border-brutal-black shadow-brutal-active transition-all ${
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
               activeTab === 'agents'
-                ? 'bg-brutal-yellow text-brutal-black -translate-y-0.5'
-                : 'bg-white hover:bg-gray-100 text-gray-800'
+                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Robot weight="bold" className="w-4 h-4 text-blue-600" />
+            <Robot weight="bold" className="w-4 h-4 text-cyan-400" />
             <span>AGENTS.md</span>
-            {project.agentsDocument && <span className="text-[10px] bg-brutal-blue text-white px-1.5 py-0.2">✓</span>}
+            {project.agentsDocument && <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('architecture')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs md:text-sm font-black uppercase border-2 border-brutal-black shadow-brutal-active transition-all ${
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
               activeTab === 'architecture'
-                ? 'bg-brutal-yellow text-brutal-black -translate-y-0.5'
-                : 'bg-white hover:bg-gray-100 text-gray-800'
+                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Cpu weight="bold" className="w-4 h-4" />
+            <Cpu weight="bold" className="w-4 h-4 text-amber-400" />
             <span>Architecture & Schema</span>
-            {adr && <span className="text-[10px] bg-brutal-black text-white px-1.5 py-0.2">✓</span>}
+            {adr && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('prompts')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs md:text-sm font-black uppercase border-2 border-brutal-black shadow-brutal-active transition-all ${
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold border transition-all ${
               activeTab === 'prompts'
-                ? 'bg-brutal-yellow text-brutal-black -translate-y-0.5'
-                : 'bg-white hover:bg-gray-100 text-gray-800'
+                ? 'bg-zinc-800 text-zinc-100 border-white/20 shadow-sm'
+                : 'bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border-transparent'
             }`}
           >
-            <Lightning weight="bold" className="w-4 h-4 text-amber-500" />
+            <Lightning weight="bold" className="w-4 h-4 text-emerald-400" />
             <span>Prompt.md</span>
-            {effectivePromptMd && <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2">✓</span>}
+            {effectivePromptMd && <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-mono">✓</span>}
           </button>
         </div>
 
@@ -597,22 +597,22 @@ export function ProjectWorkspace({
         <button
           type="button"
           onClick={handleExportAll}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brutal-black hover:bg-neutral-800 text-brutal-white font-mono text-xs font-bold uppercase border-2 border-brutal-black shadow-brutal-active transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-zinc-950 hover:bg-zinc-200 font-sans text-xs font-semibold rounded-lg shadow-sm transition-all cursor-pointer shrink-0"
           title="Download semua spesifikasi menjadi file Markdown lengkap"
         >
-          <DownloadSimple weight="bold" className="w-4 h-4 text-brutal-yellow" />
+          <DownloadSimple weight="bold" className="w-3.5 h-3.5" />
           <span>Export All Specs (.md)</span>
         </button>
       </div>
 
       {/* Global Error Notice */}
       {error && (
-        <div className="bg-brutal-red text-brutal-white font-mono font-bold text-xs p-3 border-b-4 border-brutal-black flex items-center justify-between shrink-0">
+        <div className="bg-rose-950/80 text-rose-200 border-b border-rose-500/30 font-sans text-xs p-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <WarningCircle weight="bold" className="w-5 h-5" />
+            <WarningCircle weight="bold" className="w-4 h-4 text-rose-400" />
             <span>Error: {error}</span>
           </div>
-          <button type="button" onClick={() => setError(null)} className="underline uppercase text-xs">
+          <button type="button" onClick={() => setError(null)} className="underline uppercase text-[10px] font-semibold text-rose-300 hover:text-rose-100">
             Dismiss
           </button>
         </div>
@@ -622,12 +622,12 @@ export function ProjectWorkspace({
       <div className="flex-1 w-full h-full overflow-hidden relative">
         {/* TAB 1: INTERACTIVE TREE */}
         {activeTab === 'tree' && (
-          <div className="w-full h-full relative bg-[#e5e5f7]">
+          <div className="w-full h-full relative bg-background bg-dot-grid">
             {!appFlowchart && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-brutal-white border-4 border-brutal-black p-4 shadow-brutal flex items-center gap-4">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-zinc-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-4">
                 <div>
-                  <p className="font-sans font-black text-sm uppercase">Interactive Tree Belum Digenerate</p>
-                  <p className="font-mono text-xs text-gray-600">Klik tombol untuk memetakan alur screen dan modul aplikasi.</p>
+                  <p className="font-sans font-semibold text-sm text-zinc-100">Interactive Tree Belum Digenerate</p>
+                  <p className="font-sans text-xs text-zinc-400">Klik tombol untuk memetakan alur screen dan modul aplikasi.</p>
                 </div>
                 <Button
                   variant="primary"
@@ -651,23 +651,23 @@ export function ProjectWorkspace({
               minZoom={0.1}
               attributionPosition="bottom-right"
             >
-              <Controls className="!border-4 !border-brutal-black !shadow-brutal-sm !bg-brutal-white [&>button]:!border-b-4 [&>button]:!border-brutal-black [&>button:last-child]:!border-b-0" />
-              <MiniMap className="!border-4 !border-brutal-black !shadow-brutal-sm !bg-brutal-white mask-none" nodeColor="#050505" />
-              <Background gap={24} size={2} color="#050505" />
+              <Controls className="!border !border-white/10 !rounded-lg !shadow-xl !bg-zinc-900/90 !text-zinc-200 [&>button]:!border-b [&>button]:!border-white/10 [&>button]:!bg-transparent [&>button]:hover:!bg-white/[0.08] [&>button]:!text-zinc-200 [&>button:last-child]:!border-b-0" />
+              <MiniMap className="!border !border-white/10 !rounded-lg !shadow-xl !bg-zinc-900/90" nodeColor="#3f3f46" maskColor="rgba(9, 9, 11, 0.7)" />
+              <Background gap={24} size={1.5} color="rgba(255, 255, 255, 0.08)" />
             </ReactFlow>
           </div>
         )}
 
         {/* TAB 2: PRD */}
         {activeTab === 'prd' && (
-          <div className="w-full h-full overflow-y-auto bg-[#f4f4f0] p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-4">
-              <div className="bg-brutal-white border-4 border-brutal-black p-4 sm:p-6 shadow-brutal flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-sans font-black text-2xl uppercase tracking-tight text-brutal-black">
+                  <h2 className="font-sans font-bold text-xl text-zinc-100">
                     Product Requirements Document (PRD)
                   </h2>
-                  <p className="font-mono text-xs text-gray-600 font-semibold mt-1">
+                  <p className="font-sans text-xs text-zinc-400 mt-1">
                     Target: {prd?.targetUser || 'General User'} &bull; Monetization: {prd?.monetizationModel || 'N/A'}
                   </p>
                 </div>
@@ -676,16 +676,16 @@ export function ProjectWorkspace({
                     variant="secondary"
                     size="sm"
                     onClick={() => copyToClipboard(prd?.documentContent || '', 'prd')}
-                    className="gap-1.5"
+                    className="gap-1.5 text-xs"
                   >
-                    {copiedKey === 'prd' ? <Check weight="bold" className="text-emerald-600" /> : <Copy weight="bold" />}
+                    {copiedKey === 'prd' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
                     <span>{copiedKey === 'prd' ? 'Tersalin!' : 'Copy PRD'}</span>
                   </Button>
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => downloadFile(prd?.documentContent || '', `${project.name}_PRD.md`)}
-                    className="gap-1.5"
+                    className="gap-1.5 text-xs"
                   >
                     <DownloadSimple weight="bold" />
                     <span>Download PRD.md</span>
@@ -693,7 +693,7 @@ export function ProjectWorkspace({
                 </div>
               </div>
 
-              <div className="bg-brutal-white border-4 border-brutal-black p-6 md:p-8 shadow-brutal font-mono text-sm leading-relaxed whitespace-pre-wrap selection:bg-brutal-yellow">
+              <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
                 {prd?.documentContent || 'PRD belum digenerate.'}
               </div>
             </div>
@@ -702,19 +702,19 @@ export function ProjectWorkspace({
 
         {/* TAB 3: AGENTS.MD */}
         {activeTab === 'agents' && (
-          <div className="w-full h-full overflow-y-auto bg-[#f4f4f0] p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-4">
-              <div className="bg-brutal-white border-4 border-brutal-black p-4 sm:p-6 shadow-brutal flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-brutal-blue text-brutal-white px-2 py-0.5 font-mono text-xs font-bold uppercase border-2 border-brutal-black">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-cyan-500/10 text-cyan-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase rounded-full border border-cyan-500/20">
                       AI Pair Programmer Directive
                     </span>
                   </div>
-                  <h2 className="font-sans font-black text-2xl uppercase tracking-tight text-brutal-black mt-1">
+                  <h2 className="font-sans font-bold text-xl text-zinc-100">
                     AGENTS.md (Pedoman & Guardrails)
                   </h2>
-                  <p className="font-mono text-xs text-gray-600 font-semibold mt-0.5">
+                  <p className="font-sans text-xs text-zinc-400 mt-1">
                     Petunjuk operasional coding untuk Cursor, Windsurf, Claude Code, Antigravity, dan Copilot.
                   </p>
                 </div>
@@ -724,7 +724,7 @@ export function ProjectWorkspace({
                     size="sm"
                     onClick={generateAgents}
                     disabled={loadingAgents}
-                    className="gap-1.5 !bg-brutal-yellow"
+                    className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingAgents ? 'animate-spin' : ''} />
                     <span>{loadingAgents ? 'Merumuskan AGENTS.md...' : project.agentsDocument ? 'Regenerate AGENTS.md' : 'Generate AGENTS.md'}</span>
@@ -735,16 +735,16 @@ export function ProjectWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => copyToClipboard(project.agentsDocument, 'agents')}
-                        className="gap-1.5"
+                        className="gap-1.5 text-xs"
                       >
-                        {copiedKey === 'agents' ? <Check weight="bold" className="text-emerald-600" /> : <Copy weight="bold" />}
+                        {copiedKey === 'agents' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
                         <span>{copiedKey === 'agents' ? 'Tersalin!' : 'Copy AGENTS.md'}</span>
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => downloadFile(project.agentsDocument, 'AGENTS.md')}
-                        className="gap-1.5"
+                        className="gap-1.5 text-xs"
                       >
                         <DownloadSimple weight="bold" />
                         <span>Download AGENTS.md</span>
@@ -755,24 +755,25 @@ export function ProjectWorkspace({
               </div>
 
               {project.agentsDocument ? (
-                <div className="bg-brutal-white border-4 border-brutal-black p-6 md:p-8 shadow-brutal font-mono text-sm leading-relaxed whitespace-pre-wrap selection:bg-brutal-yellow">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
                   {project.agentsDocument}
                 </div>
               ) : (
-                <div className="bg-brutal-white border-4 border-brutal-black p-8 shadow-brutal text-center flex flex-col items-center gap-4">
-                  <Robot weight="fill" className="w-16 h-16 text-blue-600 animate-pulse" />
+                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                    <Robot weight="duotone" className="w-8 h-8" />
+                  </div>
                   <div>
-                    <h3 className="font-sans font-black text-xl uppercase">AGENTS.md Belum Dibuat</h3>
-                    <p className="font-mono text-sm text-gray-600 max-w-md mt-1">
+                    <h3 className="font-sans font-bold text-lg text-zinc-100">AGENTS.md Belum Dibuat</h3>
+                    <p className="font-sans text-xs text-zinc-400 max-w-md mt-1">
                       Buat aturan standar coding, pencegah halusinasi, dan guardrails teknis untuk coding agent kamu.
                     </p>
                   </div>
                   <Button
                     variant="primary"
-                    size="md"
+                    size="sm"
                     onClick={generateAgents}
                     disabled={loadingAgents}
-                    className="!bg-brutal-yellow"
                   >
                     {loadingAgents ? `Generating AGENTS.md (${Math.round(generationProgress)}%)...` : '🤖 Buat AGENTS.md Sekarang'}
                   </Button>
@@ -784,15 +785,15 @@ export function ProjectWorkspace({
 
         {/* TAB 4: ARCHITECTURE & SCHEMA */}
         {activeTab === 'architecture' && (
-          <div className="w-full h-full overflow-y-auto bg-[#f4f4f0] p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-6">
               {/* Architecture Decision Record Header */}
-              <div className="bg-brutal-white border-4 border-brutal-black p-4 sm:p-6 shadow-brutal flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-sans font-black text-2xl uppercase tracking-tight text-brutal-black">
+                  <h2 className="font-sans font-bold text-xl text-zinc-100">
                     Architecture & Tech Stack (ADR)
                   </h2>
-                  <p className="font-mono text-xs text-gray-600 font-semibold mt-1">
+                  <p className="font-sans text-xs text-zinc-400 mt-1">
                     Stack: {adr?.frontendStack || 'Next.js'} &bull; Backend: {adr?.backendStack || 'Node.js'} &bull; DB: {adr?.database || 'SQLite / PostgreSQL'}
                   </p>
                 </div>
@@ -802,7 +803,7 @@ export function ProjectWorkspace({
                     size="sm"
                     onClick={generateADR}
                     disabled={loadingAdr}
-                    className="gap-1.5 !bg-brutal-yellow"
+                    className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingAdr ? 'animate-spin' : ''} />
                     <span>{loadingAdr ? 'Merancang ADR...' : adr ? 'Regenerate ADR' : 'Generate ADR'}</span>
@@ -812,9 +813,9 @@ export function ProjectWorkspace({
                       variant="secondary"
                       size="sm"
                       onClick={() => copyToClipboard(adr.adrDocument, 'adr')}
-                      className="gap-1.5"
+                      className="gap-1.5 text-xs"
                     >
-                      {copiedKey === 'adr' ? <Check weight="bold" className="text-emerald-600" /> : <Copy weight="bold" />}
+                      {copiedKey === 'adr' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
                       <span>{copiedKey === 'adr' ? 'Tersalin!' : 'Copy ADR'}</span>
                     </Button>
                   )}
@@ -823,18 +824,18 @@ export function ProjectWorkspace({
 
               {/* ADR Markdown */}
               {adr?.adrDocument && (
-                <div className="bg-brutal-white border-4 border-brutal-black p-6 md:p-8 shadow-brutal font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                   {adr.adrDocument}
                 </div>
               )}
 
               {/* Database Schema & API Contract Section */}
-              <div className="bg-brutal-white border-4 border-brutal-black p-4 sm:p-6 shadow-brutal flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-sans font-black text-xl uppercase tracking-tight text-brutal-black">
+                  <h3 className="font-sans font-bold text-lg text-zinc-100">
                     Database Schema & API Contract
                   </h3>
-                  <p className="font-mono text-xs text-gray-600 font-semibold mt-1">
+                  <p className="font-sans text-xs text-zinc-400 mt-1">
                     Struktur tabel relasional dan spesifikasi endpoint API.
                   </p>
                 </div>
@@ -844,7 +845,7 @@ export function ProjectWorkspace({
                     size="sm"
                     onClick={generateSchema}
                     disabled={loadingSchema || !adr}
-                    className="gap-1.5 !bg-brutal-yellow"
+                    className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingSchema ? 'animate-spin' : ''} />
                     <span>{loadingSchema ? 'Merancang Schema...' : schema ? 'Regenerate Schema' : 'Generate Schema'}</span>
@@ -854,9 +855,9 @@ export function ProjectWorkspace({
                       variant="secondary"
                       size="sm"
                       onClick={() => copyToClipboard(schema.dbSchema, 'schema')}
-                      className="gap-1.5"
+                      className="gap-1.5 text-xs"
                     >
-                      {copiedKey === 'schema' ? <Check weight="bold" className="text-emerald-600" /> : <Copy weight="bold" />}
+                      {copiedKey === 'schema' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
                       <span>{copiedKey === 'schema' ? 'Tersalin!' : 'Copy Schema'}</span>
                     </Button>
                   )}
@@ -865,17 +866,17 @@ export function ProjectWorkspace({
 
               {schema?.dbSchema ? (
                 <div className="flex flex-col gap-4">
-                  <div className="bg-brutal-white border-4 border-brutal-black p-6 md:p-8 shadow-brutal font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                  <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                     {schema.dbSchema}
                   </div>
                   {schema.apiContract && (
-                    <div className="bg-neutral-900 text-green-400 border-4 border-brutal-black p-6 shadow-brutal font-mono text-xs leading-relaxed overflow-x-auto">
+                    <div className="bg-zinc-950 text-emerald-400 border border-white/10 rounded-2xl p-6 shadow-lg font-mono text-xs leading-relaxed overflow-x-auto">
                       <pre>{JSON.stringify(schema.apiContract, null, 2)}</pre>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="bg-brutal-white border-4 border-brutal-black p-6 shadow-brutal text-center font-mono text-sm text-gray-500 font-bold">
+                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-6 text-center font-sans text-xs text-zinc-500">
                   Database Schema & API Contract belum digenerate.
                 </div>
               )}
@@ -885,22 +886,22 @@ export function ProjectWorkspace({
 
         {/* TAB 5: PROMPT.MD */}
         {activeTab === 'prompts' && (
-          <div className="w-full h-full overflow-y-auto bg-[#f4f4f0] p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-4">
-              <div className="bg-brutal-white border-4 border-brutal-black p-4 sm:p-6 shadow-brutal flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-emerald-600 text-white px-2 py-0.5 font-mono text-xs font-bold uppercase border-2 border-brutal-black">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase rounded-full border border-emerald-500/20">
                       Sequential Coding Plan
                     </span>
-                    <span className="font-mono text-xs font-bold text-gray-500">
+                    <span className="font-mono text-xs text-zinc-500">
                       {prompts.length > 0 ? `${prompts.length} Atomic Steps` : 'Master Prompt Mode'}
                     </span>
                   </div>
-                  <h2 className="font-sans font-black text-2xl uppercase tracking-tight text-brutal-black mt-1">
+                  <h2 className="font-sans font-bold text-xl text-zinc-100">
                     Master Prompt.md
                   </h2>
-                  <p className="font-mono text-xs text-gray-600 font-semibold mt-0.5">
+                  <p className="font-sans text-xs text-zinc-400 mt-1">
                     Prompt step-by-step siap di-copy langsung ke terminal atau editor AI untuk eksekusi kode.
                   </p>
                 </div>
@@ -910,7 +911,7 @@ export function ProjectWorkspace({
                     size="sm"
                     onClick={generatePrompts}
                     disabled={loadingPrompts || !schema}
-                    className="gap-1.5 !bg-brutal-yellow"
+                    className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingPrompts ? 'animate-spin' : ''} />
                     <span>{loadingPrompts ? 'Membuat Atomic Prompts...' : prompts.length > 0 ? 'Regenerate Prompts' : 'Generate Atomic Prompts'}</span>
@@ -921,16 +922,16 @@ export function ProjectWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => copyToClipboard(effectivePromptMd, 'prompt')}
-                        className="gap-1.5"
+                        className="gap-1.5 text-xs"
                       >
-                        {copiedKey === 'prompt' ? <Check weight="bold" className="text-emerald-600" /> : <Copy weight="bold" />}
+                        {copiedKey === 'prompt' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
                         <span>{copiedKey === 'prompt' ? 'Tersalin!' : 'Copy Prompt.md'}</span>
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => downloadFile(effectivePromptMd, 'Prompt.md')}
-                        className="gap-1.5"
+                        className="gap-1.5 text-xs"
                       >
                         <DownloadSimple weight="bold" />
                         <span>Download Prompt.md</span>
@@ -941,24 +942,25 @@ export function ProjectWorkspace({
               </div>
 
               {effectivePromptMd ? (
-                <div className="bg-brutal-white border-4 border-brutal-black p-6 md:p-8 shadow-brutal font-mono text-sm leading-relaxed whitespace-pre-wrap selection:bg-brutal-yellow">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap selection:bg-emerald-500/20">
                   {effectivePromptMd}
                 </div>
               ) : (
-                <div className="bg-brutal-white border-4 border-brutal-black p-8 shadow-brutal text-center flex flex-col items-center gap-4">
-                  <Lightning weight="fill" className="w-16 h-16 text-amber-500 animate-bounce" />
+                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                    <Lightning weight="duotone" className="w-8 h-8" />
+                  </div>
                   <div>
-                    <h3 className="font-sans font-black text-xl uppercase">Atomic Prompts Belum Dibuat</h3>
-                    <p className="font-mono text-sm text-gray-600 max-w-md mt-1">
+                    <h3 className="font-sans font-bold text-lg text-zinc-100">Atomic Prompts Belum Dibuat</h3>
+                    <p className="font-sans text-xs text-zinc-400 max-w-md mt-1">
                       Pecah implementasi sistem ke dalam rangkaian prompt atomik berurutan untuk AI Coder.
                     </p>
                   </div>
                   <Button
                     variant="primary"
-                    size="md"
+                    size="sm"
                     onClick={generatePrompts}
                     disabled={loadingPrompts || !schema}
-                    className="!bg-brutal-yellow"
                   >
                     {loadingPrompts ? `Generating Prompts (${Math.round(generationProgress)}%)...` : '⚡ Buat Atomic Prompts'}
                   </Button>
