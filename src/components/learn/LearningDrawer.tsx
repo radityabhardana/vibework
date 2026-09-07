@@ -1,9 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/context/LanguageContext';
+import {
+  BookOpen,
+  Flask,
+  X,
+  CheckCircle,
+  WarningCircle,
+  ArrowClockwise,
+  LockSimple,
+  CircleNotch,
+} from '@phosphor-icons/react';
 
 interface QuizQuestion {
   id: string;
@@ -96,159 +105,200 @@ export function LearningDrawer({
   }[node.status];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brutal-black/70 backdrop-blur-sm p-4 md:p-8">
-      <div className="bg-brutal-white border-4 border-brutal-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-4xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
-        
-        {/* Header */}
-        <div className="bg-brutal-yellow border-b-4 border-brutal-black p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-mono font-bold uppercase px-2 py-0.5 border border-brutal-black ${
-                node.status === 'mastered' ? 'bg-green-400' : node.status === 'unlocked' ? 'bg-brutal-white' : 'bg-gray-300'
-              }`}>
-                {statusLabel}
-              </span>
-              <span className="text-xs font-mono uppercase opacity-70">{t('Kategori:', 'Category:')} {node.category}</span>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8 animate-in fade-in duration-200">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-zinc-900/80 p-0.5 rounded-2xl ring-1 ring-white/10 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="w-full h-full bg-[#08080b] rounded-[14px] flex flex-col overflow-hidden">
+          
+          {/* Header */}
+          <div className="border-b border-white/10 bg-[#0d0d12]/95 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-[10px] font-mono font-medium uppercase px-2.5 py-0.5 rounded-full border ${
+                  node.status === 'mastered'
+                    ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
+                    : node.status === 'unlocked'
+                    ? 'bg-white/10 text-white border-white/20'
+                    : 'bg-zinc-800/80 text-zinc-400 border-zinc-700/50'
+                }`}>
+                  {statusLabel}
+                </span>
+                <span className="text-[11px] font-mono uppercase text-zinc-500">
+                  {t('Kategori:', 'Category:')} {node.category}
+                </span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight truncate">
+                {node.title}
+              </h2>
             </div>
-            <h2 className="font-sans font-black text-2xl uppercase tracking-tight mt-1">{node.title}</h2>
+
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end shrink-0">
+              <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl">
+                <button
+                  onClick={() => setActiveTab('material')}
+                  className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 ${
+                    activeTab === 'material'
+                      ? 'bg-white text-black shadow-sm font-semibold'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <BookOpen weight="bold" className="w-3.5 h-3.5" />
+                  {t('Materi Pelajaran', 'Micro-Lesson')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('quiz')}
+                  className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 ${
+                    activeTab === 'quiz'
+                      ? 'bg-white text-black shadow-sm font-semibold'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Flask weight="bold" className="w-3.5 h-3.5" />
+                  {t('Kuis Bertahap', 'Staged Quiz')} ({node.quizData?.length || 0})
+                </button>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                title={t('Tutup', 'Close')}
+              >
+                <X weight="bold" className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-            <div className="flex border-2 border-brutal-black bg-brutal-white p-1">
-              <button
-                onClick={() => setActiveTab('material')}
-                className={`px-3 py-1 font-mono font-bold text-xs uppercase transition-colors ${
-                  activeTab === 'material' ? 'bg-brutal-black text-white' : 'hover:bg-gray-200'
-                }`}
-              >
-                📖 {t('Materi Pelajaran', 'Micro-Lesson')}
-              </button>
-              <button
-                onClick={() => setActiveTab('quiz')}
-                className={`px-3 py-1 font-mono font-bold text-xs uppercase transition-colors ${
-                  activeTab === 'quiz' ? 'bg-brutal-black text-white' : 'hover:bg-gray-200'
-                }`}
-              >
-                🧪 {t('Kuis Bertahap', 'Staged Quiz')} ({node.quizData?.length || 0})
-              </button>
-            </div>
-            <Button variant="primary" size="sm" onClick={onClose} className="!bg-brutal-red text-white">
-              {t('Tutup', 'Close')}
-            </Button>
-          </div>
-        </div>
+          {/* Content Body */}
+          <div className="p-6 md:p-8 overflow-y-auto bg-[#08080b] flex-1 text-zinc-200">
+            {activeTab === 'material' && (
+              <div className="prose prose-invert prose-zinc max-w-none text-sm font-sans leading-relaxed [&_h1]:text-white [&_h2]:text-white [&_h3]:text-zinc-200 [&_code]:text-zinc-200 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_pre]:bg-[#0d0d12] [&_pre]:border [&_pre]:border-white/10 [&_pre]:rounded-xl">
+                <ReactMarkdown>{node.contentMarkdown}</ReactMarkdown>
+              </div>
+            )}
 
-        {/* Content Body */}
-        <div className="p-6 overflow-y-auto bg-[#f8f9fa] flex-1">
-          {activeTab === 'material' && (
-            <div className="prose prose-slate max-w-none font-mono text-sm leading-relaxed">
-              <ReactMarkdown>{node.contentMarkdown}</ReactMarkdown>
-            </div>
-          )}
-
-          {activeTab === 'quiz' && (
-            <div className="flex flex-col gap-6 font-sans">
-              {node.status === 'locked' ? (
-                <div className="p-6 bg-red-100 border-4 border-brutal-black font-mono font-bold text-center">
-                  🔒 {t('NODE INI MASIH TERKUNCI. Selesaikan node prasyarat terlebih dahulu untuk membuka kuis ini!', 'THIS NODE IS LOCKED. Complete prerequisite nodes first to unlock this quiz!')}
-                </div>
-              ) : (
-                <>
-                  {scoreResult && (
-                    <div className={`p-4 border-4 border-brutal-black font-mono font-bold text-center ${
-                      scoreResult.passed ? 'bg-green-300 text-black' : 'bg-brutal-red text-white'
-                    }`}>
-                      {scoreResult.passed
-                        ? t(
-                            `🎉 SELAMAT! Kamu lulus dengan nilai ${scoreResult.score}%! Node Berhasil Dikuasai & Node Selanjutnya Terbuka.`,
-                            `🎉 CONGRATULATIONS! You passed with ${scoreResult.score}%! Node Mastered & Next Nodes Unlocked.`
-                          )
-                        : t(
-                            `❌ SKOR: ${scoreResult.score}%. Kamu butuh minimal 70% untuk lulus. Pelajari kembali materi dan coba lagi!`,
-                            `❌ SCORE: ${scoreResult.score}%. You need at least 70% to pass. Review the lesson and try again!`
-                          )}
-                    </div>
-                  )}
-
-                  {submitError && (
-                    <div className="p-4 border-4 border-brutal-black bg-red-100 font-mono font-bold text-center">
-                      {submitError} {t('Silakan coba lagi.', 'Please try again.')}
-                    </div>
-                  )}
-
-                  {(node.quizData || []).map((q, qIdx) => (
-                    <div key={q.id || qIdx} className="bg-brutal-white border-4 border-brutal-black p-5 shadow-brutal-sm">
-                      <div className="font-mono font-bold text-sm text-gray-500 uppercase mb-1">
-                        {t(`Pertanyaan ${qIdx + 1} dari ${node.quizData.length}`, `Question ${qIdx + 1} of ${node.quizData.length}`)}
-                      </div>
-                      <h4 className="font-sans font-bold text-base mb-4">{q.question}</h4>
-
-                      <div className="flex flex-col gap-2">
-                        {q.options.map((opt, oIdx) => {
-                          const isSelected = selectedAnswers[qIdx] === oIdx;
-                          const isCorrect = q.correctAnswerIndex === oIdx;
-
-                          let optionStyle = 'bg-white hover:bg-gray-100';
-                          if (submitted) {
-                            if (isCorrect) optionStyle = 'bg-green-300 font-bold border-green-800';
-                            else if (isSelected && !isCorrect) optionStyle = 'bg-red-200 line-through';
-                          } else if (isSelected) {
-                            optionStyle = 'bg-brutal-yellow font-bold';
-                          }
-
-                          return (
-                            <button
-                              key={oIdx}
-                              onClick={() => handleOptionSelect(qIdx, oIdx)}
-                              className={`w-full text-left p-3 border-2 border-brutal-black font-mono text-sm transition-all flex items-center gap-3 ${optionStyle}`}
-                            >
-                              <span className="w-6 h-6 border-2 border-brutal-black flex items-center justify-center font-bold text-xs bg-brutal-white shrink-0">
-                                {String.fromCharCode(65 + oIdx)}
-                              </span>
-                              <span>{opt}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {submitted && (
-                        <div className="mt-4 p-3 bg-blue-50 border-2 border-brutal-black font-mono text-xs text-blue-950">
-                          <strong>{t('Penjelasan:', 'Explanation:')}</strong> {q.explanation}
-                        </div>
+            {activeTab === 'quiz' && (
+              <div className="flex flex-col gap-6">
+                {node.status === 'locked' ? (
+                  <div className="p-6 rounded-xl bg-amber-950/20 border border-amber-500/30 text-amber-300 flex items-center justify-center gap-3 text-center text-sm font-mono">
+                    <LockSimple weight="bold" className="w-5 h-5 shrink-0" />
+                    <span>
+                      {t(
+                        'NODE INI MASIH TERKUNCI. Selesaikan node prasyarat terlebih dahulu untuk membuka kuis ini!',
+                        'THIS NODE IS LOCKED. Complete prerequisite nodes first to unlock this quiz!'
                       )}
-                    </div>
-                  ))}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    {scoreResult && (
+                      <div className={`p-4 rounded-xl border font-mono text-sm text-center flex items-center justify-center gap-2 ${
+                        scoreResult.passed
+                          ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30'
+                          : 'bg-rose-950/40 text-rose-300 border-rose-500/30'
+                      }`}>
+                        {scoreResult.passed ? (
+                          <>
+                            <CheckCircle weight="fill" className="w-5 h-5 text-emerald-400 shrink-0" />
+                            <span>
+                              {t(
+                                `🎉 SELAMAT! Kamu lulus dengan nilai ${scoreResult.score}%! Node Berhasil Dikuasai & Node Selanjutnya Terbuka.`,
+                                `🎉 CONGRATULATIONS! You passed with ${scoreResult.score}%! Node Mastered & Next Nodes Unlocked.`
+                              )}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <WarningCircle weight="fill" className="w-5 h-5 text-rose-400 shrink-0" />
+                            <span>
+                              {t(
+                                `❌ SKOR: ${scoreResult.score}%. Kamu butuh minimal 70% untuk lulus. Pelajari kembali materi dan coba lagi!`,
+                                `❌ SCORE: ${scoreResult.score}%. You need at least 70% to pass. Review the lesson and try again!`
+                              )}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
 
-                  {submitted && scoreResult && !scoreResult.passed && (
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={() => {
-                        setSubmitted(false);
-                        setScoreResult(null);
-                        setSelectedAnswers({});
-                      }}
-                      className="mt-2 w-full font-black uppercase text-base"
-                    >
-                      {t('Coba Kuis Lagi', 'Retry Quiz')}
-                    </Button>
-                  )}
+                    {submitError && (
+                      <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-950/30 font-mono text-xs text-rose-300 text-center">
+                        {submitError} {t('Silakan coba lagi.', 'Please try again.')}
+                      </div>
+                    )}
 
-                  {!submitted && (
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={handleSubmitQuiz}
-                      disabled={loading || !node.quizData?.length || Object.keys(selectedAnswers).length < node.quizData.length}
-                      className="mt-2 w-full font-black uppercase text-base"
-                    >
-                      {loading ? t('Menevaluasi...', 'Evaluating...') : t('Kirim Jawaban Kuis', 'Submit Quiz Answers')}
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+                    {(node.quizData || []).map((q, qIdx) => (
+                      <div key={q.id || qIdx} className="bg-[#0d0d12] border border-white/10 rounded-xl p-5 shadow-lg">
+                        <div className="font-mono text-xs text-zinc-500 uppercase mb-1.5 tracking-wider">
+                          {t(`Pertanyaan ${qIdx + 1} dari ${node.quizData.length}`, `Question ${qIdx + 1} of ${node.quizData.length}`)}
+                        </div>
+                        <h4 className="text-base font-semibold text-white mb-4 leading-snug">
+                          {q.question}
+                        </h4>
+
+                        <div className="flex flex-col gap-2">
+                          {q.options.map((opt, oIdx) => {
+                            const isSelected = selectedAnswers[qIdx] === oIdx;
+                            const isCorrect = q.correctAnswerIndex === oIdx;
+
+                            let optionStyle = 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05] hover:border-white/25 text-zinc-300';
+                            if (submitted) {
+                              if (isCorrect) optionStyle = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200 font-medium';
+                              else if (isSelected && !isCorrect) optionStyle = 'bg-rose-950/40 border-rose-500/50 text-rose-300 line-through';
+                            } else if (isSelected) {
+                              optionStyle = 'bg-white/[0.08] border-white/40 text-white font-medium ring-1 ring-white/20';
+                            }
+
+                            return (
+                              <button
+                                key={oIdx}
+                                onClick={() => handleOptionSelect(qIdx, oIdx)}
+                                className={`w-full text-left p-3.5 rounded-xl border text-sm transition-all flex items-center gap-3 ${optionStyle}`}
+                              >
+                                <span className="w-6 h-6 rounded-md border border-white/10 flex items-center justify-center font-mono text-xs font-semibold bg-white/5 text-zinc-400 shrink-0">
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span className="leading-relaxed">{opt}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {submitted && (
+                          <div className="mt-4 p-3.5 rounded-lg bg-blue-950/20 border border-blue-500/30 font-mono text-xs text-blue-200 leading-relaxed">
+                            <strong className="text-blue-100">{t('Penjelasan:', 'Explanation:')}</strong> {q.explanation}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {submitted && scoreResult && !scoreResult.passed && (
+                      <button
+                        onClick={() => {
+                          setSubmitted(false);
+                          setScoreResult(null);
+                          setSelectedAnswers({});
+                        }}
+                        className="mt-2 w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <ArrowClockwise weight="bold" className="w-4 h-4" />
+                        {t('Coba Kuis Lagi', 'Retry Quiz')}
+                      </button>
+                    )}
+
+                    {!submitted && (
+                      <button
+                        onClick={handleSubmitQuiz}
+                        disabled={loading || !node.quizData?.length || Object.keys(selectedAnswers).length < node.quizData.length}
+                        className="mt-2 w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
+                      >
+                        {loading && <CircleNotch weight="bold" className="w-4 h-4 animate-spin" />}
+                        {loading ? t('Menevaluasi...', 'Evaluating...') : t('Kirim Jawaban Kuis', 'Submit Quiz Answers')}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

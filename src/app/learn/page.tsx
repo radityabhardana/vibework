@@ -154,21 +154,27 @@ export default function LearnHubPage() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-auto relative selection:bg-violet-500/20">
-      {/* Ambient Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gradient-to-b from-violet-500/10 via-cyan-500/5 to-transparent blur-3xl pointer-events-none" />
+    <div className="w-full h-full flex flex-col bg-[#030303] text-white overflow-auto relative selection:bg-white selection:text-black">
+      {/* Ambient Lighting & Geometric Dot Matrix */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
       {/* Header */}
-      <header className="h-16 w-full border-b border-white/10 bg-zinc-950/80 backdrop-blur-md flex items-center px-6 justify-between z-10 shrink-0">
+      <header className="h-16 w-full border-b border-white/10 bg-[#030303]/80 backdrop-blur-md flex items-center px-4 sm:px-6 justify-between z-10 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+          <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-white">
             <GraduationCap weight="duotone" className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-sans font-bold text-sm text-zinc-100 tracking-tight">
-              {t('Mesin Roadmap Pembelajaran AI', 'AI Learning Roadmap Engine')}
-            </h1>
-            <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider">
+            <div className="flex items-center gap-2">
+              <h1 className="font-sans font-bold text-sm text-white tracking-tight">
+                {t('Mesin Roadmap Pembelajaran AI', 'AI Learning Roadmap Engine')}
+              </h1>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-300">
+                Active
+              </span>
+            </div>
+            <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider hidden sm:block">
               roadmap.sh-style interactive trees
             </p>
           </div>
@@ -185,118 +191,124 @@ export default function LearnHubPage() {
       </header>
 
       {/* Main Content */}
-      <main className="p-6 md:p-10 max-w-5xl w-full mx-auto flex flex-col gap-8 z-0">
+      <main className="p-4 sm:p-6 md:p-10 max-w-5xl w-full mx-auto flex flex-col gap-8 z-0">
         
-        {/* Topic Input Banner */}
-        <div className="bg-zinc-900/70 border border-white/10 p-6 md:p-8 rounded-2xl shadow-xl backdrop-blur-md flex flex-col gap-5">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 font-mono text-[11px] font-medium">
-                <Sparkle weight="fill" className="w-3 h-3" />
-                Adaptive Curriculum
-              </span>
+        {/* Double-Bezel Topic Input Chassis */}
+        <div className="p-2 sm:p-2.5 rounded-3xl bg-zinc-900/60 border border-white/10 ring-1 ring-white/5 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]">
+          <div className="rounded-2xl bg-[#08080b]/90 border border-white/5 p-6 sm:p-8 flex flex-col gap-5 shadow-inner">
+            <div className="flex flex-col gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300 w-fit">
+                <Sparkle weight="fill" className="w-3 h-3 text-zinc-200" />
+                <span>Adaptive Curriculum Architect</span>
+              </div>
+              <h2 className="font-sans font-extrabold text-2xl sm:text-3xl text-white tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
+                {t('Buat Roadmap Pembelajaran Baru', 'Generate New Learning Roadmap')}
+              </h2>
+              <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                {t(
+                  'Ketik teknologi atau domain apapun (contoh: Machine Learning, Blockchain, Rust). AI akan mewawancarai kamu dengan pertanyaan singkat untuk menyusun pohon roadmap 100% personal!',
+                  'Type any technology or domain (e.g. Machine Learning, Blockchain, Rust). AI will Grill you with key questions to build a 100% personalized roadmap tree!'
+                )}
+              </p>
             </div>
-            <h2 className="font-sans font-extrabold text-xl sm:text-2xl text-zinc-100 tracking-tight">
-              {t('Buat Roadmap Pembelajaran Baru', 'Generate New Learning Roadmap')}
-            </h2>
-            <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-              {t(
-                'Ketik teknologi atau domain apapun (contoh: Machine Learning, Blockchain, Rust). AI akan mewawancarai kamu dengan pertanyaan singkat untuk menyusun pohon roadmap 100% personal!',
-                'Type any technology or domain (e.g. Machine Learning, Blockchain, Rust). AI will Grill you with key questions to build a 100% personalized roadmap tree!'
-              )}
-            </p>
+
+            {error && (
+              <div className="p-3 bg-rose-950/60 text-rose-200 font-mono text-xs rounded-xl border border-rose-500/30">
+                {t('Gagal:', 'Error:')} {error}
+              </div>
+            )}
+
+            <form onSubmit={handleOpenGrill} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder={t('Contoh: Machine Learning, Blockchain, Python Backend...', 'e.g. Machine Learning, Blockchain, Python Backend...')}
+                value={topic}
+                onChange={e => setTopic(e.target.value)}
+                maxLength={120}
+                disabled={loading}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 font-sans text-sm bg-black/60 text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/15 transition-all"
+              />
+              <Button
+                variant="primary"
+                size="md"
+                type="submit"
+                disabled={loading || !topic.trim()}
+                className="px-6 flex items-center justify-center gap-2 min-w-[170px] text-xs font-semibold shadow-md active:scale-95 transition-all"
+              >
+                {loading ? (
+                  <>
+                    <Spinner weight="bold" className="w-4 h-4 animate-spin" />
+                    <span>{t('Memproses...', 'Generating...')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Fire weight="bold" className="w-4 h-4 text-amber-400" />
+                    <span>{t('AI Quick Grill →', 'AI Quick Grill →')}</span>
+                  </>
+                )}
+              </Button>
+            </form>
+
+            {/* Progress Bar Container when Loading */}
+            {loading && (
+              <div className="p-4 bg-white/[0.02] rounded-xl border border-white/10 shadow-xl flex flex-col gap-2.5 animate-in fade-in duration-200">
+                <div className="flex justify-between items-center font-mono text-xs">
+                  <span className="text-zinc-300 font-medium">{statusText}</span>
+                  <span className="text-white font-bold">{Math.round(progress)}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                    style={{ width: `${Math.min(100, Math.max(5, progress))}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-
-          {error && (
-            <div className="p-3 bg-rose-950/80 text-rose-200 font-sans text-xs rounded-lg border border-rose-500/30">
-              {t('Gagal:', 'Error:')} {error}
-            </div>
-          )}
-
-          <form onSubmit={handleOpenGrill} className="flex flex-col md:flex-row gap-3">
-            <input
-              type="text"
-              placeholder={t('Contoh: Machine Learning, Blockchain, Python Backend...', 'e.g. Machine Learning, Blockchain, Python Backend...')}
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-              maxLength={120}
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-white/10 font-sans text-sm bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500/80 focus:ring-2 focus:ring-violet-500/20 transition-all"
-            />
-            <Button
-              variant="primary"
-              size="md"
-              type="submit"
-              disabled={loading || !topic.trim()}
-              className="px-6 flex items-center justify-center gap-2 min-w-[180px] text-xs font-semibold"
-            >
-              {loading ? (
-                <>
-                  <Spinner weight="bold" className="w-4 h-4 animate-spin" />
-                  <span>{t('Memproses...', 'Generating...')}</span>
-                </>
-              ) : (
-                <>
-                  <Fire weight="bold" className="w-4 h-4 text-amber-500" />
-                  <span>{t('AI Quick Grill →', 'AI Quick Grill →')}</span>
-                </>
-              )}
-            </Button>
-          </form>
-
-          {/* Progress Bar Container when Loading */}
-          {loading && (
-            <div className="p-4 bg-zinc-950 rounded-xl border border-violet-500/30 shadow-xl flex flex-col gap-2.5 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center font-sans text-xs">
-                <span className="text-zinc-300 font-medium">{statusText}</span>
-                <span className="font-mono text-violet-400 font-bold">{Math.round(progress)}%</span>
-              </div>
-              <div className="w-full h-2 bg-zinc-900 rounded-full border border-white/10 overflow-hidden relative">
-                <div
-                  className="h-full bg-gradient-to-r from-violet-500 to-cyan-500 rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(139,92,246,0.8)]"
-                  style={{ width: `${Math.min(100, Math.max(5, progress))}%` }}
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Existing Roadmaps Section */}
         <section className="flex flex-col gap-4">
-          <h3 className="font-sans font-bold text-sm uppercase tracking-wider text-zinc-400">
-            {t('Daftar Roadmap Pembelajaran Tersimpan', 'Your Saved Learning Roadmaps')}
-          </h3>
+          <div className="flex items-center justify-between px-1">
+            <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              {t('Daftar Roadmap Pembelajaran Tersimpan', 'Your Saved Learning Roadmaps')}
+            </h3>
+            <span className="font-mono text-[10px] text-zinc-600">
+              {roadmaps.length} {t('Roadmap', 'Roadmaps')}
+            </span>
+          </div>
 
           {roadmaps.length === 0 ? (
-            <div className="p-8 bg-zinc-900/40 border border-dashed border-white/10 rounded-2xl text-center text-zinc-500 font-sans text-xs">
+            <div className="p-8 rounded-2xl border border-dashed border-white/10 bg-white/[0.01] text-center text-zinc-500 font-sans text-xs">
               {t('Belum ada roadmap tersimpan. Masukkan topik di atas untuk membuat & menyimpan roadmap interaktif pertama kamu!', 'No saved roadmaps yet. Enter a topic above to generate & save your first interactive roadmap!')}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {roadmaps.map(rm => (
                 <Link key={rm.id} href={`/learn/${rm.id}`}>
-                  <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 hover:border-violet-500/40 hover:shadow-[0_0_25px_-5px_rgba(139,92,246,0.2)] transition-all h-full flex flex-col justify-between cursor-pointer group">
+                  <div className="p-5 sm:p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/30 transition-all h-full flex flex-col justify-between cursor-pointer group shadow-sm hover:shadow-xl backdrop-blur-md">
                     <div>
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-mono font-medium uppercase px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                        <span className="text-[10px] font-mono font-medium uppercase px-2.5 py-0.5 rounded-full bg-white/5 text-zinc-300 border border-white/10">
                           {rm.topic}
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-mono text-zinc-500">{new Date(rm.createdAt).toLocaleDateString()}</span>
                           <button
+                            type="button"
                             onClick={(e) => handleDelete(e, rm.id)}
                             title={t('Hapus Roadmap', 'Delete Roadmap')}
-                            className="p-1 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                            className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                           >
                             <Trash weight="bold" className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                      <h4 className="font-sans font-bold text-base text-zinc-100 mb-1.5 leading-snug group-hover:text-violet-400 transition-colors">{rm.title}</h4>
+                      <h4 className="font-sans font-bold text-base text-white mb-1.5 leading-snug group-hover:text-zinc-100 transition-colors">{rm.title}</h4>
                       <p className="font-sans text-xs text-zinc-400 line-clamp-2 leading-relaxed">{rm.description}</p>
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-white/[0.06] flex justify-between items-center font-sans font-semibold text-xs text-violet-400">
+                    <div className="mt-5 pt-3 border-t border-white/5 flex justify-between items-center font-mono text-xs text-zinc-400 group-hover:text-white font-medium transition-colors">
                       <span>{t('Buka Pohon & Kerjakan Kuis', 'View Tree & Take Quizzes')}</span>
                       <ArrowRight weight="bold" className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
@@ -310,22 +322,23 @@ export default function LearnHubPage() {
 
       {/* AI Quick Grill Modal */}
       {showGrillModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="bg-[#09090c] border border-white/15 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-white">
             
             {/* Modal Header */}
-            <div className="bg-zinc-950/80 border-b border-white/10 p-5 flex justify-between items-center sticky top-0 z-10">
+            <div className="bg-zinc-950/80 border-b border-white/10 p-5 flex justify-between items-center sticky top-0 z-10 backdrop-blur-md">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+                <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-white">
                   <Fire weight="bold" className="w-4 h-4 text-amber-400" />
                 </div>
-                <h3 className="font-sans font-bold text-base text-zinc-100">
+                <h3 className="font-sans font-bold text-base text-white">
                   {t('AI Quick Grill: Personalisasi Roadmap', 'AI Quick Grill: Personalize Roadmap')}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowGrillModal(false)}
-                className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white rounded-md hover:bg-white/[0.06] transition-colors"
+                className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <X weight="bold" className="w-4 h-4" />
               </button>
@@ -333,9 +346,9 @@ export default function LearnHubPage() {
 
             {/* Modal Body */}
             <div className="p-6 flex flex-col gap-6 font-sans text-sm text-zinc-200">
-              <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center gap-2 text-xs">
+              <div className="p-3 bg-white/[0.03] border border-white/10 rounded-xl flex items-center gap-2 text-xs">
                 <span className="text-zinc-400">{t('Topik Target:', 'Target Topic:')}</span>
-                <span className="font-semibold text-violet-300 uppercase">{topic}</span>
+                <span className="font-semibold text-white uppercase">{topic}</span>
               </div>
 
               {/* Q1: Self-Familiarity with Topic */}
@@ -349,10 +362,10 @@ export default function LearnHubPage() {
                       key={fam}
                       type="button"
                       onClick={() => setFamiliarity(index)}
-                      className={`p-3 rounded-xl border text-xs text-left transition-all ${
+                      className={`p-3 rounded-xl border text-xs text-left transition-all cursor-pointer ${
                         familiarity === index
-                          ? 'border-violet-500 bg-violet-500/15 text-zinc-100 shadow-[0_0_15px_-3px_rgba(139,92,246,0.3)]'
-                          : 'border-white/10 bg-zinc-950/60 text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                          ? 'border-white/40 bg-white/15 text-white shadow-md'
+                          : 'border-white/10 bg-black/40 text-zinc-400 hover:text-white hover:border-white/20'
                       }`}
                     >
                       {fam}
@@ -367,7 +380,7 @@ export default function LearnHubPage() {
                   <label className="font-sans font-semibold text-xs text-zinc-300 block">
                     {t('2. Apa tujuan utama kamu belajar topik ini?', '2. What are your primary learning goals?')}
                   </label>
-                  <span className="text-[10px] font-mono font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-mono font-medium text-zinc-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
                     {t('Multi-Select', 'Multi-Select')}
                   </span>
                 </div>
@@ -379,15 +392,15 @@ export default function LearnHubPage() {
                         key={g}
                         type="button"
                         onClick={() => toggleGoal(index)}
-                        className={`p-3 rounded-xl border text-xs text-left flex items-center justify-between transition-all ${
+                        className={`p-3 rounded-xl border text-xs text-left flex items-center justify-between transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-cyan-500 bg-cyan-500/15 text-zinc-100 shadow-[0_0_15px_-3px_rgba(6,182,212,0.3)]'
-                            : 'border-white/10 bg-zinc-950/60 text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                            ? 'border-white/40 bg-white/15 text-white shadow-md'
+                            : 'border-white/10 bg-black/40 text-zinc-400 hover:text-white hover:border-white/20'
                         }`}
                       >
                         <span>{g}</span>
                         {isSelected ? (
-                          <Checks weight="bold" className="w-4 h-4 shrink-0 text-cyan-400" />
+                          <Checks weight="bold" className="w-4 h-4 shrink-0 text-emerald-400" />
                         ) : (
                           <span className="w-3.5 h-3.5 rounded border border-white/20 inline-block shrink-0" />
                         )}
@@ -414,16 +427,16 @@ export default function LearnHubPage() {
                   value={focusText}
                   onChange={e => setFocusText(e.target.value)}
                   maxLength={500}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-white/10 font-sans text-xs bg-zinc-950 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/80"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 font-sans text-xs bg-black/60 text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
                 />
               </div>
 
               {/* Actions */}
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3 sticky bottom-0 bg-zinc-900 p-2">
+              <div className="pt-4 border-t border-white/10 flex justify-end gap-3 sticky bottom-0 bg-[#09090c] p-2">
                 <Button variant="secondary" size="sm" onClick={() => setShowGrillModal(false)}>
                   {t('Batal', 'Cancel')}
                 </Button>
-                <Button variant="primary" size="sm" onClick={handleGenerate} className="text-xs">
+                <Button variant="primary" size="sm" onClick={handleGenerate} className="text-xs font-semibold">
                   <CheckCircle weight="bold" className="w-4 h-4 mr-1" />
                   {t('Buat Pohon Personal →', 'Generate Personalized Tree →')}
                 </Button>

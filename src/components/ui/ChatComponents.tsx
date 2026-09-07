@@ -122,26 +122,26 @@ export function MessageOptions({
 
   if (!isMultiSelect) {
     return (
-      <div className="flex flex-col gap-2 mt-6 border-t-2 border-brutal-black/10 pt-4">
+      <div className="flex flex-col gap-2 mt-4 border-t border-white/10 pt-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-mono text-xs font-bold uppercase bg-brutal-yellow border-2 border-brutal-black px-2 py-1">
-            PILIH TEPAT 1
+          <span className="font-mono text-[10px] font-semibold uppercase rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-0.5">
+            Pilih Tepat 1
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {options.map((opt, i) => (
             <button
               type="button"
               key={i}
-              className="text-left w-full h-full p-4 border-4 border-brutal-black bg-brutal-white hover:bg-brutal-yellow hover:-translate-y-1 hover:shadow-brutal transition-all disabled:opacity-50 disabled:pointer-events-none group"
+              className="text-left w-full h-full p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/30 transition-all disabled:opacity-50 disabled:pointer-events-none group cursor-pointer"
               onClick={() => onSend(opt)}
               disabled={disabled}
             >
               <div className="flex items-start gap-3">
-                <span className="font-sans font-black text-brutal-white bg-brutal-black px-2 py-0.5 shrink-0 h-fit text-sm">
+                <span className="font-mono font-bold text-xs rounded-md bg-white/10 text-white w-6 h-6 flex items-center justify-center shrink-0">
                   {i + 1}
                 </span>
-                <span className="font-mono text-sm md:text-base font-bold leading-tight mt-0.5">
+                <span className="font-sans text-xs sm:text-sm text-zinc-200 group-hover:text-white leading-snug mt-0.5">
                   {opt}
                 </span>
               </div>
@@ -150,15 +150,15 @@ export function MessageOptions({
           {!hideCustom && (
             <button
               type="button"
-              className="text-left w-full h-full p-4 border-4 border-brutal-black bg-brutal-white hover:bg-brutal-yellow hover:-translate-y-1 hover:shadow-brutal transition-all disabled:opacity-50 disabled:pointer-events-none"
+              className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
               onClick={onCustom}
               disabled={disabled}
             >
               <div className="flex items-start gap-3">
-                <span className="font-sans font-black text-brutal-white bg-brutal-black px-2 py-0.5 shrink-0 h-fit text-sm">
+                <span className="font-mono font-bold text-xs rounded-md bg-white/5 text-zinc-400 w-6 h-6 flex items-center justify-center shrink-0">
                   *
                 </span>
-                <span className="font-mono text-sm md:text-base font-bold leading-tight mt-0.5">
+                <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5">
                   Lainnya (Custom)...
                 </span>
               </div>
@@ -170,28 +170,36 @@ export function MessageOptions({
   }
 
   return (
-    <div className="mt-6 border-t-2 border-brutal-black/10 pt-4 flex flex-col gap-4">
+    <div className="mt-4 border-t border-white/10 pt-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="font-mono text-xs font-bold uppercase bg-brutal-yellow border-2 border-brutal-black px-2 py-1">
-          {maxSelections ? `PILIH MAKSIMAL ${maxSelections}` : 'PILIH 1 ATAU LEBIH'}
+        <span className="font-mono text-[10px] font-semibold uppercase rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-0.5">
+          {maxSelections ? `Pilih Maksimal ${maxSelections}` : 'Pilih 1 atau Lebih'}
         </span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         {options.map((opt, i) => {
           const isSelected = selected.has(i);
           return (
             <button
               type="button"
               key={i}
-              className={`text-left w-full h-full p-4 border-4 border-brutal-black transition-all disabled:opacity-50 disabled:pointer-events-none ${isSelected ? 'bg-brutal-blue text-brutal-white shadow-brutal translate-x-1 -translate-y-1' : 'bg-brutal-white hover:bg-brutal-yellow'}`}
+              className={`text-left w-full h-full p-3.5 rounded-xl border transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${
+                isSelected
+                  ? 'bg-white/[0.12] border-white/40 ring-1 ring-white/30 shadow-md'
+                  : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.08] hover:border-white/30'
+              }`}
               onClick={() => toggleSelect(i)}
               disabled={disabled}
             >
               <div className="flex items-start gap-3">
-                <span className={`font-sans font-black px-2 py-0.5 shrink-0 h-fit text-sm ${isSelected ? 'bg-brutal-white text-brutal-blue' : 'bg-brutal-black text-brutal-white'}`}>
+                <span
+                  className={`font-mono font-bold text-xs rounded-md w-6 h-6 flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-white text-black' : 'bg-white/10 text-white'
+                  }`}
+                >
                   {i + 1}
                 </span>
-                <span className="font-mono text-sm md:text-base font-bold leading-tight mt-0.5">
+                <span className="font-sans text-xs sm:text-sm text-zinc-200 leading-snug mt-0.5">
                   {opt}
                 </span>
               </div>
@@ -201,15 +209,15 @@ export function MessageOptions({
         {!hideCustom && (
           <button
             type="button"
-            className="text-left w-full h-full p-4 border-4 border-brutal-black bg-brutal-white hover:bg-brutal-yellow transition-all disabled:opacity-50 disabled:pointer-events-none"
+            className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
             onClick={onCustom}
             disabled={disabled}
           >
             <div className="flex items-start gap-3">
-              <span className="font-sans font-black text-brutal-white bg-brutal-black px-2 py-0.5 shrink-0 h-fit text-sm">
+              <span className="font-mono font-bold text-xs rounded-md bg-white/5 text-zinc-400 w-6 h-6 flex items-center justify-center shrink-0">
                 *
               </span>
-              <span className="font-mono text-sm md:text-base font-bold leading-tight mt-0.5">
+              <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5">
                 Lainnya (Custom)...
               </span>
             </div>
@@ -219,9 +227,10 @@ export function MessageOptions({
       <Button
         type="button"
         variant="primary"
+        size="sm"
         disabled={disabled || selected.size === 0}
         onClick={handleSend}
-        className="self-end"
+        className="self-end mt-1"
       >
         Kirim Pilihan ({selected.size})
       </Button>
@@ -274,20 +283,20 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
   }
 
   return (
-    <div className={`flex flex-col gap-1 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+    <div className={`flex flex-col gap-1.5 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
       <Card
-        bg={message.role === 'user' ? 'blue' : 'white'}
-        className={`max-w-[80%] !p-4 ${message.role === 'user' ? 'rounded-tl-2xl' : 'rounded-tr-2xl'}`}
+        bg={message.role === 'user' ? 'black' : 'white'}
+        className={`max-w-[85%] !p-4 sm:!p-5 ${
+          message.role === 'user'
+            ? '!bg-zinc-800/80 !border-white/20 rounded-2xl rounded-tr-sm'
+            : '!bg-[#09090c]/90 !border-white/10 rounded-2xl rounded-tl-sm'
+        }`}
       >
-        <span className="font-sans font-black text-xs uppercase opacity-70 block mb-2">
-          {message.role === 'user' ? 'You' : 'Architect'}
+        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 block mb-2 font-semibold">
+          {message.role === 'user' ? 'You' : 'System Architect'}
         </span>
         <div className="flex flex-col gap-4">
-          <div className={`font-mono leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-strong:font-black ${
-            message.role === 'user'
-              ? 'text-brutal-white prose-p:text-brutal-white prose-headings:text-brutal-white prose-strong:text-brutal-white'
-              : 'text-brutal-black prose-p:text-brutal-black prose-headings:text-brutal-black prose-strong:text-brutal-black'
-          }`}>
+          <div className="font-sans text-sm leading-relaxed text-zinc-100 prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
             <ReactMarkdown>{cleanText}</ReactMarkdown>
           </div>
 
@@ -308,9 +317,9 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
         <button
           type="button"
           onClick={onUndo}
-          className="group flex items-center gap-1.5 mt-1 mr-2 px-3 py-1 border-2 border-brutal-black bg-brutal-white hover:bg-brutal-yellow hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_rgba(0,0,0,1)] transition-all text-xs font-mono font-bold text-brutal-black cursor-pointer"
+          className="group flex items-center gap-1.5 mt-0.5 mr-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all text-[11px] font-mono cursor-pointer"
         >
-          <ArrowUUpLeft weight="bold" className="w-3.5 h-3.5" />
+          <ArrowUUpLeft weight="bold" className="w-3 h-3" />
           <span>Tarik Jawaban</span>
         </button>
       )}
@@ -325,25 +334,25 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brutal-black/70 backdrop-blur-sm p-4">
-      <form onSubmit={onSubmit} className="bg-brutal-yellow border-4 border-brutal-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in">
+      <form onSubmit={onSubmit} className="bg-[#09090c] border border-white/15 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full flex flex-col gap-5 animate-in zoom-in-95 duration-200">
         <div>
-          <h3 className="font-sans font-black text-2xl uppercase mb-2">Beri Nama Project</h3>
-          <p className="font-mono text-sm opacity-80">Masukkan nama untuk project ini sebelum membuat PRD dan Workflow.</p>
+          <h3 className="font-sans font-bold text-xl text-white mb-1">Beri Nama Proyek</h3>
+          <p className="font-sans text-xs text-zinc-400 leading-relaxed">Masukkan nama untuk proyek ini sebelum mengompilasi PRD dan node flowchart.</p>
         </div>
         <Input
           autoFocus
           required
           value={projectName}
           onChange={e => onNameChange(e.target.value)}
-          placeholder="Contoh: Aplikasi Kasir Super"
-          className="!bg-brutal-white"
+          placeholder="Contoh: Aplikasi Kasir Pintar"
+          className="!bg-black/60"
         />
-        <div className="flex gap-4 justify-end mt-2">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+        <div className="flex gap-3 justify-end pt-2">
+          <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
             Batal
           </Button>
-          <Button type="submit" variant="primary" disabled={!projectName.trim()}>
+          <Button type="submit" variant="primary" size="sm" disabled={!projectName.trim()}>
             Lanjut Generate &rarr;
           </Button>
         </div>

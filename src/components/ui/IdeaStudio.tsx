@@ -15,7 +15,11 @@ import {
   CheckCircle,
   WarningCircle,
   Gear,
-  ArrowRight
+  ArrowRight,
+  Buildings,
+  ChartLineUp,
+  Package,
+  SlidersHorizontal,
 } from '@phosphor-icons/react';
 
 type IdeaStudioProps = {
@@ -34,28 +38,36 @@ const QUICK_TAGS = [
 
 const STARTER_PROMPTS = [
   {
-    icon: '🏢',
+    icon: Buildings,
+    tag: 'PROPTECH AUTOMATION',
     title: 'Manajemen Kos & Tagihan Otomatis',
     desc: 'Pencatatan kamar, tagihan WhatsApp otomatis, scan meteran listrik AI.',
-    prompt: 'Buat aplikasi manajemen kos-kosan otomatis. Fiturnya meliputi pencatatan kamar dan penghuni, tagihan bulanan otomatis yang mengirim notifikasi via WhatsApp, sistem scan foto meteran listrik AI untuk hitung beban per kamar, dan dashboard ringkasan keuangan bulanan bagi pemilik kos.'
+    prompt: 'Buat aplikasi manajemen kos-kosan otomatis. Fiturnya meliputi pencatatan kamar dan penghuni, tagihan bulanan otomatis yang mengirim notifikasi via WhatsApp, sistem scan foto meteran listrik AI untuk hitung beban per kamar, dan dashboard ringkasan keuangan bulanan bagi pemilik kos.',
+    specs: '4 Nodes · PRD · Schema'
   },
   {
-    icon: '🤖',
+    icon: Robot,
+    tag: 'AI WORKFLOW AGENT',
     title: 'AI Customer Support Agent',
     desc: 'Integrasi WhatsApp, auto-reply knowledge base dokumen, eskalasi agen manusia.',
-    prompt: 'Bangun platform AI Customer Support multi-channel (WhatsApp, Webchat, Telegram). Fitur utama: bot cerdas yang dilatih dengan dokumen SOP & FAQ internal perusahaan, auto-resolve tiket keluhan, dan tombol handover instan ke customer service manusia saat problem butuh eskalasi.'
+    prompt: 'Bangun platform AI Customer Support multi-channel (WhatsApp, Webchat, Telegram). Fitur utama: bot cerdas yang dilatih dengan dokumen SOP & FAQ internal perusahaan, auto-resolve tiket keluhan, dan tombol handover instan ke customer service manusia saat problem butuh eskalasi.',
+    specs: '5 Nodes · PRD · AGENTS.md'
   },
   {
-    icon: '📊',
+    icon: ChartLineUp,
+    tag: 'FINTECH SAAS',
     title: 'B2B Subscription & Billing Portal',
     desc: 'Integrasi Stripe/Midtrans, tiered pricing, invoice PDF, tim multi-role.',
-    prompt: 'Rancang platform SaaS B2B untuk billing & subscription. Fitur: registrasi organisasi, manajemen tim multi-role (Owner, Admin, Member), tier langganan (Free, Pro, Enterprise), integrasi payment gateway dengan generate invoice PDF otomatis, dan analitik pendapatan bulanan (MRR/ARR).'
+    prompt: 'Rancang platform SaaS B2B untuk billing & subscription. Fitur: registrasi organisasi, manajemen tim multi-role (Owner, Admin, Member), tier langganan (Free, Pro, Enterprise), integrasi payment gateway dengan generate invoice PDF otomatis, dan analitik pendapatan bulanan (MRR/ARR).',
+    specs: '6 Nodes · PRD · ADR'
   },
   {
-    icon: '📦',
+    icon: Package,
+    tag: 'LOGISTICS & WMS',
     title: 'Inventory & Logistik Gudang',
     desc: 'Scan barcode stock opname, notifikasi stok menipis, laporan keluar masuk.',
-    prompt: 'Buat sistem manajemen pergudangan (WMS) berbasis web dan mobile. Fitur: scan barcode kamera untuk barang masuk/keluar, pelacakan multi-gudang secara real-time, notifikasi otomatis jika stok di bawah threshold, serta export laporan inventaris mingguan dan bulanan.'
+    prompt: 'Buat sistem manajemen pergudangan (WMS) berbasis web dan mobile. Fitur: scan barcode kamera untuk barang masuk/keluar, pelacakan multi-gudang secara real-time, notifikasi otomatis jika stok di bawah threshold, serta export laporan inventaris mingguan dan bulanan.',
+    specs: '4 Nodes · PRD · Schema'
   }
 ];
 
@@ -207,18 +219,19 @@ export function IdeaStudio({
 
   return (
     <div className="flex-1 w-full h-full overflow-y-auto bg-[#030304] text-white p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start relative selection:bg-white selection:text-black">
-      {/* Subtle Radial Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
+      {/* Ambient Lighting & Geometric Dot Matrix */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.07),transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
-      <div className="w-full max-w-3xl flex flex-col items-center gap-6 z-0 pt-2 sm:pt-6">
+      <div className="w-full max-w-3xl flex flex-col items-center gap-6 z-0 pt-2 sm:pt-4">
         
-        {/* Existing Project Banner */}
+        {/* Existing Project Alert Banner */}
         {projectId && (
           <div className="w-full bg-white/[0.03] border border-white/15 rounded-xl px-4 py-3 flex items-center justify-between gap-3 animate-in fade-in">
             <div className="flex items-center gap-2.5 min-w-0">
               <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="text-xs font-sans text-zinc-300 truncate">
-                Proyek ini telah memiliki dokumen spesifikasi & tree.
+                Proyek ini telah memiliki dokumen spesifikasi & flow node tree.
               </span>
             </div>
             <Link href={`/projects/${projectId}`} className="shrink-0">
@@ -229,17 +242,17 @@ export function IdeaStudio({
           </div>
         )}
 
-        {/* Minimal Hero Header */}
-        <div className="flex flex-col items-center text-center gap-2.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300">
-            <Sparkle weight="fill" className="w-3.5 h-3.5" />
+        {/* Studio Hero Header */}
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300">
+            <Sparkle weight="fill" className="w-3.5 h-3.5 text-zinc-200" />
             <span>AI Architecture & Spec Studio</span>
           </div>
-          <h1 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl tracking-tight text-white">
+          <h1 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
             Tuangkan Ide Aplikasi Anda
           </h1>
           <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
-            Deskripsikan aplikasi, alur kerja, atau problem yang ingin diselesaikan. AI akan merancang arsitektur visual, PRD, dan kode secara otomatis.
+            Deskripsikan aplikasi, alur pengguna, atau problem yang ingin diselesaikan. AI akan merancang arsitektur visual, PRD, dan kode secara otomatis.
           </p>
         </div>
 
@@ -251,102 +264,112 @@ export function IdeaStudio({
           </div>
         )}
 
-        {/* Unified AI Prompt Studio Box (v0 / Lovable style) */}
-        <div className="w-full rounded-2xl border border-white/15 bg-[#09090c] focus-within:border-white/40 focus-within:ring-2 focus-within:ring-white/10 shadow-[0_10px_35px_-5px_rgba(0,0,0,0.8)] transition-all duration-200 overflow-hidden">
+        {/* Double-Bezel Hardware Prompt Cockpit */}
+        <div className="w-full p-2 sm:p-2.5 rounded-3xl bg-zinc-900/60 border border-white/10 ring-1 ring-white/5 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.02)] focus-within:border-white/30 focus-within:ring-white/10 transition-all duration-300">
           
-          {/* Main Textarea */}
-          <div className="p-4 sm:p-5">
-            <textarea
-              ref={textareaRef}
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={status === 'generating'}
-              rows={4}
-              placeholder="Jelaskan aplikasi yang ingin Anda bangun... (Tekan Cmd+Enter / Ctrl+Enter untuk kirim)"
-              className="w-full bg-transparent text-sm sm:text-base text-white placeholder:text-zinc-600 focus:outline-none resize-none leading-relaxed font-sans"
-            />
-          </div>
-
-          {/* Optional Preferences Drawer inside Box */}
-          {showAdvanced && (
-            <div className="mx-4 mb-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
-              <div>
-                <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
-                  Target Pengguna
-                </label>
-                <input
-                  type="text"
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                  disabled={status === 'generating'}
-                  placeholder="Misal: Pemilik kos, mahasiswa, UMKM"
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
-                />
-              </div>
-              <div>
-                <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
-                  Tech Stack Preferensi
-                </label>
-                <input
-                  type="text"
-                  value={techStack}
-                  onChange={(e) => setTechStack(e.target.value)}
-                  disabled={status === 'generating'}
-                  placeholder="Misal: Next.js, Supabase, Tailwind, WhatsApp API"
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
-                />
-              </div>
+          {/* Inner Obsidian Typing Canvas */}
+          <div className="rounded-2xl bg-[#08080b]/90 border border-white/5 overflow-hidden shadow-inner">
+            
+            {/* Textarea */}
+            <div className="p-4 sm:p-5">
+              <textarea
+                ref={textareaRef}
+                value={idea}
+                onChange={(e) => setIdea(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={status === 'generating'}
+                rows={4}
+                placeholder="Jelaskan aplikasi yang ingin Anda bangun (alur pengguna, integrasi payment/AI, aturan bisnis)..."
+                className="w-full bg-transparent text-sm sm:text-base text-white placeholder:text-zinc-500 focus:outline-none resize-none leading-relaxed font-sans"
+              />
             </div>
-          )}
 
-          {/* Integrated Action Toolbar */}
-          <div className="px-4 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-[#050507]">
-            {/* Left Controls */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
-                  showAdvanced
-                    ? 'bg-white/10 border-white/30 text-white'
-                    : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Gear weight="bold" className="w-3.5 h-3.5" />
-                <span>Preferensi</span>
-              </button>
-
-              <div className="hidden md:flex items-center gap-1 pl-1">
-                {QUICK_TAGS.slice(0, 3).map((tag) => (
-                  <button
-                    key={tag.label}
-                    type="button"
-                    onClick={() => handleAddTag(tag.snippet)}
+            {/* Optional Preferences Drawer */}
+            {showAdvanced && (
+              <div className="mx-4 mb-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
+                <div>
+                  <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
+                    Target Pengguna
+                  </label>
+                  <input
+                    type="text"
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
                     disabled={status === 'generating'}
-                    className="px-2 py-1 rounded-md text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
-                  >
-                    +{tag.label}
-                  </button>
-                ))}
+                    placeholder="Misal: Pemilik kos, mahasiswa, UMKM"
+                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                  />
+                </div>
+                <div>
+                  <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
+                    Tech Stack Preferensi
+                  </label>
+                  <input
+                    type="text"
+                    value={techStack}
+                    onChange={(e) => setTechStack(e.target.value)}
+                    disabled={status === 'generating'}
+                    placeholder="Misal: Next.js, Supabase, Tailwind, WhatsApp API"
+                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Right Controls */}
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[10px] text-zinc-500">
-                {idea.trim().length > 0 ? `${idea.trim().length} chars` : ''}
-              </span>
+            {/* Integrated Action Toolbar */}
+            <div className="px-4 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-[#050507]">
+              {/* Left Controls */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    showAdvanced
+                      ? 'bg-white/10 border-white/30 text-white'
+                      : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <SlidersHorizontal weight="bold" className="w-3.5 h-3.5" />
+                  <span>Preferensi</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={!idea.trim() || status === 'generating'}
-                className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 disabled:opacity-30 disabled:hover:bg-white font-sans font-semibold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md cursor-pointer disabled:pointer-events-none"
-              >
-                <span>{status === 'generating' ? 'Drafting Spec...' : projectId ? 'Regenerate' : 'Generate Spec'}</span>
-                <ArrowUp weight="bold" className="w-3.5 h-3.5" />
-              </button>
+                <div className="hidden md:flex items-center gap-1 pl-1">
+                  {QUICK_TAGS.slice(0, 3).map((tag) => {
+                    const TagIcon = tag.icon;
+                    return (
+                      <button
+                        key={tag.label}
+                        type="button"
+                        onClick={() => handleAddTag(tag.snippet)}
+                        disabled={status === 'generating'}
+                        className="px-2 py-1 rounded-md text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <TagIcon weight="bold" className="w-3 h-3" />
+                        <span>+{tag.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right Controls */}
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline-block font-mono text-[10px] text-zinc-500">
+                  {idea.trim().length > 0 ? `${idea.trim().length} chars · ` : ''}⌘⏎
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={!idea.trim() || status === 'generating'}
+                  className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 disabled:opacity-30 disabled:hover:bg-white font-sans font-semibold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer disabled:pointer-events-none"
+                >
+                  <span>{status === 'generating' ? 'Drafting Spec...' : projectId ? 'Regenerate' : 'Generate Spec'}</span>
+                  <div className="w-5 h-5 rounded-full bg-black/10 flex items-center justify-center">
+                    <ArrowUp weight="bold" className="w-3 h-3 text-black" />
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -370,32 +393,51 @@ export function IdeaStudio({
           </div>
         )}
 
-        {/* Clickable Starter Prompt Cards */}
+        {/* Curated Architecture Blueprints */}
         {status !== 'generating' && (
-          <div className="w-full flex flex-col gap-2.5 mt-2">
-            <div className="text-[11px] font-mono text-zinc-500 px-1 uppercase tracking-wider">
-              Atau coba ide siap pakai:
+          <div className="w-full flex flex-col gap-3 mt-1">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">
+                Contoh Blueprint Arsitektur Siap Pakai:
+              </span>
+              <span className="text-[10px] font-mono text-zinc-600 hidden sm:inline-block">
+                Klik untuk memuat
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {STARTER_PROMPTS.map((ex) => (
-                <button
-                  key={ex.title}
-                  type="button"
-                  onClick={() => setIdea(ex.prompt)}
-                  className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/25 transition-all text-left flex items-start gap-3 group cursor-pointer"
-                >
-                  <span className="text-xl shrink-0 mt-0.5">{ex.icon}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors flex items-center justify-between">
-                      <span>{ex.title}</span>
-                      <ArrowRight weight="bold" className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {STARTER_PROMPTS.map((ex) => {
+                const IconComponent = ex.icon;
+                return (
+                  <button
+                    key={ex.title}
+                    type="button"
+                    onClick={() => setIdea(ex.prompt)}
+                    className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/30 transition-all text-left flex items-start gap-3.5 group cursor-pointer shadow-sm hover:shadow-xl backdrop-blur-md"
+                  >
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white shrink-0 group-hover:bg-white group-hover:text-black transition-colors">
+                      <IconComponent weight="fill" size={20} />
                     </div>
-                    <div className="text-[11px] text-zinc-400 truncate mt-0.5 leading-relaxed">
-                      {ex.desc}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 font-semibold">
+                          {ex.tag}
+                        </span>
+                        <ArrowRight weight="bold" className="w-3 h-3 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100" />
+                      </div>
+                      <div className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors truncate">
+                        {ex.title}
+                      </div>
+                      <div className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
+                        {ex.desc}
+                      </div>
+                      <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center gap-1.5 font-mono text-[10px] text-zinc-500">
+                        <span>Output:</span>
+                        <span className="text-zinc-400 font-medium">{ex.specs}</span>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

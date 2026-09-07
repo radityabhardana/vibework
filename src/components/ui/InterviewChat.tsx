@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { PaperPlaneRight, Lightning } from '@phosphor-icons/react';
+import { PaperPlaneRight, Lightning, Sparkle } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -424,27 +424,27 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         onPhaseChange={setActivePhaseTab}
       />
 
-      <div className="flex-1 flex flex-col h-full bg-brutal-white overflow-hidden relative">
+      <div className="flex-1 flex flex-col h-full bg-[#050507] text-white overflow-hidden relative selection:bg-white selection:text-black">
 
         {messages.length > 0 && (
           <div className="flex flex-col shrink-0">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b-4 border-brutal-black bg-brutal-yellow p-3 md:p-4">
-              <h2 className="min-w-0 flex-1 font-sans text-base font-black uppercase md:text-xl">Fase {activePhaseTab}: {PHASE_TITLES[activePhaseTab - 1]}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#08080b]/90 backdrop-blur-md p-3 md:p-4">
+              <h2 className="min-w-0 flex-1 font-sans text-sm md:text-base font-bold text-white tracking-tight">Fase {activePhaseTab}: {PHASE_TITLES[activePhaseTab - 1]}</h2>
               <div className="flex shrink-0 items-center gap-2">
-                <span className={`border-2 border-brutal-black px-2 py-1 font-mono text-[10px] font-bold uppercase sm:text-xs ${
-                  initialProjectId ? 'bg-brutal-blue text-brutal-white' : 'bg-brutal-white text-brutal-black'
+                <span className={`px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase ${
+                  initialProjectId ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border border-white/10 bg-white/5 text-zinc-400'
                 }`}>
                   {initialProjectId ? 'Generated' : 'Not generated'}
                 </span>
                 {initialProjectId && (
                   <Link href={`/projects/${initialProjectId}`}>
-                    <Button variant="secondary" size="sm" className="!border-2 !px-3 !py-1.5 !shadow-[3px_3px_0px_0px_rgba(5,5,5,1)]">
+                    <Button variant="secondary" size="sm" className="!px-3 !py-1 text-xs font-mono">
                       Open Flow &nearr;
                     </Button>
                   </Link>
                 )}
                 {isComplete ? (
-                  <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className={status === 'generating' ? '!border-2 !px-3 !py-1.5' : 'animate-pulse !border-2 !px-3 !py-1.5'}>
+                  <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className="text-xs font-sans">
                     {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : initialProjectId ? 'Regenerate Flow' : 'Generate Flow'}
                   </Button>
                 ) : hasUserResponse ? (
@@ -453,10 +453,10 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     size="sm" 
                     onClick={initiateGenerateWorkflow} 
                     disabled={status !== 'idle'} 
-                    className="!border-2 !px-3 !py-1.5 !bg-brutal-white hover:!bg-amber-50 gap-1.5 !shadow-[3px_3px_0px_0px_rgba(5,5,5,1)] text-xs md:text-sm font-black" 
+                    className="gap-1.5 text-xs font-sans font-semibold" 
                     title="Buat PRD & Flow sekarang (AI akan otomatis melengkapi sisa asumsi)"
                   >
-                    <Lightning weight="fill" className="w-4 h-4 text-amber-600 shrink-0" />
+                    <Lightning weight="fill" className="w-3.5 h-3.5" />
                     {status === 'generating' ? `${Math.round(generationProgress)}%...` : initialProjectId ? 'Regenerate Flow' : '⚡ Express Generate'}
                   </Button>
                 ) : null}
@@ -464,23 +464,22 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
             </div>
 
             {status === 'generating' && (
-              <div className="w-full h-6 bg-brutal-white border-b-4 border-brutal-black relative overflow-hidden flex items-center">
+              <div className="w-full h-1.5 bg-white/10 relative overflow-hidden flex items-center">
                 <div
-                  className="absolute top-0 left-0 h-full bg-brutal-blue transition-all duration-500 ease-out border-r-4 border-brutal-black"
+                  className="h-full bg-white rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                   style={{ width: `${generationProgress}%` }}
                 />
-                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#000_10px,#000_20px)]" />
               </div>
             )}
 
-            <div className="md:hidden bg-brutal-white border-b-4 border-brutal-black flex overflow-x-auto">
+            <div className="md:hidden bg-[#08080b] border-b border-white/10 flex overflow-x-auto">
               {[1, 2, 3, 4, 5].map(p => (
                 <button
                   key={p}
                   onClick={() => setActivePhaseTab(p)}
                   disabled={p > maxPhase}
-                  className={`shrink-0 px-4 py-3 border-r-4 border-brutal-black font-mono font-bold text-sm ${
-                    activePhaseTab === p ? 'bg-brutal-blue text-brutal-white' : p > maxPhase ? 'opacity-30' : 'hover:bg-brutal-yellow'
+                  className={`shrink-0 px-3.5 py-2.5 border-r border-white/10 font-mono text-xs font-semibold ${
+                    activePhaseTab === p ? 'bg-white text-black' : p > maxPhase ? 'opacity-30 text-zinc-600' : 'text-zinc-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   Fase {p}
@@ -490,17 +489,21 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           </div>
         )}
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6 bg-[#f4f4f0] relative">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-5 bg-[#030304] relative">
           {messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-1000">
-              <h1 className="text-4xl md:text-6xl font-black font-sans uppercase mb-6 tracking-tighter text-brutal-black">
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-700">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300 mb-4">
+                <Sparkle weight="fill" className="w-3.5 h-3.5" />
+                <span>Interactive Architecture Interview</span>
+              </div>
+              <h1 className="text-3xl md:text-5xl font-extrabold font-sans tracking-tight text-white mb-4">
                 Vibework Engine
               </h1>
-              <p className="text-lg md:text-xl font-mono text-brutal-black max-w-2xl bg-brutal-yellow p-6 border-4 border-brutal-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] leading-relaxed font-bold">
-                System Architect siap untuk menginterogasi Anda. Beritahu saya aplikasi apa yang ingin Anda bangun, dan kita akan merancang PRD yang sempurna bersama.
+              <p className="text-xs md:text-sm font-sans text-zinc-400 max-w-lg leading-relaxed rounded-2xl border border-white/10 bg-white/[0.02] p-6 shadow-xl backdrop-blur-md">
+                System Architect siap untuk menginterogasi kebutuhan sistem Anda. Jelaskan aplikasi yang ingin dibangun untuk merancang PRD dan node flowchart terperinci.
               </p>
               {error && (
-                <Card bg="white" className="!p-4 mt-8 border-brutal-red text-brutal-red font-bold uppercase">
+                <Card bg="red" className="!p-4 mt-6 border-rose-500/30 text-rose-300 text-xs font-mono">
                   Error: {error}
                 </Card>
               )}
@@ -522,11 +525,11 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
               ))}
 
               {activePhaseTab < maxPhase && (
-                <div className="mt-8 mb-4 border-4 border-brutal-black bg-brutal-yellow p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] rotate-[-1deg] animate-in slide-in-from-bottom-4 duration-500 max-w-lg mx-auto w-full flex flex-col gap-4 text-center">
-                  <h3 className="font-sans font-black text-2xl uppercase">Fase {activePhaseTab} Selesai!</h3>
-                  <p className="font-mono text-sm font-bold opacity-80">Fase ini ditampilkan sebagai riwayat dan tidak dapat diubah dari sini.</p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center mt-2">
-                    <Button variant="primary" onClick={() => setActivePhaseTab(activePhaseTab + 1)}>
+                <div className="mt-6 mb-2 rounded-2xl border border-white/10 bg-white/[0.02] p-5 max-w-md mx-auto w-full flex flex-col gap-3 text-center shadow-xl backdrop-blur-md animate-in fade-in">
+                  <h3 className="font-sans font-bold text-base text-white">Fase {activePhaseTab} Selesai</h3>
+                  <p className="font-sans text-xs text-zinc-400">Fase ini disimpan sebagai riwayat dan telah terkunci.</p>
+                  <div className="flex justify-center mt-1">
+                    <Button variant="primary" size="sm" onClick={() => setActivePhaseTab(activePhaseTab + 1)}>
                       Lanjut Fase {activePhaseTab + 1} &rarr;
                     </Button>
                   </div>
@@ -535,16 +538,17 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
 
               {status === 'submitted' && activePhaseTab === maxPhase && (
                 <div className="flex justify-start">
-                  <Card bg="white" className="!p-4">
-                    <span className="font-mono animate-pulse">Architect is typing...</span>
-                  </Card>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-4 py-2.5 text-xs text-zinc-400 font-mono flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Architect sedang memproses tanggapan...</span>
+                  </div>
                 </div>
               )}
               {error && (
-                <div className="flex justify-center mt-4">
-                  <Card bg="white" className="!p-4 border-brutal-red text-brutal-red font-bold uppercase">
+                <div className="flex justify-center mt-3">
+                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 font-mono text-xs text-rose-200">
                     Error: {error}
-                  </Card>
+                  </div>
                 </div>
               )}
             </>
@@ -552,15 +556,15 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         </div>
 
         {hasUserResponse && !isComplete && status === 'idle' && (
-          <div className="bg-amber-50 border-t-4 border-brutal-black px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-2 font-mono text-xs font-bold text-brutal-black">
-              <Lightning weight="fill" className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>Sudah cukup dengan informasi saat ini?</span>
+          <div className="mx-4 mb-2 p-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2 font-sans text-xs text-zinc-300">
+              <Lightning weight="fill" className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Sudah cukup dengan informasi yang tertera?</span>
             </div>
             <button
               type="button"
               onClick={initiateGenerateWorkflow}
-              className="inline-flex items-center gap-1.5 font-mono font-bold text-xs uppercase px-3 py-1.5 bg-brutal-yellow hover:bg-yellow-400 text-brutal-black border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 cursor-pointer transition-transform"
+              className="inline-flex items-center gap-1.5 font-sans font-semibold text-xs px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 cursor-pointer transition-colors shadow-sm"
             >
               <Lightning weight="bold" className="w-3.5 h-3.5" />
               Generate Sekarang (AI Lengkapi Sisanya)
@@ -585,24 +589,24 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           if (!shouldShowInput) return null;
 
           return (
-            <div className="p-4 md:p-6 bg-brutal-white border-t-4 border-brutal-black shrink-0 relative">
-              <form onSubmit={handleFormSubmit} className="max-w-4xl mx-auto flex gap-3">
+            <div className="p-3 md:p-4 bg-[#08080b] border-t border-white/10 shrink-0 relative">
+              <form onSubmit={handleFormSubmit} className="max-w-4xl mx-auto flex gap-2.5">
                 <Input
                   ref={inputRef}
                   value={localInput}
                   onChange={(e) => setLocalInput(e.target.value)}
                   placeholder={messages.length === 0 ? "Ketik ide aplikasi Anda di sini..." : "Ketik jawaban Anda (atau klik 'Generate Sekarang')..."}
-                  className="flex-1 !py-6 !text-lg !rounded-none !border-4 !border-brutal-black !shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] !px-6 focus:!translate-y-1 focus:!translate-x-1 focus:!shadow-none transition-all"
+                  className="flex-1 !rounded-xl !border-white/10 !bg-black/60 focus:!border-white/30 text-xs sm:text-sm text-white"
                   disabled={status !== 'idle'}
                   maxLength={MAX_MESSAGE_LENGTH}
                 />
                 <Button
                   type="submit"
                   variant="primary"
-                  className="!px-6 !rounded-none !border-4 !shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:!translate-y-1 hover:!translate-x-1 hover:!shadow-none transition-all"
+                  className="!rounded-xl !px-4"
                   disabled={status !== 'idle' || !localInput.trim()}
                 >
-                  <PaperPlaneRight weight="bold" className="w-8 h-8" />
+                  <PaperPlaneRight weight="bold" className="w-4 h-4" />
                 </Button>
               </form>
             </div>

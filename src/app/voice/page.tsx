@@ -479,133 +479,217 @@ export default function VoiceStudioPage() {
         : playbackState === 'error' ? t('Gagal', 'Failed') : t('Siap', 'Ready');
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[#e5e5f7]">
-      <header className="flex min-h-20 shrink-0 items-center justify-between gap-3 border-b-4 border-brutal-black bg-brutal-white px-3 py-3 sm:px-6">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#030303] text-white selection:bg-white selection:text-black relative">
+      {/* Ambient Top Glow & Subtle Dot Grid */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+
+      {/* Top Navbar */}
+      <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#030303]/80 backdrop-blur-md px-4 sm:px-6 z-10">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/" className="shrink-0">
-            <Button variant="secondary" size="sm" className="!px-3" aria-label={t('Kembali ke dashboard', 'Back to dashboard')}>
-              <ArrowLeft weight="bold" size={20} />
+            <Button variant="secondary" size="sm" className="!p-2 text-zinc-400 hover:text-white" aria-label={t('Kembali ke dashboard', 'Back to dashboard')}>
+              <ArrowLeft weight="bold" size={18} />
             </Button>
           </Link>
           <div className="min-w-0">
-            <h1 className="truncate font-sans text-lg font-black uppercase sm:text-2xl">Voice Warehouse</h1>
-            <p className="hidden font-mono text-xs font-bold opacity-55 sm:block">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate font-sans text-base font-bold text-white sm:text-lg">Voice Warehouse</h1>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full border border-white/15 bg-white/5 font-mono text-[10px] text-zinc-300">
+                AI Studio
+              </span>
+            </div>
+            <p className="hidden font-sans text-xs text-zinc-400 sm:block">
               {t('Suara perangkat dan Qwen TTS dalam satu studio.', 'Device voices and Qwen TTS in one studio.')}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className={`hidden border-2 border-brutal-black px-2 py-1 font-mono text-[10px] font-bold uppercase md:inline-block ${providerStatus?.configured ? 'bg-brutal-yellow' : 'bg-gray-200'}`}>
-            {providerStatus?.configured ? 'QWEN DIRECT' : t('Provider belum siap', 'Provider not ready')}
+        <div className="flex shrink-0 items-center gap-3">
+          <span className={`hidden px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold md:inline-flex items-center gap-1.5 ${providerStatus?.configured ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border border-white/10 bg-white/5 text-zinc-400'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${providerStatus?.configured ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
+            {providerStatus?.configured ? 'QWEN DIRECT ACTIVE' : t('Provider belum siap', 'Provider not ready')}
           </span>
           <LanguageSwitcher />
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      {/* Main Content */}
+      <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 z-0">
         <div className="mx-auto grid w-full max-w-[1440px] gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(23rem,0.85fr)]">
-          <section className="min-w-0 border-4 border-brutal-black bg-brutal-white shadow-brutal">
-            <div className="border-b-4 border-brutal-black p-4 sm:p-6">
+          
+          {/* Left Column: Voice Warehouse */}
+          <section className="min-w-0 rounded-2xl border border-white/10 bg-zinc-900/40 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="border-b border-white/10 p-4 sm:p-6 bg-white/[0.01]">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                 <div>
-                  <div className="mb-2 flex items-center gap-3">
-                    <SpeakerHigh weight="bold" size={28} />
-                    <h2 className="font-sans text-2xl font-black uppercase sm:text-3xl">{t('Gudang suara', 'Voice warehouse')}</h2>
+                  <div className="mb-1.5 flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
+                      <SpeakerHigh weight="fill" size={20} />
+                    </div>
+                    <h2 className="font-sans text-xl font-bold text-white sm:text-2xl">{t('Gudang Suara', 'Voice Warehouse')}</h2>
                   </div>
-                  <p className="max-w-2xl font-mono text-sm font-medium leading-relaxed opacity-65">
+                  <p className="max-w-2xl font-sans text-xs text-zinc-400 leading-relaxed">
                     {t('Clone sampel berizin, rancang karakter original, atau gunakan voice perangkat.', 'Clone a consented sample, design an original character, or use a device voice.')}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {hiddenVoiceIds.length > 0 && (
-                    <button type="button" onClick={restoreSystemVoices} className="font-mono text-[10px] font-bold uppercase underline underline-offset-4">
+                    <button type="button" onClick={restoreSystemVoices} className="font-mono text-[11px] text-zinc-400 hover:text-white underline underline-offset-4 cursor-pointer">
                       {t(`Pulihkan ${hiddenVoiceIds.length}`, `Restore ${hiddenVoiceIds.length}`)}
                     </button>
                   )}
-                  <span className="border-2 border-brutal-black bg-brutal-blue px-3 py-1 font-mono text-xs font-bold text-brutal-white">{allVoices.length} {t('SUARA', 'VOICES')}</span>
-                  <Button type="button" variant="primary" size="sm" onClick={() => setShowAddVoice(current => !current)} className="gap-2 !border-2 !px-3 !py-1.5 !shadow-none">
-                    <Plus weight="bold" size={18} /> {t('Buat suara', 'Create voice')}
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-zinc-300">
+                    {allVoices.length} {t('SUARA', 'VOICES')}
+                  </span>
+                  <Button type="button" variant="primary" size="sm" onClick={() => setShowAddVoice(current => !current)} className="gap-1.5 text-xs font-sans">
+                    <Plus weight="bold" size={14} /> {t('Buat Suara', 'Create Voice')}
                   </Button>
                 </div>
               </div>
 
+              {/* Add Voice Form */}
               {showAddVoice && (
-                <form onSubmit={addVoice} className="mt-5 border-4 border-brutal-black bg-brutal-yellow p-4">
-                  <div className="mb-4 grid grid-cols-2 border-4 border-brutal-black bg-brutal-white">
-                    <button type="button" onClick={() => setAddMode('clone')} className={`flex items-center justify-center gap-2 border-r-2 border-brutal-black px-3 py-3 font-sans text-xs font-black uppercase ${addMode === 'clone' ? 'bg-brutal-blue text-brutal-white' : ''}`}>
-                      <UploadSimple weight="bold" size={18} /> {t('Clone sampel', 'Clone sample')}
+                <form onSubmit={addVoice} className="mt-5 rounded-xl border border-white/15 bg-[#09090c] p-4 sm:p-5 shadow-2xl animate-in fade-in">
+                  <div className="mb-4 grid grid-cols-2 p-1 rounded-xl bg-black/50 border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setAddMode('clone')}
+                      className={`flex items-center justify-center gap-2 py-2 rounded-lg font-sans text-xs font-semibold transition-colors cursor-pointer ${
+                        addMode === 'clone' ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <UploadSimple weight="bold" size={16} /> {t('Clone Sampel', 'Clone Sample')}
                     </button>
-                    <button type="button" onClick={() => setAddMode('design')} className={`flex items-center justify-center gap-2 border-l-2 border-brutal-black px-3 py-3 font-sans text-xs font-black uppercase ${addMode === 'design' ? 'bg-brutal-blue text-brutal-white' : ''}`}>
-                      <MagicWand weight="bold" size={18} /> {t('Rancang suara', 'Design voice')}
+                    <button
+                      type="button"
+                      onClick={() => setAddMode('design')}
+                      className={`flex items-center justify-center gap-2 py-2 rounded-lg font-sans text-xs font-semibold transition-colors cursor-pointer ${
+                        addMode === 'design' ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <MagicWand weight="bold" size={16} /> {t('Rancang Suara', 'Design Voice')}
                     </button>
                   </div>
 
                   {!providerStatus?.configured && (
-                    <div className="mb-4 border-4 border-brutal-black bg-brutal-red p-3 font-mono text-[11px] font-bold text-brutal-white">
+                    <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 font-mono text-xs text-amber-200">
                       {t('Set DASHSCOPE_* dan ALIYUN_OSS_* pada server untuk mengaktifkan clone dan design.', 'Set DASHSCOPE_* and ALIYUN_OSS_* on the server to enable clone and design.')}
                     </div>
                   )}
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="font-sans text-xs font-black uppercase">
-                      {t('Nama voice', 'Voice name')}
-                      <input value={voiceName} onChange={event => setVoiceName(event.target.value)} maxLength={80} placeholder={t('Contoh: Narator Senja', 'Example: Dusk Narrator')} className="mt-2 w-full border-4 border-brutal-black bg-brutal-white px-3 py-2 font-mono text-sm font-bold normal-case outline-none focus:ring-4 focus:ring-brutal-blue" />
+                    <label className="font-mono text-xs text-zinc-300">
+                      <span className="block mb-1.5 uppercase text-[10px] text-zinc-400 tracking-wider">{t('Nama Voice', 'Voice Name')}</span>
+                      <input
+                        value={voiceName}
+                        onChange={event => setVoiceName(event.target.value)}
+                        maxLength={80}
+                        placeholder={t('Contoh: Narator Senja', 'Example: Dusk Narrator')}
+                        className="w-full rounded-xl border border-white/10 bg-black/60 px-3.5 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                      />
                     </label>
-                    <label className="font-sans text-xs font-black uppercase">
-                      {t('Kode bahasa', 'Language code')}
-                      <input value={voiceLang} onChange={event => setVoiceLang(event.target.value)} maxLength={20} placeholder="id-ID" className="mt-2 w-full border-4 border-brutal-black bg-brutal-white px-3 py-2 font-mono text-sm font-bold normal-case outline-none focus:ring-4 focus:ring-brutal-blue" />
+                    <label className="font-mono text-xs text-zinc-300">
+                      <span className="block mb-1.5 uppercase text-[10px] text-zinc-400 tracking-wider">{t('Kode Bahasa', 'Language Code')}</span>
+                      <input
+                        value={voiceLang}
+                        onChange={event => setVoiceLang(event.target.value)}
+                        maxLength={20}
+                        placeholder="id-ID"
+                        className="w-full rounded-xl border border-white/10 bg-black/60 px-3.5 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                      />
                     </label>
                   </div>
 
                   {addMode === 'clone' ? (
-                    <label className="mt-4 block font-sans text-xs font-black uppercase">
-                      {t('Sampel jernih 10-20 detik (maks. 10 MB)', 'Clear 10-20 second sample (max. 10 MB)')}
-                      <input type="file" accept="audio/*" onChange={event => setVoiceFile(event.target.files?.[0] || null)} className="mt-2 block w-full border-4 border-brutal-black bg-brutal-white p-2 font-mono text-xs font-bold file:mr-3 file:border-2 file:border-brutal-black file:bg-brutal-white file:px-3 file:py-1 file:font-bold" />
+                    <label className="mt-4 block font-mono text-xs text-zinc-300">
+                      <span className="block mb-1.5 uppercase text-[10px] text-zinc-400 tracking-wider">{t('Sampel Jernih 10-20 Detik (Maks. 10 MB)', 'Clear 10-20 Second Sample (Max. 10 MB)')}</span>
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={event => setVoiceFile(event.target.files?.[0] || null)}
+                        className="block w-full rounded-xl border border-white/10 bg-black/60 p-2 font-mono text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border file:border-white/15 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-sans file:text-white file:cursor-pointer"
+                      />
                     </label>
                   ) : (
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {(Object.keys(DESIGN_OPTIONS) as Array<keyof typeof DESIGN_OPTIONS>).map(key => (
-                        <label key={key} className="font-sans text-[10px] font-black uppercase">
-                          {optionLabel(key)}
-                          <select value={design[key]} onChange={event => updateDesign(key, event.target.value as never)} className="mt-1 w-full border-3 border-brutal-black bg-brutal-white px-2 py-2 font-mono text-xs font-bold capitalize outline-none focus:ring-3 focus:ring-brutal-blue">
+                        <label key={key} className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                          <span className="block mb-1">{optionLabel(key)}</span>
+                          <select
+                            value={design[key]}
+                            onChange={event => updateDesign(key, event.target.value as never)}
+                            className="w-full rounded-lg border border-white/10 bg-black/70 px-2.5 py-1.5 font-sans text-xs text-white capitalize focus:outline-none focus:border-white/30"
+                          >
                             {DESIGN_OPTIONS[key].map(option => <option key={option} value={option}>{optionLabel(option)}</option>)}
                           </select>
                         </label>
                       ))}
-                      <label className="font-sans text-[10px] font-black uppercase sm:col-span-2 lg:col-span-3">
-                        {t('Arahan tambahan', 'Additional direction')}
-                        <textarea value={design.customInstruction} onChange={event => updateDesign('customInstruction', event.target.value)} maxLength={400} rows={2} placeholder={t('Contoh: artikulasi Indonesia yang natural, jeda pendek...', 'Example: natural Indonesian articulation, short pauses...')} className="mt-1 w-full resize-y border-3 border-brutal-black bg-brutal-white px-3 py-2 font-mono text-xs font-bold normal-case outline-none focus:ring-3 focus:ring-brutal-blue" />
+                      <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider sm:col-span-2 lg:col-span-3">
+                        <span className="block mb-1">{t('Arahan Tambahan', 'Additional Direction')}</span>
+                        <textarea
+                          value={design.customInstruction}
+                          onChange={event => updateDesign('customInstruction', event.target.value)}
+                          maxLength={400}
+                          rows={2}
+                          placeholder={t('Contoh: artikulasi Indonesia yang natural, jeda pendek...', 'Example: natural Indonesian articulation, short pauses...')}
+                          className="w-full resize-y rounded-xl border border-white/10 bg-black/60 px-3 py-2 font-sans text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
+                        />
                       </label>
                     </div>
                   )}
 
-                  <label className="mt-4 flex items-start gap-3 font-mono text-xs font-bold leading-relaxed">
-                    <input type="checkbox" checked={consentConfirmed} onChange={event => setConsentConfirmed(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-                    {addMode === 'clone'
-                      ? t('Saya memiliki izin eksplisit pemilik suara untuk cloning dan sintesis.', 'I have the voice owner\'s explicit permission for cloning and synthesis.')
-                      : t('Saya akan menggunakan karakter original ini secara bertanggung jawab.', 'I will use this original character responsibly.')}
+                  <label className="mt-4 flex items-start gap-2.5 font-sans text-xs text-zinc-400 leading-relaxed cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentConfirmed}
+                      onChange={event => setConsentConfirmed(event.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/60 accent-white shrink-0"
+                    />
+                    <span>
+                      {addMode === 'clone'
+                        ? t('Saya memiliki izin eksplisit pemilik suara untuk cloning dan sintesis.', 'I have the voice owner\'s explicit permission for cloning and synthesis.')
+                        : t('Saya akan menggunakan karakter original ini secara bertanggung jawab.', 'I will use this original character responsibly.')}
+                    </span>
                   </label>
-                  <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <p className="font-mono text-[10px] font-bold uppercase opacity-60">{addMode === 'clone' ? 'QWEN AUDIO ENROLLMENT' : 'QWEN VOICE DESIGN + ENROLLMENT'}</p>
+
+                  <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center border-t border-white/10 pt-3">
+                    <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider">
+                      {addMode === 'clone' ? 'QWEN AUDIO ENROLLMENT' : 'QWEN VOICE DESIGN + ENROLLMENT'}
+                    </p>
                     <div className="flex gap-2">
-                      <Button type="button" variant="secondary" size="sm" onClick={resetAddForm} className="!border-2 !shadow-none">{t('Batal', 'Cancel')}</Button>
-                      <Button type="submit" variant="primary" size="sm" disabled={savingVoice || !providerStatus?.configured} className="!border-2 !shadow-none">
-                        {savingVoice ? t('Memproses...', 'Processing...') : addMode === 'clone' ? t('Clone voice', 'Clone voice') : t('Rancang voice', 'Design voice')}
+                      <Button type="button" variant="secondary" size="sm" onClick={resetAddForm}>
+                        {t('Batal', 'Cancel')}
+                      </Button>
+                      <Button type="submit" variant="primary" size="sm" disabled={savingVoice || !providerStatus?.configured}>
+                        {savingVoice ? t('Memproses...', 'Processing...') : addMode === 'clone' ? t('Clone Voice', 'Clone Voice') : t('Rancang Voice', 'Design Voice')}
                       </Button>
                     </div>
                   </div>
                 </form>
               )}
 
+              {/* Search and Language Filters */}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <label className="relative min-w-0 flex-1">
                   <span className="sr-only">{t('Cari suara', 'Search voices')}</span>
-                  <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2" weight="bold" size={20} />
-                  <input value={query} onChange={event => setQuery(event.target.value)} placeholder={t('Cari nama atau bahasa...', 'Search name or language...')} className="w-full border-4 border-brutal-black bg-brutal-white py-3 pr-4 pl-12 font-mono text-sm font-bold outline-none focus:ring-4 focus:ring-brutal-blue" />
+                  <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" weight="bold" size={18} />
+                  <input
+                    value={query}
+                    onChange={event => setQuery(event.target.value)}
+                    placeholder={t('Cari nama atau bahasa...', 'Search name or language...')}
+                    className="w-full rounded-xl border border-white/10 bg-black/50 py-2.5 pr-4 pl-10 font-sans text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/15"
+                  />
                 </label>
-                <div className="grid grid-cols-3 border-4 border-brutal-black" aria-label={t('Filter bahasa', 'Language filter')}>
+                <div className="flex p-1 rounded-xl bg-black/40 border border-white/10 shrink-0" aria-label={t('Filter bahasa', 'Language filter')}>
                   {(['all', 'id', 'en'] as const).map(filter => (
-                    <button key={filter} type="button" onClick={() => setLanguageFilter(filter)} className={`border-r-2 border-brutal-black px-4 py-2 font-mono text-xs font-bold uppercase last:border-r-0 ${languageFilter === filter ? 'bg-brutal-yellow' : 'bg-brutal-white hover:bg-gray-100'}`}>
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => setLanguageFilter(filter)}
+                      className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold uppercase transition-colors cursor-pointer ${
+                        languageFilter === filter ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
                       {filter === 'all' ? t('Semua', 'All') : filter}
                     </button>
                   ))}
@@ -613,101 +697,265 @@ export default function VoiceStudioPage() {
               </div>
             </div>
 
-            <div className="grid max-h-[38rem] grid-cols-1 gap-3 overflow-y-auto p-4 sm:grid-cols-2 sm:p-6">
+            {/* Voice Cards List */}
+            <div className="grid max-h-[38rem] grid-cols-1 gap-2.5 overflow-y-auto p-4 sm:grid-cols-2 sm:p-6">
               {loadingVoices && allVoices.length === 0 ? (
-                [1, 2, 3, 4].map(item => <div key={item} className="h-28 animate-pulse border-4 border-brutal-black/20 bg-gray-100" />)
+                [1, 2, 3, 4].map(item => (
+                  <div key={item} className="h-20 animate-pulse rounded-xl border border-white/5 bg-white/[0.02]" />
+                ))
               ) : filteredVoices.length === 0 ? (
-                <div className="col-span-full border-4 border-dashed border-brutal-black/40 p-8 text-center"><p className="font-mono text-sm font-bold uppercase opacity-55">{t('Suara tidak ditemukan.', 'No matching voices found.')}</p></div>
-              ) : filteredVoices.map((voice, index) => {
-                const selected = voice.id === selectedVoiceId;
-                const ready = voice.source === 'system' || voice.profile?.status === 'ready';
-                return (
-                  <article key={voice.id} className={`flex min-w-0 items-stretch border-4 border-brutal-black transition-transform ${selected ? 'bg-brutal-blue text-brutal-white shadow-brutal-sm -translate-y-0.5' : 'bg-brutal-white hover:-translate-y-0.5 hover:bg-brutal-yellow'}`}>
-                    <button type="button" onClick={() => setSelectedVoiceId(voice.id)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-brutal-yellow">
-                      <span className={`flex h-12 w-12 shrink-0 items-center justify-center border-2 font-sans text-sm font-black ${selected ? 'border-brutal-white bg-brutal-white text-brutal-blue' : 'border-brutal-black bg-brutal-black text-brutal-white'}`}>{voiceInitials(voice.name)}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-sans text-sm font-black uppercase">{voice.name}</span>
-                        <span className="mt-1 block font-mono text-[10px] font-bold uppercase opacity-70">
-                          {voice.lang} / {voice.source === 'provider' ? `${voice.profile?.kind} · ${voice.profile?.status}` : voice.local ? t('Perangkat', 'Device') : t('Jaringan', 'Network')} / #{String(index + 1).padStart(2, '0')}
+                <div className="col-span-full rounded-xl border border-dashed border-white/10 p-8 text-center">
+                  <p className="font-sans text-xs text-zinc-500">
+                    {t('Suara tidak ditemukan.', 'No matching voices found.')}
+                  </p>
+                </div>
+              ) : (
+                filteredVoices.map((voice, index) => {
+                  const selected = voice.id === selectedVoiceId;
+                  const ready = voice.source === 'system' || voice.profile?.status === 'ready';
+                  return (
+                    <article
+                      key={voice.id}
+                      className={`flex min-w-0 items-center justify-between rounded-xl border transition-all duration-150 group p-2 ${
+                        selected
+                          ? 'bg-white/10 border-white/30 ring-1 ring-white/20 shadow-lg'
+                          : 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVoiceId(voice.id)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none cursor-pointer"
+                      >
+                        <span
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold ${
+                            selected ? 'bg-white text-black' : 'bg-white/5 border border-white/10 text-zinc-300'
+                          }`}
+                        >
+                          {voiceInitials(voice.name)}
                         </span>
-                      </span>
-                    </button>
-                    <button type="button" data-voice-id={voice.id} onClick={previewVoice} disabled={!ready || playbackState === 'queued'} className={`flex w-14 shrink-0 items-center justify-center border-l-4 disabled:opacity-30 ${selected ? 'border-brutal-white hover:bg-brutal-white hover:text-brutal-blue' : 'border-brutal-black hover:bg-brutal-black hover:text-brutal-white'}`} aria-label={`${t('Preview', 'Preview')} ${voice.name}`}><Play weight="fill" size={20} /></button>
-                    <button type="button" data-voice-id={voice.id} onClick={removeVoice} className={`flex w-11 shrink-0 items-center justify-center border-l-2 ${selected ? 'border-brutal-white hover:bg-brutal-red' : 'border-brutal-black hover:bg-brutal-red hover:text-brutal-white'}`} aria-label={`${voice.source === 'provider' ? t('Hapus', 'Delete') : t('Sembunyikan', 'Hide')} ${voice.name}`}><Trash weight="bold" size={18} /></button>
-                  </article>
-                );
-              })}
+                        <span className="min-w-0 flex-1 pr-2">
+                          <span className="block truncate font-sans text-xs font-semibold text-white">
+                            {voice.name}
+                          </span>
+                          <span className="mt-0.5 block font-mono text-[10px] text-zinc-400 uppercase">
+                            {voice.lang} · {voice.source === 'provider' ? `${voice.profile?.kind}` : voice.local ? t('Perangkat', 'Device') : t('Jaringan', 'Network')} · #{String(index + 1).padStart(2, '0')}
+                          </span>
+                        </span>
+                      </button>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          data-voice-id={voice.id}
+                          onClick={previewVoice}
+                          disabled={!ready || playbackState === 'queued'}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors cursor-pointer"
+                          aria-label={`${t('Preview', 'Preview')} ${voice.name}`}
+                        >
+                          <Play weight="fill" size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          data-voice-id={voice.id}
+                          onClick={removeVoice}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer opacity-70 group-hover:opacity-100"
+                          aria-label={`${voice.source === 'provider' ? t('Hapus', 'Delete') : t('Sembunyikan', 'Hide')} ${voice.name}`}
+                        >
+                          <Trash weight="bold" size={16} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
             </div>
           </section>
 
-          <section className="h-fit border-4 border-brutal-black bg-brutal-yellow shadow-brutal xl:sticky xl:top-0">
-            <div className="flex items-center justify-between gap-3 border-b-4 border-brutal-black p-4 sm:p-5">
-              <div className="flex items-center gap-3"><Waveform weight="bold" size={28} /><h2 className="font-sans text-2xl font-black uppercase">Voice Studio</h2></div>
-              <span className={`border-2 border-brutal-black px-2 py-1 font-mono text-[10px] font-bold uppercase ${playbackState === 'playing' ? 'bg-brutal-blue text-brutal-white' : 'bg-brutal-white'}`}>{statusLabel}</span>
+          {/* Right Column: Voice Studio Deck */}
+          <section className="h-fit rounded-2xl border border-white/15 bg-[#08080b]/90 shadow-2xl backdrop-blur-2xl xl:sticky xl:top-6 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4 sm:p-5 bg-white/[0.01]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
+                  <Waveform weight="fill" size={20} />
+                </div>
+                <h2 className="font-sans text-lg font-bold text-white tracking-tight">Voice Studio</h2>
+              </div>
+              <span
+                className={`px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold uppercase ${
+                  playbackState === 'playing'
+                    ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 animate-pulse'
+                    : 'border border-white/10 bg-white/5 text-zinc-400'
+                }`}
+              >
+                {statusLabel}
+              </span>
             </div>
 
-            <div className="flex flex-col gap-5 p-4 sm:p-5">
-              <div className="border-4 border-brutal-black bg-brutal-white p-3">
-                <span className="font-mono text-[10px] font-bold uppercase opacity-55">{t('Suara aktif', 'Active voice')}</span>
-                <div className="mt-1 flex items-center gap-2"><SpeakerHigh weight="fill" size={22} /><strong className="truncate font-sans text-base uppercase">{selectedVoice?.name || t('Memuat suara...', 'Loading voices...')}</strong></div>
-                <p className="mt-1 font-mono text-xs opacity-60">{selectedVoice?.lang || '---'} / {selectedVoice?.source === 'provider' ? `MODEL STUDIO · ${selectedVoice.profile?.targetModel}` : t('TTS perangkat', 'Device TTS')}</p>
+            <div className="flex flex-col gap-4 p-4 sm:p-5">
+              {/* Active Voice Info Card */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-300 shrink-0 mt-0.5">
+                  <SpeakerHigh weight="fill" size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="font-mono text-[10px] uppercase text-zinc-500 block mb-0.5">
+                    {t('Suara Aktif', 'Active Voice')}
+                  </span>
+                  <div className="truncate font-sans text-sm font-bold text-white">
+                    {selectedVoice?.name || t('Memuat suara...', 'Loading voices...')}
+                  </div>
+                  <p className="font-mono text-[11px] text-zinc-400 mt-0.5">
+                    {selectedVoice?.lang || '---'} · {selectedVoice?.source === 'provider' ? `MODEL STUDIO · ${selectedVoice.profile?.targetModel}` : t('TTS Perangkat', 'Device TTS')}
+                  </p>
+                </div>
               </div>
 
               {selectedVoice?.source === 'provider' && selectedVoice.profile?.status !== 'ready' && (
-                <div className="border-4 border-brutal-black bg-brutal-red p-3 text-brutal-white">
-                  <p className="font-sans text-sm font-black uppercase">{t('Voice belum siap', 'Voice not ready')}</p>
-                  <p className="mt-1 font-mono text-[11px] font-bold">{selectedVoice.profile?.errorMessage || selectedVoice.profile?.status}</p>
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-200 text-xs">
+                  <p className="font-sans font-bold uppercase">{t('Voice Belum Siap', 'Voice Not Ready')}</p>
+                  <p className="mt-0.5 font-mono text-[11px]">{selectedVoice.profile?.errorMessage || selectedVoice.profile?.status}</p>
                 </div>
               )}
 
+              {/* Textarea for Script */}
               <div>
-                <label htmlFor="voice-script" className="mb-2 flex items-center justify-between gap-3 font-sans text-sm font-black uppercase">
-                  <span className="flex items-center gap-2"><TextT weight="bold" size={18} /> {t('Teks narasi', 'Narration text')}</span>
-                  <span className="font-mono text-[10px] tabular-nums opacity-55">{text.length}/{MAX_TEXT_LENGTH}</span>
+                <label htmlFor="voice-script" className="mb-2 flex items-center justify-between gap-3 font-sans text-xs font-semibold text-zinc-300">
+                  <span className="flex items-center gap-1.5"><TextT weight="bold" size={16} /> {t('Teks Narasi', 'Narration Text')}</span>
+                  <span className="font-mono text-[10px] tabular-nums text-zinc-500">{text.length}/{MAX_TEXT_LENGTH}</span>
                 </label>
-                <textarea id="voice-script" value={text} onChange={event => setText(event.target.value)} maxLength={MAX_TEXT_LENGTH} rows={7} placeholder={t('Tulis kalimat yang ingin dibacakan dengan suara terpilih...', 'Write the text to read with the selected voice...')} className="w-full resize-y border-4 border-brutal-black bg-brutal-white p-4 font-mono text-sm font-medium leading-relaxed outline-none placeholder:text-brutal-black/40 focus:ring-4 focus:ring-brutal-blue" />
+                <textarea
+                  id="voice-script"
+                  value={text}
+                  onChange={event => setText(event.target.value)}
+                  maxLength={MAX_TEXT_LENGTH}
+                  rows={6}
+                  placeholder={t('Tulis kalimat yang ingin dibacakan dengan suara terpilih...', 'Write the text to read with the selected voice...')}
+                  className="w-full resize-y rounded-xl border border-white/10 bg-black/60 p-3.5 font-sans text-xs sm:text-sm text-white leading-relaxed outline-none placeholder:text-zinc-600 focus:border-white/30 focus:ring-1 focus:ring-white/15"
+                />
               </div>
 
-              <div className="border-4 border-brutal-black bg-brutal-white p-4">
-                <div className="mb-4 flex items-center gap-2 font-sans text-sm font-black uppercase"><SlidersHorizontal weight="bold" size={18} />{t('Kontrol suara', 'Voice controls')}</div>
-                <label className="block font-mono text-xs font-bold uppercase">
-                  <span className="flex justify-between"><span>{t('Kecepatan', 'Speed')}</span><span className="tabular-nums">{rate.toFixed(1)}x</span></span>
-                  <input type="range" min="0.5" max="2" step="0.1" value={rate} onChange={event => setRate(Number(event.target.value))} className="mt-2 w-full accent-blue-700" />
-                </label>
-                <label className="mt-4 block font-mono text-xs font-bold uppercase">
-                  <span className="flex justify-between"><span>{t('Nada', 'Pitch')}</span><span className="tabular-nums">{pitch.toFixed(1)}</span></span>
-                  <input type="range" min="0.5" max="2" step="0.1" value={pitch} onChange={event => setPitch(Number(event.target.value))} className="mt-2 w-full accent-blue-700" />
-                </label>
+              {/* Sliders for Controls */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+                <div className="mb-3 flex items-center gap-2 font-sans text-xs font-semibold text-zinc-300">
+                  <SlidersHorizontal weight="bold" size={16} />
+                  <span>{t('Kontrol Suara', 'Voice Controls')}</span>
+                </div>
+                <div className="space-y-3">
+                  <label className="block font-mono text-xs text-zinc-400">
+                    <span className="flex justify-between text-[11px]">
+                      <span>{t('Kecepatan', 'Speed')}</span>
+                      <span className="tabular-nums font-bold text-white">{rate.toFixed(1)}x</span>
+                    </span>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={rate}
+                      onChange={event => setRate(Number(event.target.value))}
+                      className="mt-1.5 w-full accent-white h-1.5 bg-white/10 rounded-lg cursor-pointer"
+                    />
+                  </label>
+                  <label className="block font-mono text-xs text-zinc-400">
+                    <span className="flex justify-between text-[11px]">
+                      <span>{t('Nada', 'Pitch')}</span>
+                      <span className="tabular-nums font-bold text-white">{pitch.toFixed(1)}</span>
+                    </span>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={pitch}
+                      onChange={event => setPitch(Number(event.target.value))}
+                      className="mt-1.5 w-full accent-white h-1.5 bg-white/10 rounded-lg cursor-pointer"
+                    />
+                  </label>
+                </div>
               </div>
 
-              {error && <div role="alert" className="border-4 border-brutal-black bg-brutal-red p-3 font-mono text-xs font-bold text-brutal-white">{error}</div>}
+              {error && (
+                <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 font-mono text-xs text-rose-200">
+                  {error}
+                </div>
+              )}
 
-              <div className="grid grid-cols-[1fr_auto_auto] gap-3">
-                <Button type="button" variant="primary" onClick={() => void generateSpeech()} disabled={!selectedVoice || !text.trim() || playbackState === 'queued' || (selectedVoice.source === 'provider' && selectedVoice.profile?.status !== 'ready')} className="min-w-0 gap-2 !bg-brutal-blue !text-brutal-white hover:!bg-blue-800">
-                  <Play weight="fill" size={20} /><span className="truncate">{selectedVoice?.source === 'provider' ? t('Generate Qwen', 'Generate with Qwen') : t('Putar perangkat', 'Play on device')}</span>
+              {/* Action Buttons */}
+              <div className="grid grid-cols-[1fr_auto_auto] gap-2.5 pt-1">
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => void generateSpeech()}
+                  disabled={!selectedVoice || !text.trim() || playbackState === 'queued' || (selectedVoice.source === 'provider' && selectedVoice.profile?.status !== 'ready')}
+                  className="min-w-0 gap-2 font-sans font-semibold text-xs"
+                >
+                  <Play weight="fill" size={16} />
+                  <span className="truncate">{selectedVoice?.source === 'provider' ? t('Generate Qwen', 'Generate with Qwen') : t('Putar Perangkat', 'Play on Device')}</span>
                 </Button>
-                <Button type="button" variant="secondary" onClick={togglePause} disabled={playbackState !== 'playing' && playbackState !== 'paused'} className="!px-4" aria-label={playbackState === 'paused' ? t('Lanjutkan', 'Resume') : t('Jeda', 'Pause')}>{playbackState === 'paused' ? <Play weight="fill" size={20} /> : <Pause weight="fill" size={20} />}</Button>
-                <Button type="button" variant="secondary" onClick={stopPlayback} disabled={playbackState === 'idle' || playbackState === 'error'} className="!px-4" aria-label={t('Berhenti', 'Stop')}><Stop weight="fill" size={20} /></Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={togglePause}
+                  disabled={playbackState !== 'playing' && playbackState !== 'paused'}
+                  className="!px-3.5"
+                  aria-label={playbackState === 'paused' ? t('Lanjutkan', 'Resume') : t('Jeda', 'Pause')}
+                >
+                  {playbackState === 'paused' ? <Play weight="fill" size={16} /> : <Pause weight="fill" size={16} />}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={stopPlayback}
+                  disabled={playbackState === 'idle' || playbackState === 'error'}
+                  className="!px-3.5"
+                  aria-label={t('Berhenti', 'Stop')}
+                >
+                  <Stop weight="fill" size={16} />
+                </Button>
               </div>
 
+              {/* Recent Output Generations */}
               {generations.length > 0 && (
-                <div className="border-t-4 border-brutal-black pt-4">
-                  <h3 className="font-sans text-sm font-black uppercase">{t('Hasil terbaru', 'Recent output')}</h3>
-                  <div className="mt-2 space-y-2">
+                <div className="border-t border-white/10 pt-3">
+                  <h3 className="font-mono text-[10px] uppercase text-zinc-500 font-semibold mb-2">
+                    {t('Hasil Terbaru', 'Recent Output')}
+                  </h3>
+                  <div className="space-y-1.5">
                     {generations.slice(0, 3).map(generation => (
-                      <div key={generation.id} className="flex items-center gap-2 border-2 border-brutal-black bg-brutal-white p-2">
-                        <button type="button" onClick={() => generation.audioUrl && playAudio(generation.audioUrl)} disabled={!generation.audioUrl} className="flex h-8 w-8 shrink-0 items-center justify-center bg-brutal-black text-brutal-white disabled:opacity-30" aria-label={t('Putar hasil', 'Play output')}><Play weight="fill" size={15} /></button>
-                        <span className="min-w-0 flex-1 truncate font-mono text-[10px] font-bold">{generation.text}</span>
-                        {generation.audioUrl && <a href={generation.audioUrl} download className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-brutal-black" aria-label={t('Unduh hasil', 'Download output')}><DownloadSimple weight="bold" size={16} /></a>}
+                      <div key={generation.id} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-2">
+                        <button
+                          type="button"
+                          onClick={() => generation.audioUrl && playAudio(generation.audioUrl)}
+                          disabled={!generation.audioUrl}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-30 cursor-pointer"
+                          aria-label={t('Putar hasil', 'Play output')}
+                        >
+                          <Play weight="fill" size={12} />
+                        </button>
+                        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-zinc-300">
+                          {generation.text}
+                        </span>
+                        {generation.audioUrl && (
+                          <a
+                            href={generation.audioUrl}
+                            download
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-300 hover:text-white hover:bg-white/10"
+                            aria-label={t('Unduh hasil', 'Download output')}
+                          >
+                            <DownloadSimple weight="bold" size={14} />
+                          </a>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex items-start gap-3 border-t-4 border-brutal-black pt-4">
-                <ShieldCheck className="mt-0.5 shrink-0" weight="bold" size={22} />
-                <p className="font-mono text-[11px] font-bold leading-relaxed opacity-70">
+              {/* Security Banner */}
+              <div className="flex items-start gap-2.5 border-t border-white/10 pt-3 text-zinc-500">
+                <ShieldCheck className="mt-0.5 shrink-0 text-zinc-400" weight="bold" size={18} />
+                <p className="font-sans text-[11px] leading-relaxed">
                   {t('Audio provider dikirim langsung dari server ke Alibaba Model Studio. API key tidak pernah dikirim ke browser.', 'Provider audio goes directly from the server to Alibaba Model Studio. API keys are never sent to the browser.')}
                 </p>
               </div>

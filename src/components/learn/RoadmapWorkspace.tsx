@@ -17,81 +17,98 @@ import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import { LearningDrawer } from '@/components/learn/LearningDrawer';
 import { useRouter } from 'next/navigation';
+import { CheckCircle, Lightning, LockSimple } from '@phosphor-icons/react';
 
 // Custom Section Milestone Node (Spine Center)
 const SectionMilestoneNode = ({ data }: { data: any }) => {
   return (
-    <div className="bg-brutal-yellow border-4 border-brutal-black shadow-brutal px-6 py-3 min-w-[280px] text-center font-sans font-black text-lg uppercase tracking-tight text-brutal-black">
-      <Handle type="target" position={Position.Top} className="!bg-brutal-black !w-3 !h-3" />
-      {data.label}
-      <Handle type="source" position={Position.Bottom} className="!bg-brutal-black !w-3 !h-3" />
+    <div className="group relative">
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-2xl blur-sm opacity-50 group-hover:opacity-100 transition duration-300" />
+      <div className="relative bg-[#0d0d12] border border-white/15 px-8 py-3.5 min-w-[280px] rounded-xl shadow-2xl text-center flex items-center justify-center gap-2.5">
+        <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="font-semibold text-sm uppercase tracking-wider text-white">
+          {data.label}
+        </span>
+        <Handle type="source" position={Position.Bottom} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
+      </div>
     </div>
   );
 };
 
 // Custom Topic Group Box Node (Left / Right Cards)
 const TopicGroupNode = ({ data }: { data: any }) => {
+  const masteredCount = data.topics.filter((t: any) => t.status === 'mastered').length;
+  const isAllMastered = masteredCount === data.topics.length && data.topics.length > 0;
+
   return (
-    <div className="bg-brutal-white border-4 border-brutal-black shadow-brutal p-4 w-80 flex flex-col gap-3">
-      <Handle
-        type="target"
-        position={data.side === 'left' ? Position.Right : Position.Left}
-        className="!bg-brutal-black !w-3 !h-3"
-      />
+    <div className="w-80 rounded-2xl bg-zinc-900/60 p-0.5 ring-1 ring-white/10 shadow-2xl backdrop-blur-md">
+      <div className="bg-[#09090c]/95 rounded-[14px] p-4 flex flex-col gap-3 border border-white/5">
+        <Handle
+          type="target"
+          position={data.side === 'left' ? Position.Right : Position.Left}
+          className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none"
+        />
 
-      {/* Group Title Header */}
-      <div className="border-b-2 border-brutal-black pb-2 flex justify-between items-center">
-        <h4 className="font-sans font-black text-sm uppercase text-brutal-black tracking-tight">
-          {data.groupName}
-        </h4>
-        <span className="font-mono text-[10px] font-bold uppercase opacity-60">
-          {data.topics.filter((t: any) => t.status === 'mastered').length}/{data.topics.length} Done
-        </span>
-      </div>
+        {/* Group Title Header */}
+        <div className="border-b border-white/10 pb-2.5 flex justify-between items-center">
+          <h4 className="font-medium text-xs text-zinc-200 tracking-wide uppercase flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+            {data.groupName}
+          </h4>
+          <span className={`font-mono text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+            isAllMastered
+              ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/20'
+              : 'bg-white/5 text-zinc-400 border-white/10'
+          }`}>
+            {masteredCount}/{data.topics.length} Done
+          </span>
+        </div>
 
-      {/* List of Topic Pills */}
-      <div className="flex flex-col gap-2">
-        {data.topics.map((topic: any) => {
-          const isMastered = topic.status === 'mastered';
-          const isUnlocked = topic.status === 'unlocked';
-          const isLocked = topic.status === 'locked';
+        {/* List of Topic Pills */}
+        <div className="flex flex-col gap-1.5">
+          {data.topics.map((topic: any) => {
+            const isMastered = topic.status === 'mastered';
+            const isUnlocked = topic.status === 'unlocked';
+            const isLocked = topic.status === 'locked';
 
-          let pillStyle = 'bg-gray-100 border-gray-300 text-gray-500 opacity-70 cursor-not-allowed';
-          let badge = '🔒';
+            let pillStyle = 'bg-white/[0.02] border-white/5 text-zinc-500 opacity-60 cursor-not-allowed';
+            let icon = <LockSimple weight="bold" className="w-3.5 h-3.5 text-zinc-600 shrink-0" />;
 
-          if (isMastered) {
-            pillStyle = 'bg-green-100 border-green-600 font-bold text-green-950 hover:bg-green-200 cursor-pointer shadow-sm';
-            badge = '✅';
-          } else if (isUnlocked) {
-            pillStyle = 'bg-brutal-yellow border-brutal-black font-bold text-brutal-black hover:scale-[1.02] cursor-pointer shadow-brutal-sm';
-            badge = '⚡';
-          }
+            if (isMastered) {
+              pillStyle = 'bg-emerald-950/25 border-emerald-500/25 text-emerald-300 hover:bg-emerald-950/40 hover:border-emerald-500/40 cursor-pointer shadow-sm';
+              icon = <CheckCircle weight="fill" className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+            } else if (isUnlocked) {
+              pillStyle = 'bg-white/[0.06] border-white/20 text-white hover:bg-white/[0.12] hover:border-white/30 cursor-pointer shadow-sm';
+              icon = <Lightning weight="fill" className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+            }
 
-          return (
-            <div
-              key={topic.nodeId}
-              onClick={() => {
-                data.onTopicClick(topic);
-              }}
-              className={`p-2.5 border-2 flex items-center justify-between text-xs font-mono transition-all ${pillStyle}`}
-            >
-              <div className="flex items-center gap-2 line-clamp-1">
-                <span>{badge}</span>
-                <span className="font-bold">{topic.title}</span>
+            return (
+              <div
+                key={topic.nodeId}
+                onClick={() => {
+                  data.onTopicClick(topic);
+                }}
+                className={`p-2.5 rounded-lg border flex items-center justify-between text-xs transition-all ${pillStyle}`}
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-1">
+                  {icon}
+                  <span className="font-medium truncate">{topic.title}</span>
+                </div>
+                <span className="text-[10px] font-mono opacity-60 shrink-0 ml-1">
+                  {isMastered ? 'Mastered' : isUnlocked ? 'Learn' : 'Locked'}
+                </span>
               </div>
-              <span className="text-[10px] opacity-70 shrink-0 ml-1">
-                {isMastered ? 'Mastered' : isUnlocked ? 'Learn' : 'Locked'}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <Handle
-        type="source"
-        position={data.side === 'left' ? Position.Right : Position.Left}
-        className="!bg-brutal-black !w-3 !h-3"
-      />
+        <Handle
+          type="source"
+          position={data.side === 'left' ? Position.Right : Position.Left}
+          className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none"
+        />
+      </div>
     </div>
   );
 };
@@ -102,38 +119,38 @@ const FlatNodeComponent = ({ data }: { data: any }) => {
   const isUnlocked = data.status === 'unlocked';
   const isLocked = data.status === 'locked';
 
-  let borderStyle = 'border-gray-400 bg-gray-100 opacity-70';
-  let badgeColor = 'bg-gray-300 text-gray-700';
+  let borderStyle = 'border-white/10 bg-[#09090c]/90 opacity-60';
+  let badgeStyle = 'bg-white/5 text-zinc-500 border-white/10';
 
   if (isMastered) {
-    borderStyle = 'border-green-600 bg-green-50 shadow-brutal hover:bg-green-100 cursor-pointer';
-    badgeColor = 'bg-green-400 text-black';
+    borderStyle = 'border-emerald-500/30 bg-[#09090c] hover:border-emerald-500/50 cursor-pointer shadow-lg';
+    badgeStyle = 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30';
   } else if (isUnlocked) {
-    borderStyle = 'border-brutal-black bg-brutal-yellow shadow-brutal hover:scale-105 transition-transform cursor-pointer';
-    badgeColor = 'bg-brutal-black text-white';
+    borderStyle = 'border-white/25 bg-[#0e0e13] hover:border-white/40 cursor-pointer shadow-xl';
+    badgeStyle = 'bg-white/10 text-white border-white/20';
   }
 
   return (
     <div
       onClick={data.onClick}
-      className={`border-4 p-4 w-72 transition-all ${borderStyle}`}
+      className={`rounded-xl border p-4 w-72 transition-all backdrop-blur-md ${borderStyle}`}
     >
-      <Handle type="target" position={Position.Top} className="!bg-brutal-black !w-3 !h-3" />
+      <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
       <div className="flex justify-between items-center mb-2">
-        <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border border-brutal-black ${badgeColor}`}>
-          {isMastered ? '✅ MASTERED' : isUnlocked ? '⚡ UNLOCKED' : '🔒 LOCKED'}
+        <span className={`text-[10px] font-mono font-medium uppercase px-2 py-0.5 rounded-full border ${badgeStyle}`}>
+          {isMastered ? '✓ MASTERED' : isUnlocked ? '⚡ UNLOCKED' : '🔒 LOCKED'}
         </span>
       </div>
 
-      <h3 className="font-sans font-black text-base uppercase leading-tight mb-1 text-brutal-black">
+      <h3 className="font-semibold text-sm text-white tracking-tight mb-1">
         {data.title}
       </h3>
-      <p className="font-mono text-xs text-gray-700 line-clamp-2">{data.description}</p>
+      <p className="font-mono text-xs text-zinc-400 line-clamp-2">{data.description}</p>
 
-      <div className="mt-3 text-[10px] font-mono font-bold uppercase text-right opacity-70">
+      <div className="mt-3 text-[10px] font-mono font-medium uppercase text-right text-zinc-400">
         {isLocked ? 'Complete Prereqs' : 'Click to Learn & Quiz →'}
       </div>
-      <Handle type="source" position={Position.Bottom} className="!bg-brutal-black !w-3 !h-3" />
+      <Handle type="source" position={Position.Bottom} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
     </div>
   );
 };
@@ -220,7 +237,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
             source: prevSectionNodeId,
             target: secNodeId,
             type: 'default',
-            style: { strokeWidth: 4, stroke: '#050505' },
+            style: { strokeWidth: 2, stroke: '#52525b' },
           });
         }
         prevSectionNodeId = secNodeId;
@@ -258,7 +275,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
             source: secNodeId,
             target: grpNodeId,
             type: 'default',
-            style: { strokeWidth: 3, stroke: '#3b82f6', strokeDasharray: '5,5' },
+            style: { strokeWidth: 1.5, stroke: '#6366f1', strokeDasharray: '4,4' },
           });
         });
 
@@ -321,7 +338,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
           source: p,
           target: n.nodeId,
           type: 'default',
-          style: { strokeWidth: 3, stroke: n.status === 'mastered' ? '#16a34a' : '#050505' },
+          style: { strokeWidth: 2, stroke: n.status === 'mastered' ? '#10b981' : '#3f3f46' },
         });
       });
     });
@@ -335,7 +352,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
   }, [initialNodes]);
 
   return (
-    <div className="flex-1 w-full h-full relative">
+    <div className="flex-1 w-full h-full relative bg-[#030303]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -345,9 +362,9 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
         fitView
         minZoom={0.15}
       >
-        <Controls className="!border-4 !border-brutal-black !shadow-brutal-sm !bg-brutal-white" />
-        <MiniMap className="!border-4 !border-brutal-black !shadow-brutal-sm !bg-brutal-white" nodeColor="#050505" />
-        <Background gap={24} size={2} color="#050505" />
+        <Controls className="!border !border-white/10 !rounded-xl !bg-[#0b0b0e] !shadow-2xl overflow-hidden [&_button]:!bg-[#0b0b0e] [&_button]:!border-b [&_button]:!border-white/10 [&_button]:!fill-zinc-300 [&_button]:!text-zinc-300 hover:[&_button]:!bg-white/10" />
+        <MiniMap className="!border !border-white/10 !rounded-xl !bg-[#08080b]/90 !shadow-2xl overflow-hidden" nodeColor="#3f3f46" maskColor="rgba(3, 3, 3, 0.75)" />
+        <Background gap={24} size={1.5} color="#ffffff15" />
       </ReactFlow>
 
       {selectedNode && (

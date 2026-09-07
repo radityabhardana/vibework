@@ -19,8 +19,10 @@ export default async function LearningRoadmapDetailPage({ params }: { params: Pr
 
   if (!data) {
     return (
-      <div className="flex-1 w-full flex overflow-hidden items-center justify-center bg-[#e5e5f7]">
-        <div className="font-mono text-xl">Learning Roadmap Not Found</div>
+      <div className="flex-1 w-full h-screen flex overflow-hidden items-center justify-center bg-[#030303] text-zinc-400">
+        <div className="font-mono text-sm px-4 py-2 rounded-lg border border-white/10 bg-white/5">
+          Learning Roadmap Not Found
+        </div>
       </div>
     );
   }
@@ -29,7 +31,7 @@ export default async function LearningRoadmapDetailPage({ params }: { params: Pr
   const masteredNodes = data.nodes.filter(n => n.status === 'mastered').length;
 
   return (
-    <div className="w-full h-full flex flex-col bg-brutal-white overflow-hidden">
+    <div className="w-full h-screen flex flex-col bg-[#030303] text-white overflow-hidden">
       {/* Header with Language Switcher */}
       <RoadmapDetailHeader
         topic={data.roadmap.topic}
@@ -39,7 +41,7 @@ export default async function LearningRoadmapDetailPage({ params }: { params: Pr
       />
 
       {/* Main Workspace (ReactFlow) */}
-      <div className="flex-1 w-full overflow-hidden bg-[#e5e5f7]">
+      <div className="flex-1 w-full overflow-hidden bg-[#030303] relative">
         <RoadmapWorkspace roadmap={data.roadmap} initialNodes={data.nodes} />
       </div>
     </div>
