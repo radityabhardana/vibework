@@ -434,7 +434,7 @@ export function ProjectWorkspace({
         source: '1',
         target: '1.8',
         type: 'default',
-        style: { strokeWidth: 2, stroke: '#0000ff' },
+        style: { strokeWidth: 2, stroke: 'rgba(255, 255, 255, 0.5)' },
       });
     }
 
@@ -494,7 +494,7 @@ export function ProjectWorkspace({
           source: '1.5',
           target: `appflow-${root.id}`,
           type: 'default',
-          style: { strokeWidth: 2, stroke: '#e8be17' },
+          style: { strokeWidth: 2, stroke: 'rgba(255, 255, 255, 0.4)' },
         });
       });
 
@@ -517,80 +517,39 @@ export function ProjectWorkspace({
     generationProgress,
   ]);
 
+  // Artifact tabs — numbering (01–05) replaces per-type color coding
+  const TABS: { id: WorkspaceTab; num: string; label: string; icon: typeof TreeStructure; ready: boolean }[] = [
+    { id: 'tree', num: '01', label: 'Interactive Tree', icon: TreeStructure, ready: !!appFlowchart },
+    { id: 'prd', num: '02', label: 'PRD', icon: Article, ready: !!prd },
+    { id: 'agents', num: '03', label: 'AGENTS.md', icon: Robot, ready: !!project.agentsDocument },
+    { id: 'architecture', num: '04', label: 'Architecture & Schema', icon: Cpu, ready: !!adr },
+    { id: 'prompts', num: '05', label: 'Prompt.md', icon: Lightning, ready: !!effectivePromptMd },
+  ];
+
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#030303] text-white relative">
       {/* Top Workspace Tab Switcher Bar */}
       <div className="bg-[#030303]/90 border-b border-white/10 px-3 py-2.5 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 backdrop-blur-md">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('tree')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
-              activeTab === 'tree'
-                ? 'bg-white text-black border-transparent shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
-            }`}
-          >
-            <TreeStructure weight="bold" className="w-4 h-4" />
-            <span>Interactive Tree</span>
-            {appFlowchart && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'tree' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('prd')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
-              activeTab === 'prd'
-                ? 'bg-white text-black border-transparent shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
-            }`}
-          >
-            <Article weight="bold" className="w-4 h-4" />
-            <span>PRD</span>
-            {prd && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'prd' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('agents')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
-              activeTab === 'agents'
-                ? 'bg-white text-black border-transparent shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
-            }`}
-          >
-            <Robot weight="bold" className="w-4 h-4" />
-            <span>AGENTS.md</span>
-            {project.agentsDocument && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'agents' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('architecture')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
-              activeTab === 'architecture'
-                ? 'bg-white text-black border-transparent shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
-            }`}
-          >
-            <Cpu weight="bold" className="w-4 h-4" />
-            <span>Architecture & Schema</span>
-            {adr && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'architecture' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('prompts')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
-              activeTab === 'prompts'
-                ? 'bg-white text-black border-transparent shadow-sm'
-                : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
-            }`}
-          >
-            <Lightning weight="bold" className="w-4 h-4" />
-            <span>Prompt.md</span>
-            {effectivePromptMd && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'prompts' ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>}
-          </button>
+          {TABS.map(({ id, num, label, icon: TabIcon, ready }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveTab(id)}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
+                activeTab === id
+                  ? 'bg-white text-black border-transparent shadow-sm'
+                  : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
+              }`}
+            >
+              <TabIcon weight="bold" className="w-4 h-4" />
+              <span className="hidden lg:inline">{num}</span>
+              <span>{label}</span>
+              {ready && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === id ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Global Export Button */}
@@ -624,7 +583,7 @@ export function ProjectWorkspace({
         {activeTab === 'tree' && (
           <div className="w-full h-full relative bg-background bg-dot-grid">
             {!appFlowchart && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-zinc-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-4">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-zinc-900/90 border border-white/15 p-4 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-4">
                 <div>
                   <p className="font-sans font-semibold text-sm text-zinc-100">Interactive Tree Belum Digenerate</p>
                   <p className="font-sans text-xs text-zinc-400">Klik tombol untuk memetakan alur screen dan modul aplikasi.</p>
@@ -635,7 +594,7 @@ export function ProjectWorkspace({
                   onClick={generateFlowchart}
                   disabled={loadingFlowchart}
                 >
-                  {loadingFlowchart ? `Membuat Tree (${Math.round(generationProgress)}%)...` : '⚡ Generate Tree Sekarang'}
+                  {loadingFlowchart ? `Membuat Tree (${Math.round(generationProgress)}%)...` : 'Generate Tree Sekarang'}
                 </Button>
               </div>
             )}
@@ -693,7 +652,7 @@ export function ProjectWorkspace({
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
+              <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                 {prd?.documentContent || 'PRD belum digenerate.'}
               </div>
             </div>
@@ -707,7 +666,7 @@ export function ProjectWorkspace({
               <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-cyan-500/10 text-cyan-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase rounded-full border border-cyan-500/20">
+                    <span className="bg-white/5 text-zinc-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] rounded-full border border-white/10">
                       AI Pair Programmer Directive
                     </span>
                   </div>
@@ -755,12 +714,12 @@ export function ProjectWorkspace({
               </div>
 
               {project.agentsDocument ? (
-                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                   {project.agentsDocument}
                 </div>
               ) : (
                 <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                  <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-300">
                     <Robot weight="duotone" className="w-8 h-8" />
                   </div>
                   <div>
@@ -775,7 +734,7 @@ export function ProjectWorkspace({
                     onClick={generateAgents}
                     disabled={loadingAgents}
                   >
-                    {loadingAgents ? `Generating AGENTS.md (${Math.round(generationProgress)}%)...` : '🤖 Buat AGENTS.md Sekarang'}
+                    {loadingAgents ? `Generating AGENTS.md (${Math.round(generationProgress)}%)...` : 'Buat AGENTS.md Sekarang'}
                   </Button>
                 </div>
               )}
@@ -870,7 +829,7 @@ export function ProjectWorkspace({
                     {schema.dbSchema}
                   </div>
                   {schema.apiContract && (
-                    <div className="bg-zinc-950 text-emerald-400 border border-white/10 rounded-2xl p-6 shadow-lg font-mono text-xs leading-relaxed overflow-x-auto">
+                    <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed overflow-x-auto">
                       <pre>{JSON.stringify(schema.apiContract, null, 2)}</pre>
                     </div>
                   )}
@@ -891,7 +850,7 @@ export function ProjectWorkspace({
               <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase rounded-full border border-emerald-500/20">
+                    <span className="bg-white/5 text-zinc-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] rounded-full border border-white/10">
                       Sequential Coding Plan
                     </span>
                     <span className="font-mono text-xs text-zinc-500">
@@ -942,12 +901,12 @@ export function ProjectWorkspace({
               </div>
 
               {effectivePromptMd ? (
-                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap selection:bg-emerald-500/20">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                   {effectivePromptMd}
                 </div>
               ) : (
                 <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-300">
                     <Lightning weight="duotone" className="w-8 h-8" />
                   </div>
                   <div>
@@ -962,7 +921,7 @@ export function ProjectWorkspace({
                     onClick={generatePrompts}
                     disabled={loadingPrompts || !schema}
                   >
-                    {loadingPrompts ? `Generating Prompts (${Math.round(generationProgress)}%)...` : '⚡ Buat Atomic Prompts'}
+                    {loadingPrompts ? `Generating Prompts (${Math.round(generationProgress)}%)...` : 'Buat Atomic Prompts'}
                   </Button>
                 </div>
               )}

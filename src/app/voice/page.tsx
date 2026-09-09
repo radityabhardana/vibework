@@ -505,8 +505,8 @@ export default function VoiceStudioPage() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <span className={`hidden px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold md:inline-flex items-center gap-1.5 ${providerStatus?.configured ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border border-white/10 bg-white/5 text-zinc-400'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${providerStatus?.configured ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
+          <span className={`hidden px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold md:inline-flex items-center gap-1.5 ${providerStatus?.configured ? 'border border-white/15 bg-white/5 text-zinc-300' : 'border border-white/10 bg-white/5 text-zinc-400'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${providerStatus?.configured ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
             {providerStatus?.configured ? 'QWEN DIRECT ACTIVE' : t('Provider belum siap', 'Provider not ready')}
           </span>
           <LanguageSwitcher />
@@ -572,7 +572,7 @@ export default function VoiceStudioPage() {
                   </div>
 
                   {!providerStatus?.configured && (
-                    <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 font-mono text-xs text-amber-200">
+                    <div className="mb-4 rounded-xl border border-amber-500/30 bg-white/[0.02] p-3 font-mono text-xs text-amber-300">
                       {t('Set DASHSCOPE_* dan ALIYUN_OSS_* pada server untuk mengaktifkan clone dan design.', 'Set DASHSCOPE_* and ALIYUN_OSS_* on the server to enable clone and design.')}
                     </div>
                   )}
@@ -782,12 +782,17 @@ export default function VoiceStudioPage() {
                 <h2 className="font-sans text-lg font-bold text-white tracking-tight">Voice Studio</h2>
               </div>
               <span
-                className={`px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold uppercase ${
-                  playbackState === 'playing'
-                    ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 animate-pulse'
-                    : 'border border-white/10 bg-white/5 text-zinc-400'
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold uppercase border ${
+                  playbackState === 'error'
+                    ? 'border-rose-500/30 bg-white/[0.02] text-rose-300'
+                    : 'border-white/10 bg-white/5 text-zinc-300'
                 }`}
               >
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  playbackState === 'playing' ? 'bg-emerald-400 animate-pulse'
+                  : playbackState === 'error' ? 'bg-rose-400'
+                  : 'bg-zinc-600'
+                }`} />
                 {statusLabel}
               </span>
             </div>

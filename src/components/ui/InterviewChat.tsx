@@ -449,11 +449,16 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider ${
-                  initialProjectId ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border border-white/10 bg-white/5 text-zinc-400'
-                }`}>
-                  {initialProjectId ? 'Generated' : 'Not generated'}
-                </span>
+                {initialProjectId ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/15 bg-white/5 text-zinc-300">
+                    <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
+                    Generated
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/10 bg-white/5 text-zinc-500">
+                    Not generated
+                  </span>
+                )}
                 {initialProjectId && (
                   <Link href={`/projects/${initialProjectId}`}>
                     <Button variant="secondary" size="sm" className="!px-3 !py-1 text-xs font-mono">
@@ -530,7 +535,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
               <div aria-hidden className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05),transparent_70%)] pointer-events-none" />
               <div className="relative flex flex-col items-center gap-5 max-w-xl">
                 <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
-                  <span aria-hidden className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+                  <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
                   <span>Interactive Architecture Interview</span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-extrabold font-sans tracking-[-0.03em] text-white leading-[1.08]">
@@ -606,7 +611,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         {hasUserResponse && !isComplete && status === 'idle' && (
           <div className="mx-4 mb-2 p-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2 font-sans text-xs text-zinc-300">
-              <Lightning weight="fill" className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <Lightning weight="fill" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <span>Sudah cukup dengan informasi yang tertera?</span>
             </div>
             <button

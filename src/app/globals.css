@@ -10,14 +10,6 @@
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-border-hover: rgba(255, 255, 255, 0.25);
 
-  /* Accents */
-  --accent-blue: #007aff;
-  --accent-cyan: #06b6d4;
-  --accent-violet: #8b5cf6;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #f43f5e;
-
   /* Backward compatibility tokens */
   --brutal-red: #f43f5e;
   --brutal-blue: #007aff;
@@ -32,13 +24,6 @@
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
   --color-surface-border: var(--surface-border);
-
-  --color-accent-blue: var(--accent-blue);
-  --color-accent-cyan: var(--accent-cyan);
-  --color-accent-violet: var(--accent-violet);
-  --color-accent-emerald: var(--accent-emerald);
-  --color-accent-amber: var(--accent-amber);
-  --color-accent-rose: var(--accent-rose);
 
   --color-brutal-red: var(--brutal-red);
   --color-brutal-blue: var(--brutal-blue);

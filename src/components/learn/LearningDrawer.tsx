@@ -115,7 +115,7 @@ export function LearningDrawer({
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-[10px] font-mono font-medium uppercase px-2.5 py-0.5 rounded-full border ${
                   node.status === 'mastered'
-                    ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
+                    ? 'bg-white text-black border-white'
                     : node.status === 'unlocked'
                     ? 'bg-white/10 text-white border-white/20'
                     : 'bg-zinc-800/80 text-zinc-400 border-zinc-700/50'
@@ -178,8 +178,8 @@ export function LearningDrawer({
             {activeTab === 'quiz' && (
               <div className="flex flex-col gap-6">
                 {node.status === 'locked' ? (
-                  <div className="p-6 rounded-xl bg-amber-950/20 border border-amber-500/30 text-amber-300 flex items-center justify-center gap-3 text-center text-sm font-mono">
-                    <LockSimple weight="bold" className="w-5 h-5 shrink-0" />
+                  <div className="p-6 rounded-xl bg-white/[0.02] border border-white/15 text-zinc-300 flex items-center justify-center gap-3 text-center text-sm font-mono">
+                    <LockSimple weight="bold" className="w-5 h-5 shrink-0 text-zinc-400" />
                     <span>
                       {t(
                         'NODE INI MASIH TERKUNCI. Selesaikan node prasyarat terlebih dahulu untuk membuka kuis ini!',
@@ -190,18 +190,18 @@ export function LearningDrawer({
                 ) : (
                   <>
                     {scoreResult && (
-                      <div className={`p-4 rounded-xl border font-mono text-sm text-center flex items-center justify-center gap-2 ${
+                      <div className={`p-4 rounded-xl border font-mono text-sm text-center flex items-center justify-center gap-2 bg-transparent ${
                         scoreResult.passed
-                          ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30'
-                          : 'bg-rose-950/40 text-rose-300 border-rose-500/30'
+                          ? 'border-emerald-500/30 text-emerald-300'
+                          : 'border-rose-500/30 text-rose-300'
                       }`}>
                         {scoreResult.passed ? (
                           <>
                             <CheckCircle weight="fill" className="w-5 h-5 text-emerald-400 shrink-0" />
                             <span>
                               {t(
-                                `🎉 SELAMAT! Kamu lulus dengan nilai ${scoreResult.score}%! Node Berhasil Dikuasai & Node Selanjutnya Terbuka.`,
-                                `🎉 CONGRATULATIONS! You passed with ${scoreResult.score}%! Node Mastered & Next Nodes Unlocked.`
+                                `SELAMAT! Kamu lulus dengan nilai ${scoreResult.score}%. Node Berhasil Dikuasai & Node Selanjutnya Terbuka.`,
+                                `CONGRATULATIONS! You passed with ${scoreResult.score}%. Node Mastered & Next Nodes Unlocked.`
                               )}
                             </span>
                           </>
@@ -210,8 +210,8 @@ export function LearningDrawer({
                             <WarningCircle weight="fill" className="w-5 h-5 text-rose-400 shrink-0" />
                             <span>
                               {t(
-                                `❌ SKOR: ${scoreResult.score}%. Kamu butuh minimal 70% untuk lulus. Pelajari kembali materi dan coba lagi!`,
-                                `❌ SCORE: ${scoreResult.score}%. You need at least 70% to pass. Review the lesson and try again!`
+                                `SKOR: ${scoreResult.score}%. Kamu butuh minimal 70% untuk lulus. Pelajari kembali materi dan coba lagi!`,
+                                `SCORE: ${scoreResult.score}%. You need at least 70% to pass. Review the lesson and try again!`
                               )}
                             </span>
                           </>
@@ -220,7 +220,7 @@ export function LearningDrawer({
                     )}
 
                     {submitError && (
-                      <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-950/30 font-mono text-xs text-rose-300 text-center">
+                      <div className="p-4 rounded-xl border border-rose-500/30 bg-transparent font-mono text-xs text-rose-300 text-center">
                         {submitError} {t('Silakan coba lagi.', 'Please try again.')}
                       </div>
                     )}
@@ -241,8 +241,8 @@ export function LearningDrawer({
 
                             let optionStyle = 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05] hover:border-white/25 text-zinc-300';
                             if (submitted) {
-                              if (isCorrect) optionStyle = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200 font-medium';
-                              else if (isSelected && !isCorrect) optionStyle = 'bg-rose-950/40 border-rose-500/50 text-rose-300 line-through';
+                              if (isCorrect) optionStyle = 'bg-transparent border-emerald-500/40 text-emerald-200 font-medium';
+                              else if (isSelected && !isCorrect) optionStyle = 'bg-transparent border-rose-500/40 text-rose-300 line-through';
                             } else if (isSelected) {
                               optionStyle = 'bg-white/[0.08] border-white/40 text-white font-medium ring-1 ring-white/20';
                             }
@@ -263,8 +263,8 @@ export function LearningDrawer({
                         </div>
 
                         {submitted && (
-                          <div className="mt-4 p-3.5 rounded-lg bg-blue-950/20 border border-blue-500/30 font-mono text-xs text-blue-200 leading-relaxed">
-                            <strong className="text-blue-100">{t('Penjelasan:', 'Explanation:')}</strong> {q.explanation}
+                          <div className="mt-4 p-3.5 rounded-lg bg-white/[0.03] border border-white/10 font-mono text-xs text-zinc-300 leading-relaxed">
+                            <strong className="text-white">{t('Penjelasan:', 'Explanation:')}</strong> {q.explanation}
                           </div>
                         )}
                       </div>

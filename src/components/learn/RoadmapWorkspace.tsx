@@ -17,16 +17,15 @@ import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import { LearningDrawer } from '@/components/learn/LearningDrawer';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Lightning, LockSimple } from '@phosphor-icons/react';
+import { CheckCircle, LockSimple } from '@phosphor-icons/react';
 
 // Custom Section Milestone Node (Spine Center)
 const SectionMilestoneNode = ({ data }: { data: any }) => {
   return (
     <div className="group relative">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-2xl blur-sm opacity-50 group-hover:opacity-100 transition duration-300" />
       <div className="relative bg-[#0d0d12] border border-white/15 px-8 py-3.5 min-w-[280px] rounded-xl shadow-2xl text-center flex items-center justify-center gap-2.5">
         <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
         <span className="font-semibold text-sm uppercase tracking-wider text-white">
           {data.label}
         </span>
@@ -58,7 +57,7 @@ const TopicGroupNode = ({ data }: { data: any }) => {
           </h4>
           <span className={`font-mono text-[10px] font-medium px-2 py-0.5 rounded-full border ${
             isAllMastered
-              ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/20'
+              ? 'bg-white text-black border-white'
               : 'bg-white/5 text-zinc-400 border-white/10'
           }`}>
             {masteredCount}/{data.topics.length} Done
@@ -76,11 +75,11 @@ const TopicGroupNode = ({ data }: { data: any }) => {
             let icon = <LockSimple weight="bold" className="w-3.5 h-3.5 text-zinc-600 shrink-0" />;
 
             if (isMastered) {
-              pillStyle = 'bg-emerald-950/25 border-emerald-500/25 text-emerald-300 hover:bg-emerald-950/40 hover:border-emerald-500/40 cursor-pointer shadow-sm';
-              icon = <CheckCircle weight="fill" className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+              pillStyle = 'bg-white border-white text-black hover:bg-zinc-200 cursor-pointer shadow-sm font-medium';
+              icon = <CheckCircle weight="fill" className="w-3.5 h-3.5 text-black shrink-0" />;
             } else if (isUnlocked) {
               pillStyle = 'bg-white/[0.06] border-white/20 text-white hover:bg-white/[0.12] hover:border-white/30 cursor-pointer shadow-sm';
-              icon = <Lightning weight="fill" className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+              icon = <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" aria-hidden="true" />;
             }
 
             return (
@@ -123,8 +122,8 @@ const FlatNodeComponent = ({ data }: { data: any }) => {
   let badgeStyle = 'bg-white/5 text-zinc-500 border-white/10';
 
   if (isMastered) {
-    borderStyle = 'border-emerald-500/30 bg-[#09090c] hover:border-emerald-500/50 cursor-pointer shadow-lg';
-    badgeStyle = 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30';
+    borderStyle = 'border-white bg-[#09090c] hover:border-zinc-300 cursor-pointer shadow-lg';
+    badgeStyle = 'bg-white text-black border-white';
   } else if (isUnlocked) {
     borderStyle = 'border-white/25 bg-[#0e0e13] hover:border-white/40 cursor-pointer shadow-xl';
     badgeStyle = 'bg-white/10 text-white border-white/20';
@@ -138,7 +137,7 @@ const FlatNodeComponent = ({ data }: { data: any }) => {
       <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
       <div className="flex justify-between items-center mb-2">
         <span className={`text-[10px] font-mono font-medium uppercase px-2 py-0.5 rounded-full border ${badgeStyle}`}>
-          {isMastered ? '✓ MASTERED' : isUnlocked ? '⚡ UNLOCKED' : '🔒 LOCKED'}
+          {isMastered ? 'MASTERED' : isUnlocked ? 'UNLOCKED' : 'LOCKED'}
         </span>
       </div>
 
@@ -275,7 +274,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
             source: secNodeId,
             target: grpNodeId,
             type: 'default',
-            style: { strokeWidth: 1.5, stroke: '#6366f1', strokeDasharray: '4,4' },
+            style: { strokeWidth: 1.5, stroke: '#3f3f46', strokeDasharray: '4,4' },
           });
         });
 
@@ -338,7 +337,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
           source: p,
           target: n.nodeId,
           type: 'default',
-          style: { strokeWidth: 2, stroke: n.status === 'mastered' ? '#10b981' : '#3f3f46' },
+          style: { strokeWidth: 2, stroke: n.status === 'mastered' ? '#e4e4e7' : '#3f3f46' },
         });
       });
     });

@@ -55,16 +55,16 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
   ];
 
   return (
-    <div className="hidden md:flex flex-col w-72 shrink-0 overflow-y-auto overflow-x-hidden border-r border-white/10 bg-[#050507]">
+    <div className="hidden md:flex flex-col w-64 shrink-0 overflow-y-auto overflow-x-hidden border-r border-white/10 bg-[#050507]">
       {/* Progress rail header */}
-      <div className="shrink-0 border-b border-white/10 px-5 pb-4 pt-5">
+      <div className="shrink-0 border-b border-white/10 px-4 py-4">
         <div className="flex items-center gap-3">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-400">
             Interview Flow
           </span>
           <span aria-hidden className="h-px flex-1 bg-white/10" />
         </div>
-        <div className="mt-3 flex items-center gap-1.5" aria-hidden>
+        <div className="mt-3 flex items-center gap-1" aria-hidden>
           {[1, 2, 3, 4, 5].map(p => (
             <span
               key={p}
@@ -92,7 +92,7 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
               onClick={() => onPhaseChange(p)}
               disabled={locked}
               aria-current={active ? 'step' : undefined}
-              className={`group relative flex items-center gap-4 px-5 py-3.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:bg-white/[0.04] ${
+              className={`group relative flex items-center gap-3 px-4 py-3 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:bg-white/[0.04] ${
                 locked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
               } ${active ? 'bg-white/[0.06]' : !locked ? 'hover:bg-white/[0.03]' : ''}`}
             >

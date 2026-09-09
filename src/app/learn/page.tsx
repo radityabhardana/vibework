@@ -170,7 +170,8 @@ export default function LearnHubPage() {
               <h1 className="font-sans font-bold text-sm text-white tracking-tight">
                 {t('Mesin Roadmap Pembelajaran AI', 'AI Learning Roadmap Engine')}
               </h1>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-300">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-white/15 bg-white/5 font-mono text-[10px] text-zinc-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 Active
               </span>
             </div>
@@ -201,7 +202,7 @@ export default function LearnHubPage() {
                 <Sparkle weight="fill" className="w-3 h-3 text-zinc-200" />
                 <span>Adaptive Curriculum Architect</span>
               </div>
-              <h2 className="font-sans font-extrabold text-2xl sm:text-3xl text-white tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
+              <h2 className="font-sans font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
                 {t('Buat Roadmap Pembelajaran Baru', 'Generate New Learning Roadmap')}
               </h2>
               <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
@@ -242,7 +243,7 @@ export default function LearnHubPage() {
                   </>
                 ) : (
                   <>
-                    <Fire weight="bold" className="w-4 h-4 text-amber-400" />
+                    <Fire weight="bold" className="w-4 h-4" />
                     <span>{t('AI Quick Grill →', 'AI Quick Grill →')}</span>
                   </>
                 )}
@@ -329,7 +330,7 @@ export default function LearnHubPage() {
             <div className="bg-zinc-950/80 border-b border-white/10 p-5 flex justify-between items-center sticky top-0 z-10 backdrop-blur-md">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-white">
-                  <Fire weight="bold" className="w-4 h-4 text-amber-400" />
+                  <Fire weight="bold" className="w-4 h-4" />
                 </div>
                 <h3 className="font-sans font-bold text-base text-white">
                   {t('AI Quick Grill: Personalisasi Roadmap', 'AI Quick Grill: Personalize Roadmap')}
@@ -400,7 +401,7 @@ export default function LearnHubPage() {
                       >
                         <span>{g}</span>
                         {isSelected ? (
-                          <Checks weight="bold" className="w-4 h-4 shrink-0 text-emerald-400" />
+                          <Checks weight="bold" className="w-4 h-4 shrink-0 text-white" />
                         ) : (
                           <span className="w-3.5 h-3.5 rounded border border-white/20 inline-block shrink-0" />
                         )}

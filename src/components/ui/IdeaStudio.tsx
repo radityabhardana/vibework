@@ -231,7 +231,7 @@ export function IdeaStudio({
         {projectId && (
           <div className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle weight="fill" className="w-4 h-4 text-zinc-300 shrink-0" />
               <span className="text-xs font-sans text-zinc-300 truncate">
                 Proyek ini telah memiliki dokumen spesifikasi &amp; flow node tree.
               </span>
@@ -406,7 +406,7 @@ export function IdeaStudio({
               </div>
             </div>
             <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600">
-              <Lightning weight="fill" className="w-3 h-3 text-amber-400" />
+              <Lightning weight="fill" className="w-3 h-3 text-zinc-400" />
               <span>Jangan tutup halaman ini sampai proses selesai</span>
             </div>
           </div>

@@ -40,7 +40,7 @@ export default async function EngineLayout({
               <span className="hidden sm:inline-block text-zinc-700">/</span>
               <span className="hidden sm:inline-block text-zinc-400">Spec Studio</span>
             </div>
-            <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-300">
+            <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-white/10 bg-white/5 font-mono text-[10px] text-zinc-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Engine Active</span>
             </span>

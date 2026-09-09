@@ -49,7 +49,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </Link>
           <div className="h-4 w-[1px] bg-white/10" />
           <h1 className="truncate font-sans text-base font-bold text-zinc-100 sm:text-lg">{data.project.name}</h1>
-          <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-cyan-400">
+          <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 font-mono text-[11px] font-medium text-zinc-300">
             {data.project.status}
           </span>
         </div>

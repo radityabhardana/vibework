@@ -96,7 +96,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
                     <span
                       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                         s.projectId
-                          ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
+                          ? 'bg-emerald-400'
                           : 'bg-zinc-600'
                       }`}
                       title={s.projectId ? 'Ready' : 'Draft'}
