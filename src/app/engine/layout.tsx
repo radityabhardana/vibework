@@ -5,7 +5,6 @@ import { chatSessions, projects } from '@/lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { EngineSidebar } from '@/components/ui/EngineSidebar';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
-import { Sparkle, Waveform, GraduationCap } from '@phosphor-icons/react/dist/ssr';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,14 +31,14 @@ export default async function EngineLayout({
         {/* Top Studio App Bar */}
         <header className="h-14 border-b border-white/10 bg-[#030303]/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-10 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
               <Link href="/" className="hover:text-white transition-colors">
                 Vibework
               </Link>
-              <span>/</span>
+              <span className="text-zinc-700">/</span>
               <span className="text-zinc-200 font-semibold">The Grill</span>
-              <span className="hidden sm:inline-block">/</span>
-              <span className="hidden sm:inline-block text-white">Spec Studio</span>
+              <span className="hidden sm:inline-block text-zinc-700">/</span>
+              <span className="hidden sm:inline-block text-zinc-400">Spec Studio</span>
             </div>
             <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -48,21 +47,6 @@ export default async function EngineLayout({
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
-            <Link
-              href="/voice"
-              className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-zinc-400 hover:text-white transition-colors"
-            >
-              <Waveform weight="bold" className="w-3.5 h-3.5" />
-              <span>Voice Studio</span>
-            </Link>
-            <Link
-              href="/learn"
-              className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-zinc-400 hover:text-white transition-colors"
-            >
-              <GraduationCap weight="bold" className="w-3.5 h-3.5" />
-              <span>Roadmap</span>
-            </Link>
-            <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
             <LanguageSwitcher />
           </div>
         </header>

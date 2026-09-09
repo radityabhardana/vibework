@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Lightning,
-  Sparkle,
   ArrowUp,
   DeviceMobile,
   Globe,
@@ -14,7 +13,6 @@ import {
   Kanban,
   CheckCircle,
   WarningCircle,
-  Gear,
   ArrowRight,
   Buildings,
   ChartLineUp,
@@ -219,19 +217,23 @@ export function IdeaStudio({
 
   return (
     <div className="flex-1 w-full h-full overflow-y-auto bg-[#030304] text-white p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start relative selection:bg-white selection:text-black">
-      {/* Ambient Lighting & Geometric Dot Matrix */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.07),transparent_70%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+      {/* ponytail: inline <style> instead of globals.css (out of scope) — move to globals if adopted site-wide */}
+      <style>{`@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}`}</style>
+      {/* Ambient glow + dot matrix, calibrated to landing */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[320px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
+      <div
+        className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none [mask-image:linear-gradient(to_bottom,black,transparent_60%)]"
+      />
 
       <div className="w-full max-w-3xl flex flex-col items-center gap-6 z-0 pt-2 sm:pt-4">
-        
+
         {/* Existing Project Alert Banner */}
         {projectId && (
-          <div className="w-full bg-white/[0.03] border border-white/15 rounded-xl px-4 py-3 flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="text-xs font-sans text-zinc-300 truncate">
-                Proyek ini telah memiliki dokumen spesifikasi & flow node tree.
+                Proyek ini telah memiliki dokumen spesifikasi &amp; flow node tree.
               </span>
             </div>
             <Link href={`/projects/${projectId}`} className="shrink-0">
@@ -242,13 +244,14 @@ export function IdeaStudio({
           </div>
         )}
 
-        {/* Studio Hero Header */}
-        <div className="flex flex-col items-center text-center gap-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300">
-            <Sparkle weight="fill" className="w-3.5 h-3.5 text-zinc-200" />
-            <span>AI Architecture & Spec Studio</span>
+        {/* Studio Hero Header — editorial blueprint */}
+        <div className="flex flex-col items-center text-center gap-3.5">
+          <div className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
+            <span aria-hidden className="size-1.5 rounded-full bg-white" />
+            <span>AI Architecture &amp; Spec Studio</span>
+            <span aria-hidden className="size-1.5 rounded-full bg-white/20" />
           </div>
-          <h1 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
+          <h1 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-[-0.03em] leading-[1.08] text-white">
             Tuangkan Ide Aplikasi Anda
           </h1>
           <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
@@ -264,12 +267,17 @@ export function IdeaStudio({
           </div>
         )}
 
-        {/* Double-Bezel Hardware Prompt Cockpit */}
-        <div className="w-full p-2 sm:p-2.5 rounded-3xl bg-zinc-900/60 border border-white/10 ring-1 ring-white/5 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.02)] focus-within:border-white/30 focus-within:ring-white/10 transition-all duration-300">
-          
-          {/* Inner Obsidian Typing Canvas */}
-          <div className="rounded-2xl bg-[#08080b]/90 border border-white/5 overflow-hidden shadow-inner">
-            
+        {/* Composer — single calm bezel with registration marks */}
+        <div className="relative w-full group/composer">
+          <span aria-hidden className="absolute -top-[7px] -left-[9px] font-mono text-sm leading-none text-zinc-600 select-none">+</span>
+          <span aria-hidden className="absolute -top-[7px] -right-[9px] font-mono text-sm leading-none text-zinc-600 select-none">+</span>
+          <span aria-hidden className="absolute -bottom-[7px] -left-[9px] font-mono text-sm leading-none text-zinc-600 select-none">+</span>
+          <span aria-hidden className="absolute -bottom-[7px] -right-[9px] font-mono text-sm leading-none text-zinc-600 select-none">+</span>
+          <span aria-hidden className="absolute -top-4 right-0 font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600 select-none">
+            Fig. 02 — Brief
+          </span>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] focus-within:border-white/25 transition-colors duration-300 overflow-hidden">
             {/* Textarea */}
             <div className="p-4 sm:p-5">
               <textarea
@@ -280,15 +288,15 @@ export function IdeaStudio({
                 disabled={status === 'generating'}
                 rows={4}
                 placeholder="Jelaskan aplikasi yang ingin Anda bangun (alur pengguna, integrasi payment/AI, aturan bisnis)..."
-                className="w-full bg-transparent text-sm sm:text-base text-white placeholder:text-zinc-500 focus:outline-none resize-none leading-relaxed font-sans"
+                className="w-full bg-transparent text-sm sm:text-base text-white placeholder:text-zinc-600 focus:outline-none resize-none leading-relaxed font-sans"
               />
             </div>
 
             {/* Optional Preferences Drawer */}
             {showAdvanced && (
-              <div className="mx-4 mb-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
+              <div className="mx-4 mb-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
+                  <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-[0.18em] block mb-1">
                     Target Pengguna
                   </label>
                   <input
@@ -297,11 +305,11 @@ export function IdeaStudio({
                     onChange={(e) => setTargetAudience(e.target.value)}
                     disabled={status === 'generating'}
                     placeholder="Misal: Pemilik kos, mahasiswa, UMKM"
-                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">
+                  <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-[0.18em] block mb-1">
                     Tech Stack Preferensi
                   </label>
                   <input
@@ -310,20 +318,20 @@ export function IdeaStudio({
                     onChange={(e) => setTechStack(e.target.value)}
                     disabled={status === 'generating'}
                     placeholder="Misal: Next.js, Supabase, Tailwind, WhatsApp API"
-                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
+                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans transition-colors"
                   />
                 </div>
               </div>
             )}
 
-            {/* Integrated Action Toolbar */}
-            <div className="px-4 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-[#050507]">
+            {/* Action Toolbar */}
+            <div className="px-4 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-white/[0.015]">
               {/* Left Controls */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
                     showAdvanced
                       ? 'bg-white/10 border-white/30 text-white'
                       : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/5'
@@ -342,7 +350,7 @@ export function IdeaStudio({
                         type="button"
                         onClick={() => handleAddTag(tag.snippet)}
                         disabled={status === 'generating'}
-                        className="px-2 py-1 rounded-md text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1"
+                        className="px-2 py-1 rounded-md text-[11px] font-mono text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                       >
                         <TagIcon weight="bold" className="w-3 h-3" />
                         <span>+{tag.label}</span>
@@ -354,7 +362,7 @@ export function IdeaStudio({
 
               {/* Right Controls */}
               <div className="flex items-center gap-3">
-                <span className="hidden sm:inline-block font-mono text-[10px] text-zinc-500">
+                <span className="hidden sm:inline-block font-mono text-[10px] text-zinc-600">
                   {idea.trim().length > 0 ? `${idea.trim().length} chars · ` : ''}⌘⏎
                 </span>
 
@@ -362,7 +370,7 @@ export function IdeaStudio({
                   type="button"
                   onClick={handleGenerate}
                   disabled={!idea.trim() || status === 'generating'}
-                  className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 disabled:opacity-30 disabled:hover:bg-white font-sans font-semibold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer disabled:pointer-events-none"
+                  className="px-4 py-2 rounded-xl bg-white text-black hover:bg-white/90 disabled:opacity-30 disabled:hover:bg-white font-mono font-semibold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 >
                   <span>{status === 'generating' ? 'Drafting Spec...' : projectId ? 'Regenerate' : 'Generate Spec'}</span>
                   <div className="w-5 h-5 rounded-full bg-black/10 flex items-center justify-center">
@@ -376,19 +384,30 @@ export function IdeaStudio({
 
         {/* Progress State while Generating */}
         {status === 'generating' && (
-          <div className="w-full p-4 rounded-xl bg-white/[0.03] border border-white/15 shadow-xl flex flex-col gap-2.5 animate-in fade-in">
-            <div className="flex items-center justify-between font-mono text-xs">
-              <div className="flex items-center gap-2">
-                <Lightning weight="fill" className="w-3.5 h-3.5 text-white animate-bounce" />
-                <span className="text-zinc-200">{GENERATION_STEPS[progressStepIndex]}</span>
+          <div className="w-full p-4 sm:p-5 rounded-xl bg-white/[0.03] border border-white/10 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center gap-4">
+              <span
+                aria-hidden
+                className="font-mono text-2xl font-bold leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.4)] select-none"
+              >
+                0{progressStepIndex + 1}
+              </span>
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-3 font-mono text-xs">
+                  <span className="text-zinc-200 truncate">{GENERATION_STEPS[progressStepIndex]}</span>
+                  <span className="font-bold text-white shrink-0">{Math.round(progressPercent)}%</span>
+                </div>
+                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
               </div>
-              <span className="font-bold text-white">{Math.round(progressPercent)}%</span>
             </div>
-            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-                style={{ width: `${progressPercent}%` }}
-              />
+            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600">
+              <Lightning weight="fill" className="w-3 h-3 text-amber-400" />
+              <span>Jangan tutup halaman ini sampai proses selesai</span>
             </div>
           </div>
         )}
@@ -396,30 +415,36 @@ export function IdeaStudio({
         {/* Curated Architecture Blueprints */}
         {status !== 'generating' && (
           <div className="w-full flex flex-col gap-3 mt-1">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">
-                Contoh Blueprint Arsitektur Siap Pakai:
+            <div className="flex items-center gap-3 px-1">
+              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
+                Contoh Blueprint Siap Pakai
               </span>
+              <span aria-hidden className="h-px flex-1 bg-white/10" />
               <span className="text-[10px] font-mono text-zinc-600 hidden sm:inline-block">
                 Klik untuk memuat
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {STARTER_PROMPTS.map((ex) => {
+              {STARTER_PROMPTS.map((ex, idx) => {
                 const IconComponent = ex.icon;
                 return (
                   <button
                     key={ex.title}
                     type="button"
                     onClick={() => setIdea(ex.prompt)}
-                    className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/30 transition-all text-left flex items-start gap-3.5 group cursor-pointer shadow-sm hover:shadow-xl backdrop-blur-md"
+                    className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/25 hover:-translate-y-0.5 transition-all duration-300 text-left flex items-start gap-3.5 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                   >
-                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white shrink-0 group-hover:bg-white group-hover:text-black transition-colors">
-                      <IconComponent weight="fill" size={20} />
+                    <div className="flex flex-col items-center gap-2 shrink-0">
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white group-hover:bg-white group-hover:text-black transition-colors duration-300">
+                        <IconComponent weight="duotone" size={20} />
+                      </div>
+                      <span className="font-mono text-[9px] text-zinc-600">
+                        0{idx + 1}
+                      </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 font-semibold">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500 font-semibold">
                           {ex.tag}
                         </span>
                         <ArrowRight weight="bold" className="w-3 h-3 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100" />

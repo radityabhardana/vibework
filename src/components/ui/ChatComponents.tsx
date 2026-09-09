@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
 import { ArrowUUpLeft } from '@phosphor-icons/react';
 import ReactMarkdown from 'react-markdown';
 
@@ -56,28 +55,71 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
   ];
 
   return (
-    <div className="hidden md:flex flex-col w-72 shrink-0 overflow-y-auto overflow-x-hidden border-r-4 border-brutal-black bg-brutal-white">
-      <h2 className="font-sans font-black text-2xl uppercase text-brutal-white px-6 py-5 bg-brutal-black tracking-widest shrink-0">
-        Interview Flow
-      </h2>
-      <div className="flex flex-col w-full">
-        {[1, 2, 3, 4, 5].map(p => (
-          <button
-            key={p}
-            onClick={() => onPhaseChange(p)}
-            disabled={p > maxPhase}
-            className={`w-full text-left p-5 border-b-4 border-brutal-black font-mono font-bold transition-all ${
-              activePhaseTab === p
-                ? 'bg-brutal-blue text-brutal-white pl-8'
-                : p > maxPhase
-                  ? 'bg-brutal-white/40 text-brutal-black/40 cursor-not-allowed'
-                  : 'bg-brutal-white hover:bg-brutal-yellow'
-            }`}
-          >
-            <div className="text-xs opacity-70 mb-1">FASE {p}</div>
-            <div className="text-sm leading-tight">{PHASE_TITLES[p - 1]}</div>
-          </button>
-        ))}
+    <div className="hidden md:flex flex-col w-72 shrink-0 overflow-y-auto overflow-x-hidden border-r border-white/10 bg-[#050507]">
+      {/* Progress rail header */}
+      <div className="shrink-0 border-b border-white/10 px-5 pb-4 pt-5">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-400">
+            Interview Flow
+          </span>
+          <span aria-hidden className="h-px flex-1 bg-white/10" />
+        </div>
+        <div className="mt-3 flex items-center gap-1.5" aria-hidden>
+          {[1, 2, 3, 4, 5].map(p => (
+            <span
+              key={p}
+              className={`h-1 flex-1 rounded-full transition-colors duration-500 ${
+                p <= maxPhase ? 'bg-white/80' : 'bg-white/10'
+              }`}
+            />
+          ))}
+        </div>
+        <div className="mt-2 flex items-center justify-between font-mono text-[10px] tracking-wider text-zinc-500">
+          <span>{maxPhase}/5 unlocked</span>
+          <span className="text-zinc-600">FASE {activePhaseTab}</span>
+        </div>
+      </div>
+
+      {/* Phase rows */}
+      <div className="flex flex-col py-2">
+        {[1, 2, 3, 4, 5].map(p => {
+          const locked = p > maxPhase;
+          const active = activePhaseTab === p;
+          const done = p < maxPhase;
+          return (
+            <button
+              key={p}
+              onClick={() => onPhaseChange(p)}
+              disabled={locked}
+              aria-current={active ? 'step' : undefined}
+              className={`group relative flex items-center gap-4 px-5 py-3.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:bg-white/[0.04] ${
+                locked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+              } ${active ? 'bg-white/[0.06]' : !locked ? 'hover:bg-white/[0.03]' : ''}`}
+            >
+              {active && (
+                <span aria-hidden className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 bg-white" />
+              )}
+              <span
+                aria-hidden
+                className={`w-7 shrink-0 font-mono text-lg leading-none ${
+                  active
+                    ? 'font-bold text-white'
+                    : 'text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.3)] group-hover:[-webkit-text-stroke:1px_rgba(255,255,255,0.55)]'
+                }`}
+              >
+                0{p}
+              </span>
+              <span className="min-w-0">
+                <span className={`block font-mono text-[9px] uppercase tracking-[0.2em] ${active ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                  {done ? 'Selesai' : locked ? 'Terkunci' : `FASE ${p}`}
+                </span>
+                <span className={`mt-0.5 block truncate font-sans text-sm leading-tight ${active ? 'font-semibold text-white' : 'text-zinc-400'}`}>
+                  {PHASE_TITLES[p - 1]}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -124,7 +166,7 @@ export function MessageOptions({
     return (
       <div className="flex flex-col gap-2 mt-4 border-t border-white/10 pt-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-mono text-[10px] font-semibold uppercase rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-0.5">
+          <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-1">
             Pilih Tepat 1
           </span>
         </div>
@@ -133,15 +175,15 @@ export function MessageOptions({
             <button
               type="button"
               key={i}
-              className="text-left w-full h-full p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/30 transition-all disabled:opacity-50 disabled:pointer-events-none group cursor-pointer"
+              className="text-left w-full h-full p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               onClick={() => onSend(opt)}
               disabled={disabled}
             >
               <div className="flex items-start gap-3">
-                <span className="font-mono font-bold text-xs rounded-md bg-white/10 text-white w-6 h-6 flex items-center justify-center shrink-0">
+                <span className="font-mono font-bold text-xs rounded-md bg-white/10 text-white w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 group-hover:bg-white group-hover:text-black">
                   {i + 1}
                 </span>
-                <span className="font-sans text-xs sm:text-sm text-zinc-200 group-hover:text-white leading-snug mt-0.5">
+                <span className="font-sans text-xs sm:text-sm text-zinc-200 group-hover:text-white leading-snug mt-0.5 transition-colors">
                   {opt}
                 </span>
               </div>
@@ -150,7 +192,7 @@ export function MessageOptions({
           {!hideCustom && (
             <button
               type="button"
-              className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+              className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               onClick={onCustom}
               disabled={disabled}
             >
@@ -158,7 +200,7 @@ export function MessageOptions({
                 <span className="font-mono font-bold text-xs rounded-md bg-white/5 text-zinc-400 w-6 h-6 flex items-center justify-center shrink-0">
                   *
                 </span>
-                <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5">
+                <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5 transition-colors">
                   Lainnya (Custom)...
                 </span>
               </div>
@@ -172,7 +214,7 @@ export function MessageOptions({
   return (
     <div className="mt-4 border-t border-white/10 pt-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[10px] font-semibold uppercase rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-0.5">
+        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-1">
           {maxSelections ? `Pilih Maksimal ${maxSelections}` : 'Pilih 1 atau Lebih'}
         </span>
       </div>
@@ -183,17 +225,17 @@ export function MessageOptions({
             <button
               type="button"
               key={i}
-              className={`text-left w-full h-full p-3.5 rounded-xl border transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${
+              className={`text-left w-full h-full p-3.5 rounded-xl border transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
                 isSelected
-                  ? 'bg-white/[0.12] border-white/40 ring-1 ring-white/30 shadow-md'
-                  : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.08] hover:border-white/30'
+                  ? 'bg-white/[0.10] border-white/40 ring-1 ring-white/20'
+                  : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.07] hover:border-white/30'
               }`}
               onClick={() => toggleSelect(i)}
               disabled={disabled}
             >
               <div className="flex items-start gap-3">
                 <span
-                  className={`font-mono font-bold text-xs rounded-md w-6 h-6 flex items-center justify-center shrink-0 ${
+                  className={`font-mono font-bold text-xs rounded-md w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 ${
                     isSelected ? 'bg-white text-black' : 'bg-white/10 text-white'
                   }`}
                 >
@@ -209,7 +251,7 @@ export function MessageOptions({
         {!hideCustom && (
           <button
             type="button"
-            className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+            className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             onClick={onCustom}
             disabled={disabled}
           >
@@ -217,7 +259,7 @@ export function MessageOptions({
               <span className="font-mono font-bold text-xs rounded-md bg-white/5 text-zinc-400 w-6 h-6 flex items-center justify-center shrink-0">
                 *
               </span>
-              <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5">
+              <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5 transition-colors">
                 Lainnya (Custom)...
               </span>
             </div>
@@ -282,18 +324,19 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
     cleanText = cleanText.replace(/\[MULTI[_\s-]SELECT\]/gi, '').trim();
   }
 
+  const isUser = message.role === 'user';
+
   return (
-    <div className={`flex flex-col gap-1.5 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
-      <Card
-        bg={message.role === 'user' ? 'black' : 'white'}
-        className={`max-w-[85%] !p-4 sm:!p-5 ${
-          message.role === 'user'
-            ? '!bg-zinc-800/80 !border-white/20 rounded-2xl rounded-tr-sm'
-            : '!bg-[#09090c]/90 !border-white/10 rounded-2xl rounded-tl-sm'
+    <div className={`flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
+      <div
+        className={`max-w-[85%] px-4 py-3.5 sm:px-5 sm:py-4 border transition-colors duration-300 ${
+          isUser
+            ? 'rounded-2xl rounded-tr-sm border-white/15 bg-white/[0.07]'
+            : 'rounded-2xl rounded-tl-sm border-white/10 bg-[#0a0a0d]'
         }`}
       >
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 block mb-2 font-semibold">
-          {message.role === 'user' ? 'You' : 'System Architect'}
+        <span className={`block mb-2 font-mono text-[9px] uppercase tracking-[0.22em] font-semibold text-zinc-500 ${isUser ? 'text-right' : ''}`}>
+          {isUser ? 'You' : 'System Architect'}
         </span>
         <div className="flex flex-col gap-4">
           <div className="font-sans text-sm leading-relaxed text-zinc-100 prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
@@ -312,12 +355,12 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
             />
           )}
         </div>
-      </Card>
+      </div>
       {message.role === 'user' && canUndo && status === 'idle' && (
         <button
           type="button"
           onClick={onUndo}
-          className="group flex items-center gap-1.5 mt-0.5 mr-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all text-[11px] font-mono cursor-pointer"
+          className="group flex items-center gap-1.5 mt-0.5 mr-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-200 text-[11px] font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
           <ArrowUUpLeft weight="bold" className="w-3 h-3" />
           <span>Tarik Jawaban</span>
@@ -334,11 +377,19 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in">
-      <form onSubmit={onSubmit} className="bg-[#09090c] border border-white/15 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full flex flex-col gap-5 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+      <form
+        onSubmit={onSubmit}
+        className="bg-[#0a0a0d] border border-white/10 rounded-2xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] p-6 sm:p-8 max-w-md w-full flex flex-col gap-5"
+      >
         <div>
+          <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-zinc-500 mb-2">
+            Final Step
+          </div>
           <h3 className="font-sans font-bold text-xl text-white mb-1">Beri Nama Proyek</h3>
-          <p className="font-sans text-xs text-zinc-400 leading-relaxed">Masukkan nama untuk proyek ini sebelum mengompilasi PRD dan node flowchart.</p>
+          <p className="font-sans text-xs text-zinc-400 leading-relaxed">
+            Masukkan nama untuk proyek ini sebelum mengompilasi PRD dan node flowchart.
+          </p>
         </div>
         <Input
           autoFocus

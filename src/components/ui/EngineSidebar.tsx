@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Plus, House, Sparkle, Waveform, Kanban, GraduationCap } from '@phosphor-icons/react';
+import { Plus, House, Sparkle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/Button';
 import { DeleteSessionButton } from '@/components/ui/DeleteSessionButton';
 
@@ -15,11 +15,7 @@ export interface EngineSessionItem {
   updatedAt: string | null;
 }
 
-export function EngineSidebar({
-  initialSessions,
-}: {
-  initialSessions: EngineSessionItem[];
-}) {
+export function EngineSidebar({ initialSessions }: { initialSessions: EngineSessionItem[] }) {
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const pathname = usePathname();
 
@@ -35,10 +31,15 @@ export function EngineSidebar({
       <div className="flex flex-col gap-3 border-b border-white/10 p-3.5 bg-[#030304]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-6 rounded-md bg-white flex items-center justify-center text-black font-bold text-xs">
+            <div className="size-6 rounded-md bg-white flex items-center justify-center text-black">
               <Sparkle weight="fill" className="w-3.5 h-3.5" />
             </div>
-            <span className="font-sans font-bold text-sm text-white tracking-tight">The Grill</span>
+            <div className="leading-tight">
+              <span className="block font-sans font-bold text-sm text-white tracking-tight">The Grill</span>
+              <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">
+                Architecture Studio
+              </span>
+            </div>
           </div>
           <span className="rounded-full bg-white/5 border border-white/10 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
             {sessions.length} specs
@@ -64,33 +65,6 @@ export function EngineSidebar({
         >
           <Sparkle weight="bold" className="w-3.5 h-3.5" />
           <span>Architecture Studio</span>
-        </Link>
-        <Link
-          href="/projects"
-          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-sans transition-colors ${
-            pathname.startsWith('/projects') ? 'bg-white/10 text-white font-medium' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-          }`}
-        >
-          <Kanban weight="bold" className="w-3.5 h-3.5" />
-          <span>All Workspaces</span>
-        </Link>
-        <Link
-          href="/voice"
-          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-sans transition-colors ${
-            pathname === '/voice' ? 'bg-white/10 text-white font-medium' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-          }`}
-        >
-          <Waveform weight="bold" className="w-3.5 h-3.5" />
-          <span>Voice Studio</span>
-        </Link>
-        <Link
-          href="/learn"
-          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-sans transition-colors ${
-            pathname === '/learn' ? 'bg-white/10 text-white font-medium' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-          }`}
-        >
-          <GraduationCap weight="bold" className="w-3.5 h-3.5" />
-          <span>Curriculum Roadmap</span>
         </Link>
       </div>
 
