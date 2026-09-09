@@ -216,7 +216,7 @@ export function IdeaStudio({
   };
 
   return (
-    <div className="flex-1 w-full h-full overflow-y-auto bg-[#030304] text-white p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start relative selection:bg-white selection:text-black">
+    <div className="flex-1 w-full h-full overflow-y-auto bg-[#030304] text-white px-4 py-8 sm:px-6 md:px-8 md:py-12 flex flex-col items-center justify-start relative selection:bg-white selection:text-black">
       {/* ponytail: inline <style> instead of globals.css (out of scope) — move to globals if adopted site-wide */}
       <style>{`@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}`}</style>
       {/* Ambient glow + dot matrix, calibrated to landing */}
@@ -225,12 +225,12 @@ export function IdeaStudio({
         className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none [mask-image:linear-gradient(to_bottom,black,transparent_60%)]"
       />
 
-      <div className="w-full max-w-3xl flex flex-col items-center gap-6 z-0 pt-2 sm:pt-4">
+      <div className="w-full max-w-3xl flex flex-col gap-6 z-0">
 
         {/* Existing Project Alert Banner */}
         {projectId && (
           <div className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <CheckCircle weight="fill" className="w-4 h-4 text-zinc-300 shrink-0" />
               <span className="text-xs font-sans text-zinc-300 truncate">
                 Proyek ini telah memiliki dokumen spesifikasi &amp; flow node tree.
@@ -245,7 +245,7 @@ export function IdeaStudio({
         )}
 
         {/* Studio Hero Header — editorial blueprint */}
-        <div className="flex flex-col items-center text-center gap-3.5">
+        <div className="flex flex-col items-center text-center gap-3">
           <div className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
             <span aria-hidden className="size-1.5 rounded-full bg-white" />
             <span>AI Architecture &amp; Spec Studio</span>
@@ -261,7 +261,7 @@ export function IdeaStudio({
 
         {/* Error Alert */}
         {error && (
-          <div className="w-full bg-rose-950/40 text-rose-200 border border-rose-500/30 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs">
+          <div className="w-full bg-rose-950/40 text-rose-200 border border-rose-500/30 rounded-xl px-4 py-3 flex items-center gap-2 text-xs">
             <WarningCircle weight="bold" className="w-4 h-4 text-rose-400 shrink-0" />
             <span className="font-mono">{error}</span>
           </div>
@@ -279,7 +279,7 @@ export function IdeaStudio({
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] focus-within:border-white/25 transition-colors duration-300 overflow-hidden">
             {/* Textarea */}
-            <div className="p-4 sm:p-5">
+            <div className="p-4">
               <textarea
                 ref={textareaRef}
                 value={idea}
@@ -294,7 +294,7 @@ export function IdeaStudio({
 
             {/* Optional Preferences Drawer */}
             {showAdvanced && (
-              <div className="mx-4 mb-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="mx-4 mb-4 p-4 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-[0.18em] block mb-1">
                     Target Pengguna
@@ -325,13 +325,13 @@ export function IdeaStudio({
             )}
 
             {/* Action Toolbar */}
-            <div className="px-4 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-white/[0.015]">
+            <div className="px-4 py-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 bg-white/[0.015]">
               {/* Left Controls */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                  className={`px-3 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
                     showAdvanced
                       ? 'bg-white/10 border-white/30 text-white'
                       : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/5'
@@ -384,7 +384,7 @@ export function IdeaStudio({
 
         {/* Progress State while Generating */}
         {status === 'generating' && (
-          <div className="w-full p-4 sm:p-5 rounded-xl bg-white/[0.03] border border-white/10 shadow-xl flex flex-col gap-3">
+          <div className="w-full p-4 rounded-xl bg-white/[0.03] border border-white/10 shadow-xl flex flex-col gap-3">
             <div className="flex items-center gap-4">
               <span
                 aria-hidden
@@ -414,8 +414,8 @@ export function IdeaStudio({
 
         {/* Curated Architecture Blueprints */}
         {status !== 'generating' && (
-          <div className="w-full flex flex-col gap-3 mt-1">
-            <div className="flex items-center gap-3 px-1">
+          <div className="w-full flex flex-col gap-3 mt-2">
+            <div className="flex items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
                 Contoh Blueprint Siap Pakai
               </span>
@@ -432,7 +432,7 @@ export function IdeaStudio({
                     key={ex.title}
                     type="button"
                     onClick={() => setIdea(ex.prompt)}
-                    className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/25 hover:-translate-y-0.5 transition-all duration-300 text-left flex items-start gap-3.5 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                    className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/25 hover:-translate-y-0.5 transition-all duration-300 text-left flex items-start gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                   >
                     <div className="flex flex-col items-center gap-2 shrink-0">
                       <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white group-hover:bg-white group-hover:text-black transition-colors duration-300">
@@ -455,7 +455,7 @@ export function IdeaStudio({
                       <div className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
                         {ex.desc}
                       </div>
-                      <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center gap-1.5 font-mono text-[10px] text-zinc-500">
+                      <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 font-mono text-[10px] text-zinc-500">
                         <span>Output:</span>
                         <span className="text-zinc-400 font-medium">{ex.specs}</span>
                       </div>

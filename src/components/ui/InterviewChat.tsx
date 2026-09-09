@@ -431,7 +431,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         {messages.length > 0 && (
           <div className="flex flex-col shrink-0">
             {/* Phase header — the [FASE: n/5] affordance */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#08080b]/90 backdrop-blur-md px-4 py-3 md:px-5 md:py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#08080b]/90 backdrop-blur-md px-4 py-3 md:px-6">
               <div className="flex min-w-0 items-center gap-4">
                 <span
                   aria-hidden
@@ -450,12 +450,12 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {initialProjectId ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/15 bg-white/5 text-zinc-300">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/15 bg-white/5 text-zinc-300">
                     <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
                     Generated
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/10 bg-white/5 text-zinc-500">
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/10 bg-white/5 text-zinc-500">
                     Not generated
                   </span>
                 )}
@@ -487,7 +487,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
             </div>
 
             {/* Phase progress ticks */}
-            <div className="flex items-center border-b border-white/10 bg-[#08080b]/60 px-4 md:px-5" aria-hidden>
+            <div className="flex items-center border-b border-white/10 bg-[#08080b]/60 px-4 md:px-6" aria-hidden>
               {[1, 2, 3, 4, 5].map(p => (
                 <div key={p} className="group/tick relative flex-1 py-2">
                   <div className={`h-1 rounded-full transition-colors duration-500 ${p < activePhaseTab ? 'bg-white/60' : p === activePhaseTab ? 'bg-white' : 'bg-white/10'}`} />
@@ -514,7 +514,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   key={p}
                   onClick={() => setActivePhaseTab(p)}
                   disabled={p > maxPhase}
-                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 border-r border-white/10 font-mono text-xs font-semibold transition-colors ${
+                  className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 border-r border-white/10 font-mono text-xs font-semibold transition-colors ${
                     activePhaseTab === p ? 'bg-white text-black' : p > maxPhase ? 'opacity-30 text-zinc-600' : 'text-zinc-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -528,100 +528,105 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           </div>
         )}
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-5 bg-[#030304] relative">
-          {messages.length === 0 ? (
-            /* Empty state — no session yet */
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-4 relative">
-              <div aria-hidden className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05),transparent_70%)] pointer-events-none" />
-              <div className="relative flex flex-col items-center gap-5 max-w-xl">
-                <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
-                  <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
-                  <span>Interactive Architecture Interview</span>
-                </div>
-                <h1 className="text-3xl md:text-5xl font-extrabold font-sans tracking-[-0.03em] text-white leading-[1.08]">
-                  Vibework Engine
-                </h1>
-                <p className="text-sm md:text-[15px] font-sans text-zinc-400 max-w-lg leading-relaxed border border-white/10 bg-white/[0.02] rounded-xl px-6 py-5">
-                  System Architect siap untuk menginterogasi kebutuhan sistem Anda. Jelaskan aplikasi
-                  yang ingin dibangun untuk merancang PRD dan node flowchart terperinci.
-                </p>
-                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
-                  <Robot weight="duotone" className="w-4 h-4 text-zinc-500" />
-                  <span>5 fase wawancara · mulai dari baris pertama di bawah</span>
-                </div>
-                {error && (
-                  <Card bg="red" className="!p-4 mt-2 border-rose-500/30 text-rose-300 text-xs font-mono">
-                    Error: {error}
-                  </Card>
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
-              {activeMessages.map((m) => (
-                <MessageBubble
-                  key={m.id}
-                  message={m}
-                  status={status}
-                  onSend={sendMessage}
-                  onUndo={handleUndo}
-                  showCustomInput={showCustomInput}
-                  onShowCustom={() => setShowCustomInput(true)}
-                  isActionable={m.id === actionableAssistantId && activePhaseTab === maxPhase}
-                  canUndo={m.id === undoableUserId}
-                />
-              ))}
-
-              {activePhaseTab < maxPhase && (
-                <div className="mt-6 mb-2 rounded-xl border border-white/10 bg-white/[0.02] px-6 py-5 max-w-md mx-auto w-full flex flex-col gap-3 text-center">
-                  <span aria-hidden className="font-mono text-2xl font-bold leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.3)] select-none">
-                    0{activePhaseTab}
-                  </span>
-                  <h3 className="font-sans font-bold text-base text-white">Fase {activePhaseTab} Selesai</h3>
-                  <p className="font-sans text-xs text-zinc-500 leading-relaxed">
-                    Fase ini disimpan sebagai riwayat dan telah terkunci.
+        {/* Messages column — centered, capped at max-w-3xl; composer + banners share this column */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:px-6 md:py-8 bg-[#030304] relative">
+          <div className="mx-auto w-full max-w-3xl flex flex-col gap-6">
+            {messages.length === 0 ? (
+              /* Empty state — no session yet */
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+                <div aria-hidden className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05),transparent_70%)] pointer-events-none" />
+                <div className="relative flex flex-col items-center gap-6 max-w-xl">
+                  <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
+                    <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
+                    <span>Interactive Architecture Interview</span>
+                  </div>
+                  <h1 className="text-3xl md:text-5xl font-extrabold font-sans tracking-[-0.03em] text-white leading-[1.08]">
+                    Vibework Engine
+                  </h1>
+                  <p className="text-sm md:text-[15px] font-sans text-zinc-400 max-w-lg leading-relaxed border border-white/10 bg-white/[0.02] rounded-xl px-6 py-5">
+                    System Architect siap untuk menginterogasi kebutuhan sistem Anda. Jelaskan aplikasi
+                    yang ingin dibangun untuk merancang PRD dan node flowchart terperinci.
                   </p>
-                  <div className="flex justify-center mt-1">
-                    <Button variant="primary" size="sm" onClick={() => setActivePhaseTab(activePhaseTab + 1)}>
-                      Lanjut Fase {activePhaseTab + 1} &rarr;
-                    </Button>
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+                    <Robot weight="duotone" className="w-4 h-4 text-zinc-500" />
+                    <span>5 fase wawancara · mulai dari baris pertama di bawah</span>
                   </div>
+                  {error && (
+                    <Card bg="red" className="!p-4 border-rose-500/30 text-rose-300 text-xs font-mono">
+                      Error: {error}
+                    </Card>
+                  )}
                 </div>
-              )}
+              </div>
+            ) : (
+              <>
+                {activeMessages.map((m) => (
+                  <MessageBubble
+                    key={m.id}
+                    message={m}
+                    status={status}
+                    onSend={sendMessage}
+                    onUndo={handleUndo}
+                    showCustomInput={showCustomInput}
+                    onShowCustom={() => setShowCustomInput(true)}
+                    isActionable={m.id === actionableAssistantId && activePhaseTab === maxPhase}
+                    canUndo={m.id === undoableUserId}
+                  />
+                ))}
 
-              {status === 'submitted' && activePhaseTab === maxPhase && (
-                <div className="flex justify-start">
-                  <div className="rounded-xl rounded-tl-sm border border-white/10 bg-[#0a0a0d] px-4 py-2.5 text-xs text-zinc-400 font-mono flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Architect sedang memproses tanggapan...</span>
+                {activePhaseTab < maxPhase && (
+                  <div className="mt-2 mb-2 rounded-xl border border-white/10 bg-white/[0.02] px-6 py-6 max-w-md mx-auto w-full flex flex-col gap-3 text-center">
+                    <span aria-hidden className="font-mono text-2xl font-bold leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.3)] select-none">
+                      0{activePhaseTab}
+                    </span>
+                    <h3 className="font-sans font-bold text-base text-white">Fase {activePhaseTab} Selesai</h3>
+                    <p className="font-sans text-xs text-zinc-500 leading-relaxed">
+                      Fase ini disimpan sebagai riwayat dan telah terkunci.
+                    </p>
+                    <div className="flex justify-center">
+                      <Button variant="primary" size="sm" onClick={() => setActivePhaseTab(activePhaseTab + 1)}>
+                        Lanjut Fase {activePhaseTab + 1} &rarr;
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-              {error && (
-                <div className="flex justify-center mt-3">
-                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 font-mono text-xs text-rose-200">
-                    Error: {error}
+                )}
+
+                {status === 'submitted' && activePhaseTab === maxPhase && (
+                  <div className="flex justify-start">
+                    <div className="rounded-xl rounded-tl-sm border border-white/10 bg-[#0a0a0d] px-4 py-3 text-xs text-zinc-400 font-mono flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Architect sedang memproses tanggapan...</span>
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+                {error && (
+                  <div className="flex justify-center">
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 font-mono text-xs text-rose-200">
+                      Error: {error}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {hasUserResponse && !isComplete && status === 'idle' && (
-          <div className="mx-4 mb-2 p-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-2 font-sans text-xs text-zinc-300">
-              <Lightning weight="fill" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span>Sudah cukup dengan informasi yang tertera?</span>
+          <div className="shrink-0 bg-[#08080b] px-4 md:px-6 pb-2 pt-2">
+            <div className="mx-auto w-full max-w-3xl p-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-sans text-xs text-zinc-300">
+                <Lightning weight="fill" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>Sudah cukup dengan informasi yang tertera?</span>
+              </div>
+              <button
+                type="button"
+                onClick={initiateGenerateWorkflow}
+                className="inline-flex items-center gap-1.5 font-sans font-semibold text-xs px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 cursor-pointer transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              >
+                <Lightning weight="bold" className="w-3.5 h-3.5" />
+                Generate Sekarang (AI Lengkapi Sisanya)
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={initiateGenerateWorkflow}
-              className="inline-flex items-center gap-1.5 font-sans font-semibold text-xs px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 cursor-pointer transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            >
-              <Lightning weight="bold" className="w-3.5 h-3.5" />
-              Generate Sekarang (AI Lengkapi Sisanya)
-            </button>
           </div>
         )}
 
@@ -642,8 +647,8 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           if (!shouldShowInput) return null;
 
           return (
-            <div className="px-3 pb-3 md:px-4 md:pb-4 pt-2 bg-[#08080b] border-t border-white/10 shrink-0 relative">
-              <form onSubmit={handleFormSubmit} className="max-w-4xl mx-auto flex gap-2.5 items-center">
+            <div className="px-4 pb-4 pt-2 md:px-6 bg-[#08080b] border-t border-white/10 shrink-0 relative">
+              <form onSubmit={handleFormSubmit} className="mx-auto max-w-3xl flex gap-2 items-center">
                 <Input
                   ref={inputRef}
                   value={localInput}

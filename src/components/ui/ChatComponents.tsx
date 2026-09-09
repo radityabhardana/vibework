@@ -166,16 +166,16 @@ export function MessageOptions({
     return (
       <div className="flex flex-col gap-2 mt-4 border-t border-white/10 pt-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-1">
+          <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-3 py-1">
             Pilih Tepat 1
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {options.map((opt, i) => (
             <button
               type="button"
               key={i}
-              className="text-left w-full h-full p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="text-left w-full h-full p-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               onClick={() => onSend(opt)}
               disabled={disabled}
             >
@@ -192,7 +192,7 @@ export function MessageOptions({
           {!hideCustom && (
             <button
               type="button"
-              className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="text-left w-full h-full p-3 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               onClick={onCustom}
               disabled={disabled}
             >
@@ -214,18 +214,18 @@ export function MessageOptions({
   return (
     <div className="mt-4 border-t border-white/10 pt-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-2.5 py-1">
+        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-3 py-1">
           {maxSelections ? `Pilih Maksimal ${maxSelections}` : 'Pilih 1 atau Lebih'}
         </span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {options.map((opt, i) => {
           const isSelected = selected.has(i);
           return (
             <button
               type="button"
               key={i}
-              className={`text-left w-full h-full p-3.5 rounded-xl border transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+              className={`text-left w-full h-full p-3 rounded-xl border transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
                 isSelected
                   ? 'bg-white/[0.10] border-white/40 ring-1 ring-white/20'
                   : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.07] hover:border-white/30'
@@ -251,7 +251,7 @@ export function MessageOptions({
         {!hideCustom && (
           <button
             type="button"
-            className="text-left w-full h-full p-3.5 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            className="text-left w-full h-full p-3 rounded-xl border border-dashed border-white/15 bg-white/[0.01] hover:bg-white/[0.05] hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             onClick={onCustom}
             disabled={disabled}
           >
@@ -327,9 +327,9 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
   const isUser = message.role === 'user';
 
   return (
-    <div className={`flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
+    <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
       <div
-        className={`max-w-[85%] px-4 py-3.5 sm:px-5 sm:py-4 border transition-colors duration-300 ${
+        className={`max-w-[85%] px-4 py-3 border transition-colors duration-300 ${
           isUser
             ? 'rounded-2xl rounded-tr-sm border-white/15 bg-white/[0.07]'
             : 'rounded-2xl rounded-tl-sm border-white/10 bg-[#0a0a0d]'
@@ -360,7 +360,7 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
         <button
           type="button"
           onClick={onUndo}
-          className="group flex items-center gap-1.5 mt-0.5 mr-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-200 text-[11px] font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          className="group flex items-center gap-1.5 mt-1 mr-1 px-3 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-200 text-[11px] font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
           <ArrowUUpLeft weight="bold" className="w-3 h-3" />
           <span>Tarik Jawaban</span>

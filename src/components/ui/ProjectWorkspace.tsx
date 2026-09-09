@@ -529,14 +529,14 @@ export function ProjectWorkspace({
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#030303] text-white relative">
       {/* Top Workspace Tab Switcher Bar */}
-      <div className="bg-[#030303]/90 border-b border-white/10 px-3 py-2.5 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 backdrop-blur-md">
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+      <div className="bg-[#030303]/90 border-b border-white/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20 backdrop-blur-md">
+        <div className="flex items-center gap-1.5 overflow-x-auto min-w-0">
           {TABS.map(({ id, num, label, icon: TabIcon, ready }) => (
             <button
               key={id}
               type="button"
               onClick={() => setActiveTab(id)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
+              className={`shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
                 activeTab === id
                   ? 'bg-white text-black border-transparent shadow-sm'
                   : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
@@ -556,7 +556,7 @@ export function ProjectWorkspace({
         <button
           type="button"
           onClick={handleExportAll}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/[0.04] ring ring-white/30 hover:bg-white/10 text-white font-mono text-xs font-medium rounded-lg transition-all duration-300 cursor-pointer shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] ring ring-white/30 hover:bg-white/10 text-white font-mono text-xs font-medium rounded-lg transition-all duration-300 cursor-pointer shrink-0"
           title="Download semua spesifikasi menjadi file Markdown lengkap"
         >
           <DownloadSimple weight="bold" className="w-3.5 h-3.5" />
@@ -619,9 +619,9 @@ export function ProjectWorkspace({
 
         {/* TAB 2: PRD */}
         {activeTab === 'prd' && (
-          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 md:p-6 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-4">
-              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
                     Product Requirements Document (PRD)
@@ -652,7 +652,7 @@ export function ProjectWorkspace({
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+              <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                 {prd?.documentContent || 'PRD belum digenerate.'}
               </div>
             </div>
@@ -661,9 +661,9 @@ export function ProjectWorkspace({
 
         {/* TAB 3: AGENTS.MD */}
         {activeTab === 'agents' && (
-          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 md:p-6 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-4">
-              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-white/5 text-zinc-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] rounded-full border border-white/10">
@@ -714,11 +714,11 @@ export function ProjectWorkspace({
               </div>
 
               {project.agentsDocument ? (
-                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                   {project.agentsDocument}
                 </div>
               ) : (
-                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-4">
+                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-6 text-center flex flex-col items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-300">
                     <Robot weight="duotone" className="w-8 h-8" />
                   </div>
@@ -744,10 +744,10 @@ export function ProjectWorkspace({
 
         {/* TAB 4: ARCHITECTURE & SCHEMA */}
         {activeTab === 'architecture' && (
-          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
-            <div className="w-full max-w-5xl flex flex-col gap-6">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 md:p-6 flex flex-col items-center">
+            <div className="w-full max-w-5xl flex flex-col gap-4">
               {/* Architecture Decision Record Header */}
-              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
                     Architecture & Tech Stack (ADR)
@@ -783,13 +783,13 @@ export function ProjectWorkspace({
 
               {/* ADR Markdown */}
               {adr?.adrDocument && (
-                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                   {adr.adrDocument}
                 </div>
               )}
 
               {/* Database Schema & API Contract Section */}
-              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-sans font-bold text-lg text-zinc-100">
                     Database Schema & API Contract
@@ -825,11 +825,11 @@ export function ProjectWorkspace({
 
               {schema?.dbSchema ? (
                 <div className="flex flex-col gap-4">
-                  <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                  <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                     {schema.dbSchema}
                   </div>
                   {schema.apiContract && (
-                    <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed overflow-x-auto">
+                    <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed overflow-x-auto">
                       <pre>{JSON.stringify(schema.apiContract, null, 2)}</pre>
                     </div>
                   )}
@@ -845,9 +845,9 @@ export function ProjectWorkspace({
 
         {/* TAB 5: PROMPT.MD */}
         {activeTab === 'prompts' && (
-          <div className="w-full h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          <div className="w-full h-full overflow-y-auto bg-background p-4 md:p-6 flex flex-col items-center">
             <div className="w-full max-w-5xl flex flex-col gap-4">
-              <div className="bg-zinc-900/80 border border-white/10 p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-white/5 text-zinc-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] rounded-full border border-white/10">
@@ -901,11 +901,11 @@ export function ProjectWorkspace({
               </div>
 
               {effectivePromptMd ? (
-                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                   {effectivePromptMd}
                 </div>
               ) : (
-                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-4">
+                <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-6 text-center flex flex-col items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-300">
                     <Lightning weight="duotone" className="w-8 h-8" />
                   </div>

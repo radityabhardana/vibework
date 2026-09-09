@@ -26,9 +26,9 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
   const sessions = initialSessions.filter(s => !deletedIds.includes(s.id));
 
   return (
-    <aside className="flex max-h-[16rem] w-full shrink-0 flex-col border-b border-white/10 bg-[#050507] lg:h-full lg:max-h-none lg:w-64 lg:border-r lg:border-b-0">
+    <aside className="flex max-h-[40vh] w-full shrink-0 flex-col border-b border-white/10 bg-[#050507] lg:h-full lg:max-h-none lg:w-64 lg:border-r lg:border-b-0">
       {/* Sidebar Header */}
-      <div className="flex flex-col gap-3 border-b border-white/10 p-3.5 bg-[#030304]">
+      <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 bg-[#030304]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="size-6 rounded-md bg-white flex items-center justify-center text-black">
@@ -41,7 +41,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
               </span>
             </div>
           </div>
-          <span className="rounded-full bg-white/5 border border-white/10 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
+          <span className="rounded-full bg-white/5 border border-white/10 px-3 py-0.5 font-mono text-[11px] text-zinc-400">
             {sessions.length} specs
           </span>
         </div>
@@ -59,7 +59,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
       <div className="flex flex-col gap-0.5 px-2 py-2 border-b border-white/5 shrink-0">
         <Link
           href="/engine"
-          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-sans transition-colors ${
+          className={`flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-sans transition-colors ${
             pathname === '/engine' ? 'bg-white/10 text-white font-medium' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
           }`}
         >
@@ -69,10 +69,9 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
       </div>
 
       {/* Session History List */}
-      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
-        <div className="px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold flex items-center justify-between">
-          <span>Recent Specs</span>
-          <span className="text-[10px] text-zinc-600">{sessions.length}</span>
+      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-2">
+        <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+          Recent Specs
         </div>
 
         {sessions.length === 0 ? (
@@ -85,7 +84,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
             return (
               <div
                 key={s.id}
-                className={`group relative flex items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-all duration-150 ${
+                className={`group relative flex items-center justify-between rounded-lg px-2 py-2 text-xs transition-all duration-150 ${
                   isActive
                     ? 'bg-white/10 text-white font-medium shadow-sm'
                     : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
@@ -118,7 +117,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
       </div>
 
       {/* Sidebar System Status Footer */}
-      <div className="border-t border-white/10 p-3 bg-[#030304] shrink-0">
+      <div className="border-t border-white/10 px-4 py-3 bg-[#030304] shrink-0">
         <div className="flex items-center justify-between font-mono text-[10px] text-zinc-500">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
