@@ -2,8 +2,8 @@ import { getApiKeys } from '@/lib/utils';
 
 const configuredTimeout = Number(process.env.AI_GENERATION_TIMEOUT_MS);
 const GENERATION_TIMEOUT_MS = Number.isFinite(configuredTimeout)
-  ? Math.min(120_000, Math.max(10_000, configuredTimeout))
-  : 60_000;
+  ? Math.min(300_000, Math.max(10_000, configuredTimeout))
+  : 180_000;
 
 export class AiGenerationTimeoutError extends Error {
   constructor() {
