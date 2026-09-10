@@ -30,22 +30,25 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
       {/* Sidebar Header */}
       <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 bg-[#030304]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="size-7 rounded-lg bg-white flex items-center justify-center text-black shadow-sm shrink-0">
-              <Sparkle weight="fill" className="w-4 h-4" />
+          <div className="flex items-center gap-2">
+            <div className="size-6 rounded-md bg-white flex items-center justify-center text-black">
+              <Sparkle weight="fill" className="w-3.5 h-3.5" />
             </div>
             <div className="leading-tight">
               <span className="block font-sans font-bold text-sm text-white tracking-tight">The Grill</span>
-              <span className="block font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-400">
+              <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">
                 Architecture Studio
               </span>
             </div>
           </div>
+          <span className="rounded-full bg-white/5 border border-white/10 px-3 py-0.5 font-mono text-[11px] text-zinc-400">
+            {sessions.length} specs
+          </span>
         </div>
 
         {/* Primary Action Button */}
-        <Link href="/engine" className="group">
-          <Button variant="primary" size="sm" className="w-full !py-2 text-xs font-sans gap-2 justify-center shadow-sm group-hover:bg-zinc-100 transition-all active:scale-[0.98]">
+        <Link href="/engine">
+          <Button variant="primary" size="sm" className="w-full !py-2 text-xs font-sans gap-2 justify-center shadow-sm">
             <Plus weight="bold" className="w-3.5 h-3.5" />
             <span>New Architecture Spec</span>
           </Button>
@@ -56,8 +59,8 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
       <div className="flex flex-col gap-0.5 px-2 py-2 border-b border-white/5 shrink-0">
         <Link
           href="/engine"
-          className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sans transition-colors ${
-            pathname === '/engine' ? 'bg-white/10 text-white font-medium shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+          className={`flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-sans transition-colors ${
+            pathname === '/engine' ? 'bg-white/10 text-white font-medium' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
           }`}
         >
           <Sparkle weight="bold" className="w-3.5 h-3.5" />
@@ -67,13 +70,8 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
 
       {/* Session History List */}
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-2">
-        <div className="flex items-center justify-between px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-          <span>Recent Specs</span>
-          {sessions.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] text-zinc-400 font-mono tabular-nums">
-              {sessions.length}
-            </span>
-          )}
+        <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+          Recent Specs
         </div>
 
         {sessions.length === 0 ? (
@@ -86,7 +84,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
             return (
               <div
                 key={s.id}
-                className={`group relative flex items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-all duration-150 ${
+                className={`group relative flex items-center justify-between rounded-lg px-2 py-2 text-xs transition-all duration-150 ${
                   isActive
                     ? 'bg-white/10 text-white font-medium shadow-sm'
                     : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
@@ -97,10 +95,10 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
                     <span
                       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                         s.projectId
-                          ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]'
+                          ? 'bg-emerald-400'
                           : 'bg-zinc-600'
                       }`}
-                      title={s.projectId ? 'Workspace Ready' : 'Draft'}
+                      title={s.projectId ? 'Ready' : 'Draft'}
                     />
                     <span className="truncate font-sans">{s.projectName || s.title || 'Untitled Spec'}</span>
                   </div>

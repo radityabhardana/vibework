@@ -1,7 +1,7 @@
 import React from 'react';
 import { IdeaStudio } from '@/components/ui/IdeaStudio';
 import { db } from '@/lib/db';
-import { chatSessions, chatMessages, projects } from '@/lib/db/schema';
+import { chatSessions, chatMessages } from '@/lib/db/schema';
 import { eq, asc, sql } from 'drizzle-orm';
 
 async function fetchSessionData(id: string) {
@@ -16,18 +16,7 @@ async function fetchSessionData(id: string) {
     .where(eq(chatMessages.sessionId, id))
     .orderBy(asc(chatMessages.createdAt), sql`rowid`);
 
-  let project = null;
-  if (session.projectId) {
-    project = await db.select({
-      id: projects.id,
-      name: projects.name,
-      description: projects.description,
-      status: projects.status,
-      createdAt: projects.createdAt,
-    }).from(projects).where(eq(projects.id, session.projectId)).get() || null;
-  }
-
-  return { session, messages, project };
+  return { session, messages };
 }
 
 export default async function EngineHistoryPage({ params }: { params: Promise<{ id: string }> }) {
@@ -50,7 +39,6 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
         initialSessionId={id}
         initialIdea={initialIdea}
         initialProjectId={data.session.projectId}
-        initialProjectData={data.project}
       />
     </div>
   );
