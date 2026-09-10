@@ -22,7 +22,7 @@ export function RoadmapDetailHeader({
   const progressPercent = Math.round((masteredNodes / Math.max(1, totalNodes)) * 100);
 
   return (
-    <header className="h-16 w-full border-b border-white/10 bg-[#060608]/90 backdrop-blur-md flex items-center px-6 justify-between z-20 shrink-0">
+    <header className="h-16 w-full border-b border-white/[0.08] bg-[#0b0d0f]/95 flex items-center px-4 sm:px-6 justify-between z-20 shrink-0">
       <div className="flex items-center gap-4 min-w-0">
         <Link
           href="/learn"

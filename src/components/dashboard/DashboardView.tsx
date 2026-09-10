@@ -57,21 +57,21 @@ export function DashboardView() {
   ];
 
   return (
-    <div className="relative w-full h-full min-h-screen flex flex-col justify-between bg-[#030303] text-zinc-100 selection:bg-white selection:text-black overflow-hidden">
+    <div className="relative w-full h-full min-h-screen flex flex-col bg-[#0b0d0f] text-zinc-100 overflow-hidden">
       {/* Background ambient lighting — single subtle white glow */}
       <div
         aria-hidden
-        className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,rgba(255,255,255,0.05),rgba(0,0,0,0))]"
+        className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_65%_55%_at_78%_18%,rgba(184,231,199,0.12),transparent_68%)]"
       />
       <div
         aria-hidden
-        className="fixed inset-0 pointer-events-none bg-dot-grid opacity-20 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black,transparent)]"
+        className="fixed inset-0 pointer-events-none bg-dot-grid opacity-25 [mask-image:linear-gradient(to_bottom,black,transparent_65%)]"
       />
 
       {/* Top Bar: Minimal brand & status */}
-      <header className="relative z-20 h-16 w-full px-6 sm:px-10 flex items-center justify-between">
+      <header className="relative z-20 h-20 w-full px-6 sm:px-10 flex items-center justify-between border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-white flex items-center justify-center text-black">
+          <div className="size-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-[#102016]">
             <Sparkle weight="fill" className="w-4 h-4" />
           </div>
           <span className="font-mono font-bold text-xs tracking-wider uppercase text-white">
@@ -89,24 +89,37 @@ export function DashboardView() {
       </header>
 
       {/* Center Canvas: The 3 Main Dashboard Buttons */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-5xl mx-auto w-full">
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-          {MODULES.map((item) => {
+      <main className="relative z-10 flex-1 flex flex-col justify-center px-6 py-10 max-w-6xl mx-auto w-full">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--accent)]">{t('Ruang kerja', 'Workspace')}</p>
+            <h1 className="font-sans text-3xl font-extrabold tracking-[-0.04em] text-white sm:text-4xl">{t('Pilih langkah berikutnya', 'Choose your next step')}</h1>
+          </div>
+          <p className="max-w-xs text-xs leading-5 text-zinc-500 sm:text-right">{t('Mulai dari ide baru, lalu gunakan hasilnya di ruang kerja proyek.', 'Start with a new idea, then use its output in the project workspace.')}</p>
+        </div>
+        <div className="mb-5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          <span className="flex size-6 items-center justify-center rounded-full bg-[var(--accent)] font-bold text-[#102016]">1</span>
+          <span>{t('Direkomendasikan untuk memulai', 'Recommended starting point')}</span>
+          <span className="h-px flex-1 bg-white/10" />
+          <span className="hidden sm:inline">{t('Tiga alat, satu alur kerja', 'Three tools, one workflow')}</span>
+        </div>
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5">
+          {MODULES.map((item, itemIndex) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className="group relative p-1.5 rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 hover:border-white/25 hover:bg-white/[0.03] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex flex-col justify-between min-h-[260px] sm:min-h-[290px] cursor-pointer"
+                className={`group relative rounded-2xl border p-6 sm:p-7 hover:-translate-y-1 active:scale-[0.99] transition-all duration-200 flex flex-col justify-between cursor-pointer ${item.id === 'the-grill' ? 'border-[rgba(184,231,199,0.45)] bg-[#17221d] md:col-span-6 md:min-h-[280px]' : 'border-white/10 bg-[var(--surface)] md:col-span-3 min-h-[230px]'} hover:border-[var(--accent)] hover:bg-[var(--surface-raised)]`}
               >
-                <div className="h-full p-6 sm:p-7 rounded-xl bg-[#060608] border border-white/5 flex flex-col justify-between gap-6">
+                <div className="h-full flex flex-col justify-between gap-8">
                   {/* Top: Ghost index & Tag */}
                   <div className="flex items-start justify-between gap-3">
                     <span
                       aria-hidden
                       className="font-mono text-4xl font-bold leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.25)] group-hover:[-webkit-text-stroke:1px_rgba(255,255,255,0.5)] transition-all select-none"
                     >
-                      {item.index}
+                      {itemIndex === 0 ? '→' : item.index}
                     </span>
                     <span className="font-mono text-[10px] uppercase font-semibold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-400">
                       {item.tag}

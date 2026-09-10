@@ -527,9 +527,13 @@ export function ProjectWorkspace({
   ];
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#030303] text-white relative">
+    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#0b0d0f] text-white relative">
       {/* Top Workspace Tab Switcher Bar */}
-      <div className="bg-[#030303]/90 border-b border-white/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20 backdrop-blur-md">
+      <div className="bg-[#0f1314] border-b border-white/[0.08] px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20">
+        <div className="hidden xl:block min-w-0 pr-3">
+          <p className="truncate font-sans text-sm font-semibold text-white">{project.name}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">{TABS.filter(tab => tab.ready).length}/5 {project.status || 'Workspace'}</p>
+        </div>
         <div className="flex items-center gap-1.5 overflow-x-auto min-w-0">
           {TABS.map(({ id, num, label, icon: TabIcon, ready }) => (
             <button
@@ -538,7 +542,7 @@ export function ProjectWorkspace({
               onClick={() => setActiveTab(id)}
               className={`shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
                 activeTab === id
-                  ? 'bg-white text-black border-transparent shadow-sm'
+                  ? 'bg-[var(--accent)] text-[#102016] border-transparent shadow-sm'
                   : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
               }`}
             >
@@ -583,10 +587,11 @@ export function ProjectWorkspace({
         {activeTab === 'tree' && (
           <div className="w-full h-full relative bg-background bg-dot-grid">
             {!appFlowchart && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-zinc-900/90 border border-white/15 p-4 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-4">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[#14191a]/95 border border-white/15 p-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-[calc(100%-2rem)]">
                 <div>
                   <p className="font-sans font-semibold text-sm text-zinc-100">Interactive Tree Belum Digenerate</p>
                   <p className="font-sans text-xs text-zinc-400">Klik tombol untuk memetakan alur screen dan modul aplikasi.</p>
+                  {!prd && <p className="mt-1 font-mono text-[10px] text-amber-200">PRD perlu dibuat lebih dulu untuk membuka langkah ini.</p>}
                 </div>
                 <Button
                   variant="primary"

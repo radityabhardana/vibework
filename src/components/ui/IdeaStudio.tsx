@@ -301,7 +301,7 @@ export function IdeaStudio({
   };
 
   return (
-    <div className="flex-1 w-full h-full overflow-y-auto bg-[#030304] text-white px-4 py-8 sm:px-6 md:px-8 md:py-12 flex flex-col items-center justify-start relative selection:bg-white selection:text-black">
+    <div className="flex-1 w-full h-full overflow-y-auto bg-[#0b0d0f] text-white px-4 py-8 sm:px-6 md:px-8 md:py-12 flex flex-col items-center justify-start relative">
       {/* ponytail: inline <style> instead of globals.css (out of scope) — move to globals if adopted site-wide */}
       <style>{`@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}`}</style>
       {/* Ambient glow + dot matrix, calibrated to landing */}
@@ -310,7 +310,7 @@ export function IdeaStudio({
         className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none [mask-image:linear-gradient(to_bottom,black,transparent_60%)]"
       />
 
-      <div className="w-full max-w-3xl flex flex-col gap-6 z-0">
+      <div className="w-full max-w-5xl flex flex-col gap-8 z-0">
 
         {/* Existing Project Alert Banner */}
         {projectId && (
@@ -330,8 +330,8 @@ export function IdeaStudio({
         )}
 
         {/* Studio Hero Header — editorial blueprint */}
-        <div className="flex flex-col items-center text-center gap-3">
-          <div className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
+        <div className="flex flex-col items-start gap-3 max-w-3xl">
+          <div className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--accent)]">
             <span aria-hidden className="size-1.5 rounded-full bg-white" />
             <span>AI Architecture &amp; Spec Studio</span>
             <span aria-hidden className="size-1.5 rounded-full bg-white/20" />
@@ -362,7 +362,7 @@ export function IdeaStudio({
             Fig. 02 — Brief
           </span>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] focus-within:border-white/25 transition-colors duration-300 overflow-hidden">
+          <div className="rounded-2xl border border-white/10 bg-[#14191a] shadow-[var(--shadow-brutal)] focus-within:border-[var(--accent)]/50 transition-colors duration-300 overflow-hidden">
             {/* Textarea */}
             <div className="p-4">
               <textarea

@@ -40,7 +40,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!data) notFound();
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[#0b0d0f] text-foreground overflow-hidden">
       {/* Header */}
       <header className="z-10 flex min-h-16 w-full shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md px-4 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">

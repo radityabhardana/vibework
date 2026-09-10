@@ -154,7 +154,7 @@ export default function LearnHubPage() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#030303] text-white overflow-auto relative selection:bg-white selection:text-black">
+    <div className="w-full h-full flex flex-col bg-[#0b0d0f] text-white overflow-auto relative">
       {/* Ambient Lighting & Geometric Dot Matrix */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
@@ -192,10 +192,10 @@ export default function LearnHubPage() {
       </header>
 
       {/* Main Content */}
-      <main className="p-4 sm:p-6 md:p-10 max-w-5xl w-full mx-auto flex flex-col gap-8 z-0">
+      <main className="p-4 sm:p-6 md:p-10 max-w-6xl w-full mx-auto flex flex-col gap-10 z-0">
         
         {/* Double-Bezel Topic Input Chassis */}
-        <div className="p-2 sm:p-2.5 rounded-3xl bg-zinc-900/60 border border-white/10 ring-1 ring-white/5 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]">
+        <div className="p-2 sm:p-2.5 rounded-3xl bg-[#14191a] border border-white/10 shadow-[var(--shadow-brutal)]">
           <div className="rounded-2xl bg-[#08080b]/90 border border-white/5 p-6 sm:p-8 flex flex-col gap-5 shadow-inner">
             <div className="flex flex-col gap-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300 w-fit">

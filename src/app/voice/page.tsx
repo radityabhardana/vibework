@@ -479,13 +479,13 @@ export default function VoiceStudioPage() {
         : playbackState === 'error' ? t('Gagal', 'Failed') : t('Siap', 'Ready');
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[#030303] text-white selection:bg-white selection:text-black relative">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#0b0d0f] text-white relative">
       {/* Ambient Top Glow & Subtle Dot Grid */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(184,231,199,0.1),transparent_70%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
       {/* Top Navbar */}
-      <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#030303]/80 backdrop-blur-md px-4 sm:px-6 z-10">
+      <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0b0d0f]/95 px-4 sm:px-6 z-10">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/" className="shrink-0">
             <Button variant="secondary" size="sm" className="!p-2 text-zinc-400 hover:text-white" aria-label={t('Kembali ke dashboard', 'Back to dashboard')}>
@@ -518,7 +518,7 @@ export default function VoiceStudioPage() {
         <div className="mx-auto grid w-full max-w-[1440px] gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(23rem,0.85fr)]">
           
           {/* Left Column: Voice Warehouse */}
-          <section className="min-w-0 rounded-2xl border border-white/10 bg-zinc-900/40 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
+          <section className="min-w-0 rounded-2xl border border-white/10 bg-[#111617] shadow-[var(--shadow-brutal)] overflow-hidden flex flex-col">
             <div className="border-b border-white/10 p-4 sm:p-6 bg-white/[0.01]">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                 <div>
@@ -708,6 +708,9 @@ export default function VoiceStudioPage() {
                   <p className="font-sans text-xs text-zinc-500">
                     {t('Suara tidak ditemukan.', 'No matching voices found.')}
                   </p>
+                  <button type="button" onClick={() => { setQuery(''); setLanguageFilter('all'); }} className="mt-3 rounded-lg bg-white/5 px-3 py-2 font-mono text-[11px] text-zinc-300 transition-colors hover:bg-white/10 hover:text-white">
+                    {t('Bersihkan filter', 'Clear filters')}
+                  </button>
                 </div>
               ) : (
                 filteredVoices.map((voice, index) => {
@@ -773,7 +776,7 @@ export default function VoiceStudioPage() {
           </section>
 
           {/* Right Column: Voice Studio Deck */}
-          <section className="h-fit rounded-2xl border border-white/15 bg-[#08080b]/90 shadow-2xl backdrop-blur-2xl xl:sticky xl:top-6 flex flex-col overflow-hidden">
+          <section className="h-fit rounded-2xl border border-white/15 bg-[#14191a] shadow-[var(--shadow-brutal)] xl:sticky xl:top-6 flex flex-col overflow-hidden">
             <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4 sm:p-5 bg-white/[0.01]">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">

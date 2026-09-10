@@ -25,11 +25,11 @@ export default async function EngineLayout({
     .orderBy(desc(chatSessions.updatedAt));
 
   return (
-    <div className="flex h-full w-full flex-col lg:flex-row bg-[#030303] text-white selection:bg-white selection:text-black">
+    <div className="flex h-full w-full flex-col lg:flex-row bg-[#0b0d0f] text-white">
       <EngineSidebar initialSessions={sessions} />
       <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         {/* Top Studio App Bar */}
-        <header className="h-14 border-b border-white/10 bg-[#030303]/80 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0">
+        <header className="h-16 border-b border-white/[0.08] bg-[#0b0d0f]/95 px-4 sm:px-6 flex items-center justify-between z-10 shrink-0">
           <div className="flex items-center gap-4 min-w-0">
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
               <Link href="/" className="hover:text-white transition-colors">
