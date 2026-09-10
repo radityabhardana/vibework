@@ -14,12 +14,35 @@ import {
   CheckCircle,
   WarningCircle,
   SlidersHorizontal,
+  TreeStructure,
+  Article,
+  Cpu,
+  ArrowUpRight,
+  Sparkle,
 } from '@phosphor-icons/react';
+
+export type SpecSummaryData = {
+  projectId: string;
+  projectName: string;
+  projectDescription?: string | null;
+  nodes?: Array<{ id: string; label?: string; title?: string; description?: string }>;
+  prd?: {
+    targetUser?: string | null;
+    coreFeatures?: string | null;
+    mvpConstraints?: string | null;
+  } | null;
+  adr?: {
+    frontendStack?: string | null;
+    backendStack?: string | null;
+    database?: string | null;
+  } | null;
+};
 
 type IdeaStudioProps = {
   initialSessionId?: string;
   initialIdea?: string;
   initialProjectId?: string | null;
+  initialSpecSummary?: SpecSummaryData | null;
 };
 
 const QUICK_TAGS = [
@@ -42,10 +65,12 @@ export function IdeaStudio({
   initialSessionId,
   initialIdea = '',
   initialProjectId = null,
+  initialSpecSummary = null,
 }: IdeaStudioProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [projectId, setProjectId] = useState<string | null>(initialProjectId);
+  const [specSummary] = useState<SpecSummaryData | null>(initialSpecSummary || null);
   const [idea, setIdea] = useState(initialIdea);
   const [targetAudience, setTargetAudience] = useState('');
   const [techStack, setTechStack] = useState('');
@@ -404,6 +429,192 @@ export function IdeaStudio({
             </div>
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* SPECIFICATION OVERVIEW (Clean Deliverables Summary)          */}
+        {/* ============================================================ */}
+        {specSummary && (
+          <div className="w-full flex flex-col gap-3.5 pt-1">
+            {/* Section Header Bar */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-300 font-semibold">
+                  Architecture Deliverables
+                </span>
+                <span className="text-zinc-600 font-mono text-[11px]">/</span>
+                <span className="text-[11px] font-mono text-zinc-500">
+                  {specSummary.nodes?.length || 0} nodes mapped
+                </span>
+              </div>
+              <Link
+                href={`/projects/${specSummary.projectId}`}
+                className="text-xs font-mono text-zinc-400 hover:text-white flex items-center gap-1.5 transition-colors group"
+              >
+                <span>Buka Full Workspace</span>
+                <ArrowUpRight weight="bold" className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Modular 3-Card Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Card 1: Flowchart Blueprint */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between gap-3 hover:border-white/20 transition-colors">
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-300">
+                      <TreeStructure weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>Flowchart Nodes</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">{specSummary.nodes?.length || 0} screens</span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 pt-0.5">
+                    {specSummary.nodes && specSummary.nodes.length > 0 ? (
+                      specSummary.nodes.slice(0, 3).map((node, i) => (
+                        <div
+                          key={node.id || i}
+                          className="flex items-center gap-2 text-xs font-sans text-zinc-300 bg-white/[0.02] border border-white/5 px-2.5 py-1.5 rounded-lg"
+                        >
+                          <span className="font-mono text-[10px] text-zinc-500 font-medium">0{i + 1}</span>
+                          <span className="truncate">{node.label || node.title || node.id}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs font-sans text-zinc-500 italic">Flowchart node siap digenerate</span>
+                    )}
+                    {(specSummary.nodes?.length || 0) > 3 && (
+                      <span className="font-mono text-[10px] text-zinc-500 pl-1">
+                        +{(specSummary.nodes?.length || 0) - 3} node lainnya...
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Link
+                  href={`/projects/${specSummary.projectId}`}
+                  className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 pt-2 border-t border-white/5"
+                >
+                  Lihat Interactive Flowchart →
+                </Link>
+              </div>
+
+              {/* Card 2: Product Requirements Document (PRD) */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between gap-3 hover:border-white/20 transition-colors">
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-300">
+                      <Article weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>Product Specs</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-emerald-400">PRD Ready</span>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-0.5">
+                    <div>
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">Target User</span>
+                      <p className="line-clamp-2 text-xs font-sans text-zinc-300">
+                        {specSummary.prd?.targetUser || 'Pengguna terdaftar & admin sistem'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">MVP Scope</span>
+                      <p className="line-clamp-2 text-xs font-sans text-zinc-300">
+                        {specSummary.prd?.coreFeatures?.split('\n')[0]?.replace(/^[-*]\s*/, '') || 'Alur fungsional inti dan modul utama'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href={`/projects/${specSummary.projectId}`}
+                  className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 pt-2 border-t border-white/5"
+                >
+                  Buka Dokumen PRD →
+                </Link>
+              </div>
+
+              {/* Card 3: Tech Stack & ADR */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between gap-3 hover:border-white/20 transition-colors">
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-300">
+                      <Cpu weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>Tech Stack &amp; ADR</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">ADR Spec</span>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-0.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300 px-2 py-0.5 rounded">
+                        Next.js 16
+                      </span>
+                      <span className="text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300 px-2 py-0.5 rounded">
+                        Tailwind CSS
+                      </span>
+                      <span className="text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300 px-2 py-0.5 rounded">
+                        TypeScript
+                      </span>
+                      <span className="text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300 px-2 py-0.5 rounded">
+                        SQLite
+                      </span>
+                    </div>
+                    <div className="pt-1 text-xs text-zinc-400">
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">Coding Rules</span>
+                      <span className="text-[11px] text-zinc-300 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                        <span>AGENTS.md Guardrails Terpasang</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href={`/projects/${specSummary.projectId}`}
+                  className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 pt-2 border-t border-white/5"
+                >
+                  Lihat Aturan AGENTS.md →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deliverables Preview if no spec yet (New Spec page) */}
+        {!specSummary && (
+          <div className="w-full flex flex-col gap-3 pt-1 opacity-75">
+            <div className="flex items-center gap-2 px-1">
+              <Sparkle weight="bold" className="w-3 h-3 text-zinc-400" />
+              <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
+                Output Studio Yang Akan Dihasilkan
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
+                  <TreeStructure weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Interactive Flowchart</span>
+                </div>
+                <p className="font-sans text-[11px] text-zinc-500 leading-relaxed">
+                  Peta visual node layar, transisi aksi pengguna, dan percabangan logika aplikasi.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
+                  <Article weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>PRD &amp; Schema Spec</span>
+                </div>
+                <p className="font-sans text-[11px] text-zinc-500 leading-relaxed">
+                  Dokumen user stories, batasan MVP, skema entitas relasional, dan arsitektur ADR.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
+                  <Cpu weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Prompt.md &amp; AGENTS</span>
+                </div>
+                <p className="font-sans text-[11px] text-zinc-500 leading-relaxed">
+                  Instruksi kode modular siap pakai untuk Cursor/Claude/Copilot tanpa halusinasi.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress State while Generating */}
         {status === 'generating' && (

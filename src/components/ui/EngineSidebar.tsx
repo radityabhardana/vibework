@@ -29,21 +29,16 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
     <aside className="flex max-h-[40vh] w-full shrink-0 flex-col border-b border-white/10 bg-[#050507] lg:h-full lg:max-h-none lg:w-64 lg:border-r lg:border-b-0">
       {/* Sidebar Header */}
       <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 bg-[#030304]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-6 rounded-md bg-white flex items-center justify-center text-black">
-              <Sparkle weight="fill" className="w-3.5 h-3.5" />
-            </div>
-            <div className="leading-tight">
-              <span className="block font-sans font-bold text-sm text-white tracking-tight">The Grill</span>
-              <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">
-                Architecture Studio
-              </span>
-            </div>
+        <div className="flex items-center gap-2">
+          <div className="size-6 rounded-md bg-white flex items-center justify-center text-black">
+            <Sparkle weight="fill" className="w-3.5 h-3.5" />
           </div>
-          <span className="rounded-full bg-white/5 border border-white/10 px-3 py-0.5 font-mono text-[11px] text-zinc-400">
-            {sessions.length} specs
-          </span>
+          <div className="leading-tight">
+            <span className="block font-sans font-bold text-sm text-white tracking-tight">The Grill</span>
+            <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">
+              Architecture Studio
+            </span>
+          </div>
         </div>
 
         {/* Primary Action Button */}
