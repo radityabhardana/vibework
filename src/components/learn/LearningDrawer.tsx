@@ -134,7 +134,9 @@ export function LearningDrawer({
             <div className="flex items-center gap-3 w-full md:w-auto justify-end shrink-0">
               <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl">
                 <button
+                  type="button"
                   onClick={() => setActiveTab('material')}
+                  aria-label={t('Buka materi pelajaran', 'Open lesson material')}
                   className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 ${
                     activeTab === 'material'
                       ? 'bg-white text-black shadow-sm font-semibold'
@@ -145,7 +147,9 @@ export function LearningDrawer({
                   {t('Materi Pelajaran', 'Micro-Lesson')}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveTab('quiz')}
+                  aria-label={t('Buka kuis bertahap', 'Open staged quiz')}
                   className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 ${
                     activeTab === 'quiz'
                       ? 'bg-white text-black shadow-sm font-semibold'
@@ -158,7 +162,9 @@ export function LearningDrawer({
               </div>
 
               <button
+                type="button"
                 onClick={onClose}
+                aria-label={t('Tutup dialog pembelajaran', 'Close learning dialog')}
                 className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
                 title={t('Tutup', 'Close')}
               >
@@ -250,6 +256,7 @@ export function LearningDrawer({
                             return (
                               <button
                                 key={oIdx}
+                                type="button"
                                 onClick={() => handleOptionSelect(qIdx, oIdx)}
                                 className={`w-full text-left p-3.5 rounded-xl border text-sm transition-all flex items-center gap-3 ${optionStyle}`}
                               >

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ArrowUUpLeft } from '@phosphor-icons/react';
 import ReactMarkdown from 'react-markdown';
+import { useLanguage } from '@/context/LanguageContext';
 
 export type Message = {
   id: string;
@@ -46,12 +47,13 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
   maxPhase: number;
   onPhaseChange: (phase: number) => void;
 }) {
+  const { t } = useLanguage();
   const PHASE_TITLES = [
-    "Visi & Target Pengguna",
-    "Fitur Inti (MVP)",
-    "Alur Pengguna (User Flow)",
-    "UI/UX & Desain",
-    "Bisnis & Teknis"
+    t('Visi & Target Pengguna', 'Vision & Target Users'),
+    t('Fitur Inti (MVP)', 'Core Features (MVP)'),
+    t('Alur Pengguna (User Flow)', 'User Flow'),
+    t('UI/UX & Desain', 'UI/UX & Design'),
+    t('Bisnis & Teknis', 'Business & Technical')
   ];
 
   return (
@@ -60,7 +62,7 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
       <div className="shrink-0 border-b border-white/10 px-4 py-4">
         <div className="flex items-center gap-3">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-400">
-            Interview Flow
+            {t('Alur Wawancara', 'Interview Flow')}
           </span>
           <span aria-hidden className="h-px flex-1 bg-white/10" />
         </div>
@@ -75,8 +77,8 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
           ))}
         </div>
         <div className="mt-2 flex items-center justify-between font-mono text-[10px] tracking-wider text-zinc-500">
-          <span>{maxPhase}/5 unlocked</span>
-          <span className="text-zinc-600">FASE {activePhaseTab}</span>
+          <span>{maxPhase}/5 {t('terbuka', 'unlocked')}</span>
+          <span className="text-zinc-600">{t('FASE', 'PHASE')} {activePhaseTab}</span>
         </div>
       </div>
 
@@ -111,7 +113,7 @@ export function PhaseSidebar({ activePhaseTab, maxPhase, onPhaseChange }: {
               </span>
               <span className="min-w-0">
                 <span className={`block font-mono text-[9px] uppercase tracking-[0.2em] ${active ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                  {done ? 'Selesai' : locked ? 'Terkunci' : `FASE ${p}`}
+                  {done ? t('Selesai', 'Complete') : locked ? t('Terkunci', 'Locked') : `${t('FASE', 'PHASE')} ${p}`}
                 </span>
                 <span className={`mt-0.5 block truncate font-sans text-sm leading-tight ${active ? 'font-semibold text-white' : 'text-zinc-400'}`}>
                   {PHASE_TITLES[p - 1]}
@@ -142,6 +144,7 @@ export function MessageOptions({
   hideCustom: boolean;
   onCustom: () => void;
 }) {
+  const { t } = useLanguage();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const toggleSelect = (i: number) => {
     const next = new Set(selected);
@@ -167,7 +170,7 @@ export function MessageOptions({
       <div className="flex flex-col gap-2 mt-4 border-t border-white/10 pt-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-3 py-1">
-            Pilih Tepat 1
+            {t('Pilih Tepat 1', 'Choose Exactly 1')}
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -201,7 +204,7 @@ export function MessageOptions({
                   *
                 </span>
                 <span className="font-sans text-xs sm:text-sm text-zinc-400 hover:text-white leading-snug mt-0.5 transition-colors">
-                  Lainnya (Custom)...
+                  {t('Lainnya (Custom)...', 'Other (Custom)...')}
                 </span>
               </div>
             </button>
@@ -215,7 +218,7 @@ export function MessageOptions({
     <div className="mt-4 border-t border-white/10 pt-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] rounded-full border border-white/15 bg-white/5 text-zinc-300 px-3 py-1">
-          {maxSelections ? `Pilih Maksimal ${maxSelections}` : 'Pilih 1 atau Lebih'}
+          {maxSelections ? `${t('Pilih Maksimal', 'Choose Up to')} ${maxSelections}` : t('Pilih 1 atau Lebih', 'Choose 1 or More')}
         </span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -274,7 +277,7 @@ export function MessageOptions({
         onClick={handleSend}
         className="self-end mt-1"
       >
-        Kirim Pilihan ({selected.size})
+        {t('Kirim Pilihan', 'Send Choices')} ({selected.size})
       </Button>
     </div>
   );
@@ -306,6 +309,7 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
   isActionable: boolean;
   canUndo: boolean;
 }) {
+  const { t } = useLanguage();
   let cleanText = message.content;
   cleanText = cleanText.replace(/\[(?:FASE|PROGRESS):\s*\d+\/\d+\]/gi, '').trim();
 
@@ -336,7 +340,7 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
         }`}
       >
         <span className={`block mb-2 font-mono text-[9px] uppercase tracking-[0.22em] font-semibold text-zinc-500 ${isUser ? 'text-right' : ''}`}>
-          {isUser ? 'You' : 'System Architect'}
+          {isUser ? t('Anda', 'You') : t('System Architect', 'System Architect')}
         </span>
         <div className="flex flex-col gap-4">
           <div className="font-sans text-sm leading-relaxed text-zinc-100 prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
@@ -363,7 +367,7 @@ export function MessageBubble({ message, status, onSend, onUndo, showCustomInput
           className="group flex items-center gap-1.5 mt-1 mr-1 px-3 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-200 text-[11px] font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
           <ArrowUUpLeft weight="bold" className="w-3 h-3" />
-          <span>Tarik Jawaban</span>
+          <span>{t('Tarik Jawaban', 'Undo Answer')}</span>
         </button>
       )}
     </div>
@@ -376,6 +380,7 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
       <form
@@ -384,11 +389,11 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
       >
         <div>
           <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-zinc-500 mb-2">
-            Final Step
+            {t('Langkah Terakhir', 'Final Step')}
           </div>
-          <h3 className="font-sans font-bold text-xl text-white mb-1">Beri Nama Proyek</h3>
+          <h3 className="font-sans font-bold text-xl text-white mb-1">{t('Beri Nama Proyek', 'Name Your Project')}</h3>
           <p className="font-sans text-xs text-zinc-400 leading-relaxed">
-            Masukkan nama untuk proyek ini sebelum mengompilasi PRD dan node flowchart.
+            {t('Masukkan nama untuk proyek ini sebelum mengompilasi PRD dan node flowchart.', 'Enter a name for this project before compiling the PRD and flowchart nodes.')}
           </p>
         </div>
         <Input
@@ -396,15 +401,15 @@ export function NamePromptModal({ projectName, onNameChange, onSubmit, onCancel 
           required
           value={projectName}
           onChange={e => onNameChange(e.target.value)}
-          placeholder="Contoh: Aplikasi Kasir Pintar"
+          placeholder={t('Contoh: Aplikasi Kasir Pintar', 'Example: Smart Point of Sale')}
           className="!bg-black/60"
         />
         <div className="flex gap-3 justify-end pt-2">
           <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-            Batal
+            {t('Batal', 'Cancel')}
           </Button>
           <Button type="submit" variant="primary" size="sm" disabled={!projectName.trim()}>
-            Lanjut Generate &rarr;
+            {t('Lanjut Generate', 'Continue Generate')} &rarr;
           </Button>
         </div>
       </form>

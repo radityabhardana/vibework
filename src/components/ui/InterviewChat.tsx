@@ -14,6 +14,7 @@ import {
   type Message,
 } from '@/components/ui/ChatComponents';
 import { assignMessagePhases, getMaxMessagePhase } from '@/lib/chat-phases';
+import { useLanguage } from '@/context/LanguageContext';
 
 type InterviewChatProps = {
   onInterviewComplete?: () => void;
@@ -21,14 +22,6 @@ type InterviewChatProps = {
   initialMessages?: Message[];
   initialProjectId?: string | null;
 };
-
-const PHASE_TITLES = [
-  "Visi & Target Pengguna",
-  "Fitur Inti (MVP)",
-  "Alur Pengguna (User Flow)",
-  "UI/UX & Desain",
-  "Bisnis & Teknis"
-];
 
 const MAX_MESSAGE_LENGTH = 20_000;
 
@@ -51,6 +44,14 @@ async function getApiError(response: Response, fallback: string) {
 
 export function InterviewChat({ initialSessionId, initialMessages, initialProjectId }: InterviewChatProps) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const PHASE_TITLES = [
+    t('Visi & Target Pengguna', 'Vision & Target Users'),
+    t('Fitur Inti (MVP)', 'Core Features (MVP)'),
+    t('Alur Pengguna (User Flow)', 'User Flow'),
+    t('UI/UX & Desain', 'UI/UX & Design'),
+    t('Bisnis & Teknis', 'Business & Technical'),
+  ];
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [localInput, setLocalInput] = useState('');
@@ -59,7 +60,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStep, setGenerationStep] = useState('init');
-  const [generationStepLabel, setGenerationStepLabel] = useState('Menghubungkan ke System Architect...');
+  const [generationStepLabel, setGenerationStepLabel] = useState(t('Menghubungkan ke System Architect...', 'Connecting to System Architect...'));
   const [generationElapsedSec, setGenerationElapsedSec] = useState(0);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [projectName, setProjectName] = useState('');
@@ -107,7 +108,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       body: JSON.stringify({ id: msg.id, sessionId: sId, role: msg.role, content: msg.content })
     });
     if (!response.ok) {
-      throw new Error(await getApiError(response, 'Failed to save the message.'));
+      throw new Error(await getApiError(response, t('Gagal menyimpan pesan.', 'Failed to save the message.')));
     }
   };
 
@@ -141,11 +142,11 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
           body: JSON.stringify({})
         });
         if (!res.ok) {
-          throw new Error(await getApiError(res, 'Failed to create a chat session.'));
+          throw new Error(await getApiError(res, t('Gagal membuat sesi chat.', 'Failed to create a chat session.')));
         }
         const data: unknown = await res.json();
         if (typeof data !== 'object' || data === null || !('id' in data) || typeof data.id !== 'string') {
-          throw new Error('The chat session response was invalid.');
+          throw new Error(t('Respons sesi chat tidak valid.', 'The chat session response was invalid.'));
         }
         currentSessionId = data.id;
         createdSession = true;
@@ -178,10 +179,10 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       }
 
       if (!response.ok) {
-        throw new Error(await getApiError(response, 'Failed to connect to the AI service.'));
+        throw new Error(await getApiError(response, t('Gagal terhubung ke layanan AI.', 'Failed to connect to the AI service.')));
       }
 
-      if (!response.body) throw new Error('The AI service returned no response stream.');
+      if (!response.body) throw new Error(t('Layanan AI tidak mengembalikan aliran respons.', 'The AI service returned no response stream.'));
 
       setStatus('streaming');
       const reader = response.body.getReader();
@@ -218,7 +219,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         }
 
         if (typeof data !== 'object' || data === null || 'error' in data) {
-          throw new Error('The AI service interrupted the response.');
+          throw new Error(t('Layanan AI menghentikan respons.', 'The AI service interrupted the response.'));
         }
 
         const choices = 'choices' in data ? data.choices : undefined;
@@ -279,7 +280,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         // Stream already closed
       }
 
-      if (!finalContent.trim()) throw new Error('The AI service returned an empty response.');
+      if (!finalContent.trim()) throw new Error(t('Layanan AI mengembalikan respons kosong.', 'The AI service returned an empty response.'));
 
       if (currentSessionId) {
         await syncMessage(currentSessionId, { id: generatedAssistantId, role: 'assistant', content: finalContent });
@@ -293,7 +294,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       if (assistantId && !assistantPersisted) {
         setMessages(prev => prev.filter(message => message.id !== assistantId));
       }
-      setError(err instanceof Error ? err.message : 'Failed to connect to the AI service.');
+      setError(err instanceof Error ? err.message : t('Gagal terhubung ke layanan AI.', 'Failed to connect to the AI service.'));
       setStatus('idle');
     } finally {
       requestInFlightRef.current = false;
@@ -327,14 +328,14 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         })
       });
       if (!response.ok) {
-        throw new Error(await getApiError(response, 'Failed to undo the message.'));
+        throw new Error(await getApiError(response, t('Gagal membatalkan pesan.', 'Failed to undo the message.')));
       }
 
       setMessages(prev => prev.slice(0, lastUserIdx));
       setShowCustomInput(false);
       setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to undo the message.');
+      setError(err instanceof Error ? err.message : t('Gagal membatalkan pesan.', 'Failed to undo the message.'));
     } finally {
       requestInFlightRef.current = false;
     }
@@ -367,15 +368,15 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
 
   const executeGenerateWorkflow = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const effectiveName = projectName.trim() || messages.find(m => m.role === 'user')?.content.trim().slice(0, 35) || 'Arsitektur Proyek';
+    const effectiveName = projectName.trim() || messages.find(m => m.role === 'user')?.content.trim().slice(0, 35) || t('Arsitektur Proyek', 'Project Architecture');
     if (!effectiveName) {
-      setError('Nama proyek wajib diisi');
+      setError(t('Nama proyek wajib diisi', 'Project name is required'));
       return;
     }
     setShowNamePrompt(false);
     setGenerationProgress(5);
     setGenerationStep('init');
-    setGenerationStepLabel('Menghubungkan ke System Architect...');
+    setGenerationStepLabel(t('Menghubungkan ke System Architect...', 'Connecting to System Architect...'));
     setStatus('generating');
     setError(null);
 
@@ -395,7 +396,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
       });
 
       if (!res.ok) {
-        throw new Error(await getApiError(res, 'Gagal menghasilkan spesifikasi proyek.'));
+        throw new Error(await getApiError(res, t('Gagal menghasilkan spesifikasi proyek.', 'Failed to generate the project specification.')));
       }
 
       const contentType = res.headers.get('content-type') || '';
@@ -448,7 +449,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     targetProjectId = payload.projectId;
                   }
                 } else if (currentEvent === 'error') {
-                  throw new Error(typeof payload.error === 'string' ? payload.error : 'Gagal menghasilkan spesifikasi proyek.');
+                  throw new Error(typeof payload.error === 'string' ? payload.error : t('Gagal menghasilkan spesifikasi proyek.', 'Failed to generate the project specification.'));
                 }
               } catch (parseErr) {
                 if (parseErr instanceof Error && currentEvent === 'error') {
@@ -462,20 +463,20 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
         if (targetProjectId) {
           router.push('/projects/' + targetProjectId);
         } else {
-          throw new Error('Generasi selesai namun project ID tidak ditemukan. Silakan periksa dashboard proyek Anda.');
+          throw new Error(t('Generasi selesai namun project ID tidak ditemukan. Silakan periksa dashboard proyek Anda.', 'Generation finished but the project ID was not found. Check your project dashboard.'));
         }
       } else {
         // Fallback for standard non-streaming response
         const data: unknown = await res.json();
         if (typeof data !== 'object' || data === null || !('projectId' in data) || typeof data.projectId !== 'string') {
-          throw new Error('Respon workflow tidak valid.');
+          throw new Error(t('Respons workflow tidak valid.', 'The workflow response was invalid.'));
         }
         setGenerationProgress(100);
         router.push('/projects/' + data.projectId);
       }
     } catch (e: unknown) {
       console.error('Failed to generate workflow:', e);
-      setError(e instanceof Error ? e.message : 'Gagal menghasilkan workflow.');
+      setError(e instanceof Error ? e.message : t('Gagal menghasilkan workflow.', 'Failed to generate the workflow.'));
       setStatus('idle');
     }
   };
@@ -533,7 +534,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                 </span>
                 <div className="min-w-0">
                   <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-zinc-500">
-                    Fase {activePhaseTab}/5 {activePhaseTab < maxPhase ? '· Riwayat' : ''}
+                    {t('Fase', 'Phase')} {activePhaseTab}/5 {activePhaseTab < maxPhase ? `· ${t('Riwayat', 'History')}` : ''}
                   </div>
                   <h2 className="truncate font-sans text-sm md:text-base font-bold text-white tracking-tight">
                     {PHASE_TITLES[activePhaseTab - 1]}
@@ -544,23 +545,23 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                 {initialProjectId ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/15 bg-white/5 text-zinc-300">
                     <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
-                    Generated
+                    {t('Generated', 'Generated')}
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider border border-white/10 bg-white/5 text-zinc-500">
-                    Not generated
+                    {t('Belum digenerate', 'Not generated')}
                   </span>
                 )}
                 {initialProjectId && (
                   <Link href={`/projects/${initialProjectId}`}>
                     <Button variant="secondary" size="sm" className="!px-3 !py-1 text-xs font-mono">
-                      Open Flow &nearr;
+                      {t('Buka Flow', 'Open Flow')} &nearr;
                     </Button>
                   </Link>
                 )}
                 {isComplete ? (
                   <Button variant="primary" size="sm" onClick={initiateGenerateWorkflow} disabled={status !== 'idle'} className="text-xs font-sans">
-                    {status === 'generating' ? `${Math.round(generationProgress)}% - Generating...` : initialProjectId ? 'Regenerate Flow' : 'Generate Flow'}
+                    {status === 'generating' ? `${Math.round(generationProgress)}% - ${t('Generating...', 'Generating...')}` : initialProjectId ? t('Regenerate Flow', 'Regenerate Flow') : t('Generate Flow', 'Generate Flow')}
                   </Button>
                 ) : hasUserResponse ? (
                   <Button
@@ -569,10 +570,10 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     onClick={initiateGenerateWorkflow}
                     disabled={status !== 'idle'}
                     className="gap-1.5 text-xs font-sans font-semibold"
-                    title="Buat PRD & Flow sekarang (AI akan otomatis melengkapi sisa asumsi)"
+                    title={t('Buat PRD & Flow sekarang (AI akan otomatis melengkapi sisa asumsi)', 'Create the PRD & Flow now (AI will complete the remaining assumptions)')}
                   >
                     <Lightning weight="fill" className="w-3.5 h-3.5" />
-                    {status === 'generating' ? `${Math.round(generationProgress)}%...` : initialProjectId ? 'Regenerate Flow' : 'Express Generate'}
+                    {status === 'generating' ? `${Math.round(generationProgress)}%...` : initialProjectId ? t('Regenerate Flow', 'Regenerate Flow') : t('Generate Cepat', 'Express Generate')}
                   </Button>
                 ) : null}
               </div>
@@ -610,7 +611,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     activePhaseTab === p ? 'bg-white text-black' : p > maxPhase ? 'opacity-30 text-zinc-600' : 'text-zinc-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  <span>Fase {p}</span>
+                  <span>{t('Fase', 'Phase')} {p}</span>
                   {p < maxPhase && activePhaseTab !== p && (
                     <span className={`size-1 rounded-full ${p < activePhaseTab ? 'bg-white/60' : 'bg-white/30'}`} />
                   )}
@@ -630,18 +631,17 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                 <div className="relative flex flex-col items-center gap-6 max-w-xl">
                   <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500">
                     <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
-                    <span>Interactive Architecture Interview</span>
+                    <span>{t('Wawancara Arsitektur Interaktif', 'Interactive Architecture Interview')}</span>
                   </div>
                   <h1 className="text-3xl md:text-5xl font-extrabold font-sans tracking-[-0.03em] text-white leading-[1.08]">
                     Vibework Engine
                   </h1>
                   <p className="text-sm md:text-[15px] font-sans text-zinc-400 max-w-lg leading-relaxed border border-white/10 bg-white/[0.02] rounded-xl px-6 py-5">
-                    System Architect siap untuk menginterogasi kebutuhan sistem Anda. Jelaskan aplikasi
-                    yang ingin dibangun untuk merancang PRD dan node flowchart terperinci.
+                    {t('System Architect siap untuk menggali kebutuhan sistem Anda. Jelaskan aplikasi yang ingin dibangun untuk merancang PRD dan node flowchart terperinci.', 'System Architect is ready to explore your system requirements. Describe the application you want to build to design a detailed PRD and flowchart node tree.')}
                   </p>
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
                     <Robot weight="duotone" className="w-4 h-4 text-zinc-500" />
-                    <span>5 fase wawancara · mulai dari baris pertama di bawah</span>
+                    <span>{t('5 fase wawancara · mulai dari baris pertama di bawah', '5 interview phases · start with the first line below')}</span>
                   </div>
                   {error && (
                     <Card bg="red" className="!p-4 border-rose-500/30 text-rose-300 text-xs font-mono">
@@ -671,13 +671,13 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     <span aria-hidden className="font-mono text-2xl font-bold leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.3)] select-none">
                       0{activePhaseTab}
                     </span>
-                    <h3 className="font-sans font-bold text-base text-white">Fase {activePhaseTab} Selesai</h3>
+                    <h3 className="font-sans font-bold text-base text-white">{t('Fase', 'Phase')} {activePhaseTab} {t('Selesai', 'Complete')}</h3>
                     <p className="font-sans text-xs text-zinc-500 leading-relaxed">
-                      Fase ini disimpan sebagai riwayat dan telah terkunci.
+                      {t('Fase ini disimpan sebagai riwayat dan telah terkunci.', 'This phase is saved as history and has been locked.')}
                     </p>
                     <div className="flex justify-center">
                       <Button variant="primary" size="sm" onClick={() => setActivePhaseTab(activePhaseTab + 1)}>
-                        Lanjut Fase {activePhaseTab + 1} &rarr;
+                        {t('Lanjut Fase', 'Continue to Phase')} {activePhaseTab + 1} &rarr;
                       </Button>
                     </div>
                   </div>
@@ -687,7 +687,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   <div className="flex justify-start">
                     <div className="rounded-xl rounded-tl-sm border border-white/10 bg-[#0a0a0d] px-4 py-3 text-xs text-zinc-400 font-mono flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>Architect sedang memproses tanggapan...</span>
+                      <span>{t('Architect sedang memproses tanggapan...', 'The Architect is processing your response...')}</span>
                     </div>
                   </div>
                 )}
@@ -704,11 +704,11 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                         </span>
-                        <span className="font-bold tracking-wider uppercase text-white">Architect Engine Active</span>
+                        <span className="font-bold tracking-wider uppercase text-white">{t('Architect Engine Aktif', 'Architect Engine Active')}</span>
                       </div>
                       <div className="flex items-center gap-2 font-mono text-xs text-zinc-400">
                         <span className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1">
-                          {Math.floor(generationElapsedSec / 60).toString().padStart(2, '0')}:{(generationElapsedSec % 60).toString().padStart(2, '0')} elapsed
+                          {Math.floor(generationElapsedSec / 60).toString().padStart(2, '0')}:{(generationElapsedSec % 60).toString().padStart(2, '0')} {t('berlalu', 'elapsed')}
                         </span>
                       </div>
                     </div>
@@ -716,10 +716,10 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     {/* Main Title */}
                     <div className="mt-4 flex flex-col gap-1">
                       <h3 className="font-sans font-bold text-base sm:text-lg text-white">
-                        Merancang Arsitektur & Spesifikasi Sistem
+                        {t('Merancang Arsitektur & Spesifikasi Sistem', 'Designing System Architecture & Specifications')}
                       </h3>
                       <p className="font-sans text-xs text-zinc-400">
-                        Target Proyek: <span className="font-mono text-zinc-200 font-semibold">{projectName || 'Arsitektur Proyek'}</span>
+                        {t('Target Proyek:', 'Project Target:')} <span className="font-mono text-zinc-200 font-semibold">{projectName || t('Arsitektur Proyek', 'Project Architecture')}</span>
                       </p>
                     </div>
 
@@ -732,15 +732,15 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                         'border-white/5 bg-white/[0.02] text-zinc-500'
                       }`}>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">01 · PRD & Scope</span>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">01 · PRD &amp; {t('Cakupan', 'Scope')}</span>
                           {generationProgress >= 40 ? (
                             <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
                           ) : (
                             <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
                           )}
                         </div>
-                        <div className="mt-1 font-semibold text-xs text-zinc-100">Product Requirements Document</div>
-                        <div className="text-[11px] text-zinc-400">Persona, MVP scope, & alur bisnis</div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">{t('Product Requirements Document', 'Product Requirements Document')}</div>
+                        <div className="text-[11px] text-zinc-400">{t('Persona, cakupan MVP, & alur bisnis', 'Personas, MVP scope, & business flows')}</div>
                       </div>
 
                       {/* Stage 2: Database / Spec */}
@@ -750,17 +750,17 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                         'border-white/5 bg-white/[0.02] text-zinc-500'
                       }`}>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">02 · Database & Spec</span>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">02 · Database &amp; {t('Spesifikasi', 'Spec')}</span>
                           {generationProgress >= 65 ? (
                             <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
                           ) : generationStep === 'db' ? (
                             <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
                           ) : (
-                            <span className="text-[10px] font-mono text-zinc-600">Pending</span>
+                            <span className="text-[10px] font-mono text-zinc-600">{t('Menunggu', 'Pending')}</span>
                           )}
                         </div>
-                        <div className="mt-1 font-semibold text-xs text-zinc-100">Penyimpanan Spesifikasi</div>
-                        <div className="text-[11px] text-zinc-400">Persistensi skema & entitas relasional</div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">{t('Penyimpanan Spesifikasi', 'Specification Storage')}</div>
+                        <div className="text-[11px] text-zinc-400">{t('Persistensi skema & entitas relasional', 'Schema & relational entity persistence')}</div>
                       </div>
 
                       {/* Stage 3: Flowchart & ADR */}
@@ -770,17 +770,17 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                         'border-white/5 bg-white/[0.02] text-zinc-500'
                       }`}>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">03 · Flowchart & Tech Stack</span>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">03 · Flowchart &amp; {t('Tech Stack', 'Tech Stack')}</span>
                           {generationProgress >= 88 ? (
                             <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
                           ) : generationStep === 'architecture' ? (
                             <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
                           ) : (
-                            <span className="text-[10px] font-mono text-zinc-600">Pending</span>
+                            <span className="text-[10px] font-mono text-zinc-600">{t('Menunggu', 'Pending')}</span>
                           )}
                         </div>
-                        <div className="mt-1 font-semibold text-xs text-zinc-100">Application Tree & ADR</div>
-                        <div className="text-[11px] text-zinc-400">Node alur pengguna & stack teknologi</div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">{t('Application Tree & ADR', 'Application Tree & ADR')}</div>
+                        <div className="text-[11px] text-zinc-400">{t('Node alur pengguna & stack teknologi', 'User flow nodes & technology stack')}</div>
                       </div>
 
                       {/* Stage 4: AGENTS.md & Master Prompt */}
@@ -790,17 +790,17 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                         'border-white/5 bg-white/[0.02] text-zinc-500'
                       }`}>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">04 · AI Coding Agent</span>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">04 · {t('AI Coding Agent', 'AI Coding Agent')}</span>
                           {generationProgress >= 100 ? (
                             <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
                           ) : generationStep === 'agents' ? (
                             <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
                           ) : (
-                            <span className="text-[10px] font-mono text-zinc-600">Pending</span>
+                            <span className="text-[10px] font-mono text-zinc-600">{t('Menunggu', 'Pending')}</span>
                           )}
                         </div>
-                        <div className="mt-1 font-semibold text-xs text-zinc-100">AGENTS.md & Prompt.md</div>
-                        <div className="text-[11px] text-zinc-400">Guardrails dan instruksi coding agent</div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">AGENTS.md &amp; Prompt.md</div>
+                        <div className="text-[11px] text-zinc-400">{t('Guardrails dan instruksi coding agent', 'Coding agent guardrails and instructions')}</div>
                       </div>
                     </div>
 
@@ -823,8 +823,8 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                       <Lightning weight="fill" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                       <span>
                         {generationElapsedSec > 35
-                          ? 'AI sedang memvalidasi relasi dependensi arsitektur dan aturan anti-halusinasi...'
-                          : 'Setiap spesifikasi dirancang dan divalidasi langsung agar siap dipakai oleh AI coding agent.'}
+                          ? t('AI sedang memvalidasi relasi dependensi arsitektur dan aturan anti-halusinasi...', 'AI is validating architecture dependencies and anti-hallucination rules...')
+                          : t('Setiap spesifikasi dirancang dan divalidasi langsung agar siap dipakai oleh AI coding agent.', 'Every specification is designed and validated live so it is ready for an AI coding agent.')}
                       </span>
                     </div>
                   </div>
@@ -840,11 +840,11 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                         </div>
                         <div className="flex-1">
                           <h4 className="font-sans font-bold text-sm sm:text-base text-rose-100">
-                            Generasi Arsitektur Memerlukan Waktu Lebih Lama
+                            {t('Generasi Arsitektur Memerlukan Waktu Lebih Lama', 'Architecture Generation Is Taking Longer')}
                           </h4>
                           <p className="font-sans text-xs text-zinc-300 mt-1 leading-relaxed">
                             {error.includes('timed out')
-                              ? 'Layanan AI membutuhkan waktu lebih lama untuk menyelesaikan sintesis arsitektur. Data sesi dan transkrip Anda aman.'
+                              ? t('Layanan AI membutuhkan waktu lebih lama untuk menyelesaikan sintesis arsitektur. Data sesi dan transkrip Anda aman.', 'The AI service is taking longer to complete the architecture synthesis. Your session data and transcript are safe.')
                               : error}
                           </p>
                         </div>
@@ -857,14 +857,14 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                           className="gap-2 bg-white text-black hover:bg-zinc-200 text-xs font-semibold shadow-md"
                         >
                           <Lightning weight="fill" className="w-3.5 h-3.5" />
-                          <span>⚡ Coba Lagi Sekarang</span>
+                          <span>⚡ {t('Coba Lagi Sekarang', 'Try Again Now')}</span>
                         </Button>
                         <Button
                           variant="ghost"
                           onClick={() => setError(null)}
                           className="text-xs text-zinc-400 hover:text-white"
                         >
-                          Lanjut Edit Obrolan
+                          {t('Lanjut Edit Obrolan', 'Continue Editing Chat')}
                         </Button>
                       </div>
                     </div>
@@ -880,7 +880,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
             <div className="mx-auto w-full max-w-3xl p-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 font-sans text-xs text-zinc-300">
                 <Lightning weight="fill" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <span>Sudah cukup dengan informasi yang tertera?</span>
+                <span>{t('Sudah cukup dengan informasi yang tertera?', 'Is the information provided enough?')}</span>
               </div>
               <button
                 type="button"
@@ -888,7 +888,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                 className="inline-flex items-center gap-1.5 font-sans font-semibold text-xs px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 cursor-pointer transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               >
                 <Lightning weight="bold" className="w-3.5 h-3.5" />
-                Generate Sekarang (AI Lengkapi Sisanya)
+                {t('Generate Sekarang (AI Lengkapi Sisanya)', 'Generate Now (AI Completes the Rest)')}
               </button>
             </div>
           </div>
@@ -917,7 +917,7 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                   ref={inputRef}
                   value={localInput}
                   onChange={(e) => setLocalInput(e.target.value)}
-                  placeholder={messages.length === 0 ? "Ketik ide aplikasi Anda di sini..." : "Ketik jawaban Anda (atau klik 'Generate Sekarang')..."}
+                  placeholder={messages.length === 0 ? t('Ketik ide aplikasi Anda di sini...', 'Type your app idea here...') : t("Ketik jawaban Anda (atau klik 'Generate Sekarang')...", "Type your answer (or click 'Generate Now')...")}
                   className="flex-1 !rounded-xl !border-white/10 !bg-black/60 focus:!border-white/30 text-xs sm:text-sm text-white"
                   disabled={status !== 'idle'}
                   maxLength={MAX_MESSAGE_LENGTH}

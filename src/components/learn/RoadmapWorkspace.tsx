@@ -18,6 +18,7 @@ import dagre from 'dagre';
 import { LearningDrawer } from '@/components/learn/LearningDrawer';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, LockSimple } from '@phosphor-icons/react';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Custom Section Milestone Node (Spine Center)
 const SectionMilestoneNode = ({ data }: { data: any }) => {
@@ -60,7 +61,7 @@ const TopicGroupNode = ({ data }: { data: any }) => {
               ? 'bg-white text-black border-white'
               : 'bg-white/5 text-zinc-400 border-white/10'
           }`}>
-            {masteredCount}/{data.topics.length} Done
+            {masteredCount}/{data.topics.length} {data.doneLabel}
           </span>
         </div>
 
@@ -95,7 +96,7 @@ const TopicGroupNode = ({ data }: { data: any }) => {
                   <span className="font-medium truncate">{topic.title}</span>
                 </div>
                 <span className="text-[10px] font-mono opacity-60 shrink-0 ml-1">
-                  {isMastered ? 'Mastered' : isUnlocked ? 'Learn' : 'Locked'}
+                  {isMastered ? data.masteredLabel : isUnlocked ? data.learnLabel : data.lockedLabel}
                 </span>
               </div>
             );
@@ -137,7 +138,7 @@ const FlatNodeComponent = ({ data }: { data: any }) => {
       <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
       <div className="flex justify-between items-center mb-2">
         <span className={`text-[10px] font-mono font-medium uppercase px-2 py-0.5 rounded-full border ${badgeStyle}`}>
-          {isMastered ? 'MASTERED' : isUnlocked ? 'UNLOCKED' : 'LOCKED'}
+          {isMastered ? data.statusLabels.mastered : isUnlocked ? data.statusLabels.unlocked : data.statusLabels.locked}
         </span>
       </div>
 
@@ -147,7 +148,7 @@ const FlatNodeComponent = ({ data }: { data: any }) => {
       <p className="font-mono text-xs text-zinc-400 line-clamp-2">{data.description}</p>
 
       <div className="mt-3 text-[10px] font-mono font-medium uppercase text-right text-zinc-400">
-        {isLocked ? 'Complete Prereqs' : 'Click to Learn & Quiz →'}
+        {isLocked ? data.completePrereqsLabel : data.learnAndQuizLabel}
       </div>
       <Handle type="source" position={Position.Bottom} className="!bg-zinc-400 !w-2.5 !h-2.5 !border-none" />
     </div>
@@ -162,6 +163,7 @@ const nodeTypes = {
 
 export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; initialNodes: any[] }) {
   const router = useRouter();
+  const { language, t } = useLanguage();
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -183,7 +185,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
       if (meta && meta.sectionName) {
         hasSections = true;
         const secName = meta.sectionName;
-        const grpName = meta.groupName || 'General Topics';
+        const grpName = meta.groupName || t('Topik Umum', 'General Topics');
         const side = meta.side || 'left';
 
         if (!sectionMap.has(secName)) {
@@ -200,7 +202,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
           nodeId: n.nodeId,
           title: n.title,
           description: n.description,
-          category: meta.category || 'required',
+          category: meta.category || t('wajib', 'required'),
           status: n.status,
           contentMarkdown: n.contentMarkdown,
           quizData: n.quizData,
@@ -264,6 +266,10 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
               groupName: grpName,
               side: isLeft ? 'left' : 'right',
               topics: grpData.topics,
+              doneLabel: t('Selesai', 'Done'),
+              masteredLabel: t('Dikuasai', 'Mastered'),
+              learnLabel: t('Pelajari', 'Learn'),
+              lockedLabel: t('Terkunci', 'Locked'),
               onTopicClick: (topic: any) => setSelectedNode(topic),
             },
           });
@@ -314,6 +320,13 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
           title: n.title,
           description: n.description,
           status: n.status,
+          statusLabels: {
+            mastered: t('DIKUASAI', 'MASTERED'),
+            unlocked: t('TERBUKA', 'UNLOCKED'),
+            locked: t('TERKUNCI', 'LOCKED'),
+          },
+          completePrereqsLabel: t('Selesaikan Prasyarat', 'Complete Prereqs'),
+          learnAndQuizLabel: t('Klik untuk Belajar & Kuis →', 'Click to Learn & Quiz →'),
           onClick: () => setSelectedNode({
             dbNodeId: n.id,
             nodeId: n.nodeId,
@@ -348,7 +361,7 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
 
   useEffect(() => {
     layoutRoadmapSh(initialNodes);
-  }, [initialNodes]);
+  }, [initialNodes, language]);
 
   return (
     <div className="flex-1 w-full h-full relative bg-[#030303]">
@@ -360,6 +373,19 @@ export function RoadmapWorkspace({ roadmap, initialNodes }: { roadmap: any; init
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.15}
+        ariaLabelConfig={{
+          'controls.ariaLabel': t('Kontrol kanvas roadmap', 'Roadmap canvas controls'),
+          'controls.zoomIn.ariaLabel': t('Perbesar', 'Zoom in'),
+          'controls.zoomOut.ariaLabel': t('Perkecil', 'Zoom out'),
+          'controls.fitView.ariaLabel': t('Sesuaikan tampilan', 'Fit view'),
+          'controls.interactive.ariaLabel': t('Alihkan interaktivitas', 'Toggle interactivity'),
+          'minimap.ariaLabel': t('Peta mini roadmap', 'Roadmap minimap'),
+          'node.a11yDescription.default': t('Tekan Enter atau spasi untuk memilih node. Tekan Delete untuk menghapusnya dan Escape untuk membatalkan.', 'Press Enter or Space to select a node. Press Delete to remove it and Escape to cancel.'),
+          'node.a11yDescription.keyboardDisabled': t('Tekan Enter atau spasi untuk memilih node. Gunakan tombol panah untuk memindahkannya. Tekan Delete untuk menghapusnya dan Escape untuk membatalkan.', 'Press Enter or Space to select a node. You can then use the arrow keys to move the node around. Press Delete to remove it and Escape to cancel.'),
+          'node.a11yDescription.ariaLiveMessage': ({ direction, x, y }) => t(`Node terpilih dipindahkan ke ${direction}. Posisi baru, x: ${x}, y: ${y}`, `Moved selected node ${direction}. New position, x: ${x}, y: ${y}`),
+          'edge.a11yDescription.default': t('Tekan Enter atau spasi untuk memilih penghubung. Tekan Delete untuk menghapusnya atau Escape untuk membatalkan.', 'Press Enter or Space to select an edge. You can then press Delete to remove it or Escape to cancel.'),
+          'handle.ariaLabel': t('Titik penghubung', 'Connection point'),
+        }}
       >
         <Controls className="!border !border-white/10 !rounded-xl !bg-[#0b0b0e] !shadow-2xl overflow-hidden [&_button]:!bg-[#0b0b0e] [&_button]:!border-b [&_button]:!border-white/10 [&_button]:!fill-zinc-300 [&_button]:!text-zinc-300 hover:[&_button]:!bg-white/10" />
         <MiniMap className="!border !border-white/10 !rounded-xl !bg-[#08080b]/90 !shadow-2xl overflow-hidden" nodeColor="#3f3f46" maskColor="rgba(3, 3, 3, 0.75)" />

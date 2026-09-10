@@ -20,6 +20,7 @@ import {
   ArrowUpRight,
   Sparkle,
 } from '@phosphor-icons/react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export type SpecSummaryData = {
   projectId: string;
@@ -54,36 +55,48 @@ const QUICK_TAGS = [
 ];
 
 const GENERATION_STEPS = [
-  'Memetakan Interactive Application Tree & Screen Nodes...',
-  'Menyusun Product Requirements Document (PRD)...',
-  'Merumuskan Aturan AGENTS.md & Guardrails...',
-  'Merancang Architecture Decision Record (ADR) & Schema...',
-  'Mengompilasi Master Prompt.md Siap Pakai...',
+  ['Memetakan Interactive Application Tree & Screen Nodes...', 'Mapping Interactive Application Tree & Screen Nodes...'],
+  ['Menyusun Product Requirements Document (PRD)...', 'Preparing Product Requirements Document (PRD)...'],
+  ['Merumuskan Aturan AGENTS.md & Guardrails...', 'Defining AGENTS.md Rules & Guardrails...'],
+  ['Merancang Architecture Decision Record (ADR) & Schema...', 'Designing Architecture Decision Record (ADR) & Schema...'],
+  ['Mengompilasi Master Prompt.md Siap Pakai...', 'Compiling Ready-to-Use Master Prompt.md...'],
 ];
 
 const ARCHITECTURAL_JUMPSTARTS = [
   {
     title: 'B2B SaaS Multi-tenant',
+    titleEn: 'Multi-tenant B2B SaaS',
     category: 'Web SaaS',
+    categoryEn: 'Web SaaS',
     snippet: 'Bangun platform B2B SaaS multi-tenant dengan dashboard analitik, manajemen peran & hak akses (RBAC), integrasi subscription payment, dan webhook audit log.',
+    snippetEn: 'Build a multi-tenant B2B SaaS platform with analytics dashboards, role and access management (RBAC), subscription payments, and webhook audit logs.',
     tech: 'Next.js 16, Supabase, Tailwind CSS',
   },
   {
     title: 'AI Support & Handover',
+    titleEn: 'AI Support & Handover',
     category: 'AI Workflow',
+    categoryEn: 'AI Workflow',
     snippet: 'Bangun platform AI Customer Support multi-channel (WhatsApp & Webchat). Bot cerdas dilatih dokumen SOP/FAQ internal, auto-triage tiket, dan handover instan ke CS manusia.',
+    snippetEn: 'Build a multi-channel AI Customer Support platform (WhatsApp & Webchat). Train an intelligent bot on internal SOP/FAQ documents, with ticket auto-triage and instant handover to human support.',
     tech: 'Next.js, FastAPI, Vector DB, WhatsApp API',
   },
   {
     title: 'FinTech Expense Tracker',
+    titleEn: 'FinTech Expense Tracker',
     category: 'Mobile App',
+    categoryEn: 'Mobile App',
     snippet: 'Aplikasi mobile manajemen arus kas & pengeluaran UMKM dengan pencatatan transaksi cepat, scan struk otomatis, grafik analitik keuangan, dan reminder tagihan.',
+    snippetEn: 'A mobile cash-flow and expense management app for small businesses with quick transaction entry, automatic receipt scanning, financial analytics, and bill reminders.',
     tech: 'React Native, Expo, SQLite, OCR API',
   },
   {
     title: 'Team Collaboration Canvas',
+    titleEn: 'Team Collaboration Canvas',
     category: 'Internal Tool',
+    categoryEn: 'Internal Tool',
     snippet: 'Internal tool workspace kolaborasi tim dengan interactive kanban sprint, realtime status task, integrasi notifikasi, dan activity timeline.',
+    snippetEn: 'An internal team collaboration workspace with interactive sprint kanban, realtime task status, notification integrations, and an activity timeline.',
     tech: 'Next.js App Router, Tailwind CSS, Realtime SSE',
   },
 ];
@@ -95,6 +108,7 @@ export function IdeaStudio({
   initialSpecSummary = null,
 }: IdeaStudioProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [projectId, setProjectId] = useState<string | null>(initialProjectId);
   const [specSummary] = useState<SpecSummaryData | null>(initialSpecSummary || null);
@@ -187,7 +201,7 @@ export function IdeaStudio({
           body: JSON.stringify({}),
         });
         if (!sessionRes.ok) {
-          throw new Error('Gagal menginisialisasi sesi baru.');
+          throw new Error(t('Gagal menginisialisasi sesi baru.', 'Failed to initialize a new session.'));
         }
         const sessionData = await sessionRes.json();
         activeSessionId = sessionData.id;
@@ -206,7 +220,7 @@ export function IdeaStudio({
       });
 
       if (!messageRes.ok) {
-        throw new Error('Gagal menyimpan ide aplikasi ke database.');
+        throw new Error(t('Gagal menyimpan ide aplikasi ke database.', 'Failed to save the app idea to the database.'));
       }
 
       const genRes = await fetch('/api/projects/generate', {
@@ -227,7 +241,7 @@ export function IdeaStudio({
         const message =
           typeof errPayload === 'object' && errPayload !== null && 'error' in errPayload
             ? String((errPayload as Record<string, unknown>).error)
-            : 'Gagal generate spesifikasi proyek.';
+            : t('Gagal generate spesifikasi proyek.', 'Failed to generate the project specification.');
         throw new Error(message);
       }
 
@@ -272,7 +286,7 @@ export function IdeaStudio({
                     targetProjectId = payload.projectId;
                   }
                 } else if (currentEvent === 'error') {
-                  throw new Error(payload.error || 'Gagal generate spesifikasi proyek.');
+                  throw new Error(payload.error || t('Gagal generate spesifikasi proyek.', 'Failed to generate the project specification.'));
                 }
               } catch (parseErr) {
                 if (parseErr instanceof Error && currentEvent === 'error') {
@@ -286,7 +300,7 @@ export function IdeaStudio({
         if (targetProjectId) {
           router.push(`/projects/${targetProjectId}`);
         } else {
-          throw new Error('Sesi pembuatan selesai namun projectId tidak ditemukan.');
+          throw new Error(t('Sesi pembuatan selesai namun projectId tidak ditemukan.', 'Generation finished but the projectId was not found.'));
         }
       } else {
         const genData = await genRes.json();
@@ -295,7 +309,7 @@ export function IdeaStudio({
       }
     } catch (err: unknown) {
       console.error('Generation failed:', err);
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan sistem.');
+      setError(err instanceof Error ? err.message : t('Terjadi kesalahan sistem.', 'A system error occurred.'));
       setStatus('idle');
     }
   };
@@ -318,12 +332,12 @@ export function IdeaStudio({
             <div className="flex items-center gap-2 min-w-0">
               <CheckCircle weight="fill" className="w-4 h-4 text-zinc-300 shrink-0" />
               <span className="text-xs font-sans text-zinc-300 truncate">
-                Proyek ini telah memiliki dokumen spesifikasi &amp; flow node tree.
+                {t('Proyek ini telah memiliki dokumen spesifikasi & flow node tree.', 'This project already has specification documents & a flow node tree.')}
               </span>
             </div>
             <Link href={`/projects/${projectId}`} className="shrink-0">
               <span className="text-xs font-mono font-medium text-white hover:underline flex items-center gap-1">
-                Buka Workspace &rarr;
+                {t('Buka Workspace', 'Open Workspace')} &rarr;
               </span>
             </Link>
           </div>
@@ -333,14 +347,14 @@ export function IdeaStudio({
         <div className="flex flex-col items-start gap-3 max-w-3xl">
           <div className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--accent)]">
             <span aria-hidden className="size-1.5 rounded-full bg-white" />
-            <span>AI Architecture &amp; Spec Studio</span>
+            <span>{t('AI Architecture & Spec Studio', 'AI Architecture & Spec Studio')}</span>
             <span aria-hidden className="size-1.5 rounded-full bg-white/20" />
           </div>
           <h1 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-[-0.03em] leading-[1.08] text-white">
-            Tuangkan Ide Aplikasi Anda
+            {t('Tuangkan Ide Aplikasi Anda', 'Describe Your App Idea')}
           </h1>
           <p className="font-sans text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
-            Deskripsikan aplikasi, alur pengguna, atau problem yang ingin diselesaikan. AI akan merancang arsitektur visual, PRD, dan kode secara otomatis.
+            {t('Deskripsikan aplikasi, alur pengguna, atau problem yang ingin diselesaikan. AI akan merancang arsitektur visual, PRD, dan kode secara otomatis.', 'Describe the application, user flow, or problem you want to solve. AI will automatically design the visual architecture, PRD, and code.')}
           </p>
         </div>
 
@@ -359,7 +373,7 @@ export function IdeaStudio({
           <span aria-hidden className="absolute -bottom-[7px] -left-[9px] font-mono text-sm leading-none text-zinc-600 select-none">+</span>
           <span aria-hidden className="absolute -bottom-[7px] -right-[9px] font-mono text-sm leading-none text-zinc-600 select-none">+</span>
           <span aria-hidden className="absolute -top-4 right-0 font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600 select-none">
-            Fig. 02 — Brief
+            {t('Fig. 02 — Brief', 'Fig. 02 — Brief')}
           </span>
 
           <div className="rounded-2xl border border-white/10 bg-[#14191a] shadow-[var(--shadow-brutal)] focus-within:border-[var(--accent)]/50 transition-colors duration-300 overflow-hidden">
@@ -372,7 +386,7 @@ export function IdeaStudio({
                 onKeyDown={handleKeyDown}
                 disabled={status === 'generating'}
                 rows={4}
-                placeholder="Jelaskan aplikasi yang ingin Anda bangun (alur pengguna, integrasi payment/AI, aturan bisnis)..."
+                placeholder={t('Jelaskan aplikasi yang ingin Anda bangun (alur pengguna, integrasi payment/AI, aturan bisnis)...', 'Describe the app you want to build (user flow, payment/AI integrations, business rules)...')}
                 className="w-full bg-transparent text-sm sm:text-base text-white placeholder:text-zinc-600 focus:outline-none resize-none leading-relaxed font-sans"
               />
             </div>
@@ -382,27 +396,27 @@ export function IdeaStudio({
               <div className="mx-4 mb-4 p-4 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-[0.18em] block mb-1">
-                    Target Pengguna
+                    {t('Target Pengguna', 'Target Users')}
                   </label>
                   <input
                     type="text"
                     value={targetAudience}
                     onChange={(e) => setTargetAudience(e.target.value)}
                     disabled={status === 'generating'}
-                    placeholder="Misal: Pemilik kos, mahasiswa, UMKM"
+                    placeholder={t('Misal: Pemilik kos, mahasiswa, UMKM', 'e.g. Landlords, students, small businesses')}
                     className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans transition-colors"
                   />
                 </div>
                 <div>
                   <label className="font-mono text-[10px] text-zinc-400 uppercase tracking-[0.18em] block mb-1">
-                    Tech Stack Preferensi
+                    {t('Tech Stack Preferensi', 'Preferred Tech Stack')}
                   </label>
                   <input
                     type="text"
                     value={techStack}
                     onChange={(e) => setTechStack(e.target.value)}
                     disabled={status === 'generating'}
-                    placeholder="Misal: Next.js, Supabase, Tailwind, WhatsApp API"
+                    placeholder={t('Misal: Next.js, Supabase, Tailwind, WhatsApp API', 'e.g. Next.js, Supabase, Tailwind, WhatsApp API')}
                     className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans transition-colors"
                   />
                 </div>
@@ -423,7 +437,7 @@ export function IdeaStudio({
                   }`}
                 >
                   <SlidersHorizontal weight="bold" className="w-3.5 h-3.5" />
-                  <span>Preferensi</span>
+                  <span>{t('Preferensi', 'Preferences')}</span>
                 </button>
 
                 <div className="hidden md:flex items-center gap-1 pl-1">
@@ -438,7 +452,7 @@ export function IdeaStudio({
                         className="px-2 py-1 rounded-md text-[11px] font-mono text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                       >
                         <TagIcon weight="bold" className="w-3 h-3" />
-                        <span>+{tag.label}</span>
+                        <span>+{t(tag.label === 'Web SaaS' ? 'Web SaaS' : tag.label === 'Mobile App' ? 'Aplikasi Mobile' : tag.label === 'AI Agent' ? 'AI Agent' : tag.label === 'Marketplace' ? 'Marketplace' : 'Internal Tool', tag.label)}</span>
                       </button>
                     );
                   })}
@@ -457,7 +471,7 @@ export function IdeaStudio({
                   disabled={!idea.trim() || status === 'generating'}
                   className="px-4 py-2 rounded-xl bg-white text-black hover:bg-white/90 disabled:opacity-30 disabled:hover:bg-white font-mono font-semibold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 >
-                  <span>{status === 'generating' ? 'Drafting Spec...' : projectId ? 'Regenerate' : 'Generate Spec'}</span>
+                  <span>{status === 'generating' ? t('Menyusun Spec...', 'Drafting Spec...') : projectId ? t('Regenerate', 'Regenerate') : t('Generate Spec', 'Generate Spec')}</span>
                   <div className="w-5 h-5 rounded-full bg-black/10 flex items-center justify-center">
                     <ArrowUp weight="bold" className="w-3 h-3 text-black" />
                   </div>
@@ -477,18 +491,18 @@ export function IdeaStudio({
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
                 <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-300 font-semibold">
-                  Architecture Deliverables
+                  {t('Architecture Deliverables', 'Architecture Deliverables')}
                 </span>
                 <span className="text-zinc-600 font-mono text-[11px]">/</span>
                 <span className="text-[11px] font-mono text-zinc-500">
-                  {specSummary.nodes?.length || 0} nodes mapped
+                  {specSummary.nodes?.length || 0} {t('node dipetakan', 'nodes mapped')}
                 </span>
               </div>
               <Link
                 href={`/projects/${specSummary.projectId}`}
                 className="text-xs font-mono text-zinc-400 hover:text-white flex items-center gap-1.5 transition-colors group"
               >
-                <span>Buka Full Workspace</span>
+                <span>{t('Buka Full Workspace', 'Open Full Workspace')}</span>
                 <ArrowUpRight weight="bold" className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </Link>
             </div>
@@ -501,9 +515,9 @@ export function IdeaStudio({
                   <div className="flex items-center justify-between text-zinc-400">
                     <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-300">
                       <TreeStructure weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>Flowchart Nodes</span>
+                      <span>{t('Flowchart Nodes', 'Flowchart Nodes')}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-zinc-500">{specSummary.nodes?.length || 0} screens</span>
+                    <span className="font-mono text-[10px] text-zinc-500">{specSummary.nodes?.length || 0} {t('layar', 'screens')}</span>
                   </div>
                   <div className="flex flex-col gap-1.5 pt-0.5">
                     {specSummary.nodes && specSummary.nodes.length > 0 ? (
@@ -517,11 +531,11 @@ export function IdeaStudio({
                         </div>
                       ))
                     ) : (
-                      <span className="text-xs font-sans text-zinc-500 italic">Flowchart node siap digenerate</span>
+                      <span className="text-xs font-sans text-zinc-500 italic">{t('Flowchart node siap digenerate', 'Flowchart nodes are ready to generate')}</span>
                     )}
                     {(specSummary.nodes?.length || 0) > 3 && (
                       <span className="font-mono text-[10px] text-zinc-500 pl-1">
-                        +{(specSummary.nodes?.length || 0) - 3} node lainnya...
+                        +{(specSummary.nodes?.length || 0) - 3} {t('node lainnya...', 'more nodes...')}
                       </span>
                     )}
                   </div>
@@ -530,7 +544,7 @@ export function IdeaStudio({
                   href={`/projects/${specSummary.projectId}`}
                   className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 pt-2 border-t border-white/5"
                 >
-                  Lihat Interactive Flowchart →
+                  {t('Lihat Interactive Flowchart', 'View Interactive Flowchart')} →
                 </Link>
               </div>
 
@@ -540,21 +554,21 @@ export function IdeaStudio({
                   <div className="flex items-center justify-between text-zinc-400">
                     <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-300">
                       <Article weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>Product Specs</span>
+                      <span>{t('Product Specs', 'Product Specs')}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-emerald-400">PRD Ready</span>
+                    <span className="font-mono text-[10px] text-emerald-400">{t('PRD Ready', 'PRD Ready')}</span>
                   </div>
                   <div className="flex flex-col gap-2 pt-0.5">
                     <div>
-                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">Target User</span>
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">{t('Target User', 'Target User')}</span>
                       <p className="line-clamp-2 text-xs font-sans text-zinc-300">
-                        {specSummary.prd?.targetUser || 'Pengguna terdaftar & admin sistem'}
+                        {specSummary.prd?.targetUser || t('Pengguna terdaftar & admin sistem', 'Registered users & system admins')}
                       </p>
                     </div>
                     <div>
-                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">MVP Scope</span>
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">{t('MVP Scope', 'MVP Scope')}</span>
                       <p className="line-clamp-2 text-xs font-sans text-zinc-300">
-                        {specSummary.prd?.coreFeatures?.split('\n')[0]?.replace(/^[-*]\s*/, '') || 'Alur fungsional inti dan modul utama'}
+                        {specSummary.prd?.coreFeatures?.split('\n')[0]?.replace(/^[-*]\s*/, '') || t('Alur fungsional inti dan modul utama', 'Core functional flows and main modules')}
                       </p>
                     </div>
                   </div>
@@ -563,7 +577,7 @@ export function IdeaStudio({
                   href={`/projects/${specSummary.projectId}`}
                   className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 pt-2 border-t border-white/5"
                 >
-                  Buka Dokumen PRD →
+                  {t('Buka Dokumen PRD', 'Open PRD Document')} →
                 </Link>
               </div>
 
@@ -573,9 +587,9 @@ export function IdeaStudio({
                   <div className="flex items-center justify-between text-zinc-400">
                     <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-300">
                       <Cpu weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>Tech Stack &amp; ADR</span>
+                      <span>{t('Tech Stack & ADR', 'Tech Stack & ADR')}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-zinc-500">ADR Spec</span>
+                    <span className="font-mono text-[10px] text-zinc-500">{t('ADR Spec', 'ADR Spec')}</span>
                   </div>
                   <div className="flex flex-col gap-2 pt-0.5">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -593,10 +607,10 @@ export function IdeaStudio({
                       </span>
                     </div>
                     <div className="pt-1 text-xs text-zinc-400">
-                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">Coding Rules</span>
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 block mb-0.5">{t('Coding Rules', 'Coding Rules')}</span>
                       <span className="text-[11px] text-zinc-300 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                        <span>AGENTS.md Guardrails Terpasang</span>
+                        <span>{t('AGENTS.md Guardrails Terpasang', 'AGENTS.md Guardrails Installed')}</span>
                       </span>
                     </div>
                   </div>
@@ -605,7 +619,7 @@ export function IdeaStudio({
                   href={`/projects/${specSummary.projectId}`}
                   className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 pt-2 border-t border-white/5"
                 >
-                  Lihat Aturan AGENTS.md →
+                  {t('Lihat Aturan AGENTS.md', 'View AGENTS.md Rules')} →
                 </Link>
               </div>
             </div>
@@ -619,10 +633,10 @@ export function IdeaStudio({
               <div className="flex items-center gap-2">
                 <Sparkle weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
                 <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
-                  Architectural Jumpstarts
+                  {t('Architectural Jumpstarts', 'Architectural Jumpstarts')}
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-zinc-500">Klik kartu untuk menggunakan template</span>
+              <span className="text-[10px] font-mono text-zinc-500">{t('Klik kartu untuk menggunakan template', 'Click a card to use a template')}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -636,19 +650,19 @@ export function IdeaStudio({
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <span className="font-sans font-medium text-xs text-white group-hover:text-emerald-300 transition-colors">
-                        {item.title}
+                        {t(item.title, item.titleEn)}
                       </span>
                       <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400">
-                        {item.category}
+                        {t(item.category, item.categoryEn)}
                       </span>
                     </div>
                     <p className="font-sans text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
-                      {item.snippet}
+                      {t(item.snippet, item.snippetEn)}
                     </p>
                   </div>
                   <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-zinc-500 border-t border-white/5">
                     <span className="truncate pr-2">{item.tech}</span>
-                    <span className="text-zinc-400 group-hover:text-white transition-colors">Pakai Template →</span>
+                    <span className="text-zinc-400 group-hover:text-white transition-colors">{t('Pakai Template', 'Use Template')} →</span>
                   </div>
                 </button>
               ))}
@@ -658,11 +672,11 @@ export function IdeaStudio({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 opacity-70">
               <div className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 flex items-center gap-2">
                 <TreeStructure weight="bold" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <span className="font-mono text-[10px] text-zinc-400 truncate">Interactive Flowchart Tree</span>
+                <span className="font-mono text-[10px] text-zinc-400 truncate">{t('Interactive Flowchart Tree', 'Interactive Flowchart Tree')}</span>
               </div>
               <div className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 flex items-center gap-2">
                 <Article weight="bold" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <span className="font-mono text-[10px] text-zinc-400 truncate">PRD &amp; Schema Spec</span>
+                <span className="font-mono text-[10px] text-zinc-400 truncate">{t('PRD & Schema Spec', 'PRD & Schema Spec')}</span>
               </div>
               <div className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 flex items-center gap-2">
                 <Cpu weight="bold" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -684,7 +698,7 @@ export function IdeaStudio({
               </span>
               <div className="flex-1 min-w-0 flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-3 font-mono text-xs">
-                  <span className="text-zinc-200 truncate">{GENERATION_STEPS[progressStepIndex]}</span>
+                  <span className="text-zinc-200 truncate">{t(GENERATION_STEPS[progressStepIndex][0], GENERATION_STEPS[progressStepIndex][1])}</span>
                   <span className="font-bold text-white shrink-0">{Math.round(progressPercent)}%</span>
                 </div>
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
@@ -697,7 +711,7 @@ export function IdeaStudio({
             </div>
             <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600">
               <Lightning weight="fill" className="w-3 h-3 text-zinc-400" />
-              <span>Jangan tutup halaman ini sampai proses selesai</span>
+              <span>{t('Jangan tutup halaman ini sampai proses selesai', 'Do not close this page until the process is complete')}</span>
             </div>
           </div>
         )}

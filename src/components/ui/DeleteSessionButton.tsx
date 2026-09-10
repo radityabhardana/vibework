@@ -5,6 +5,7 @@ import { Trash, Warning } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
+import { useLanguage } from '@/context/LanguageContext';
 
 const emptySubscribe = () => () => {};
 
@@ -18,6 +19,7 @@ export function DeleteSessionButton({
   onDeleted?: (id: string) => void;
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -65,7 +67,7 @@ export function DeleteSessionButton({
         method: 'DELETE',
       });
       if (!res.ok) {
-        throw new Error('Gagal menghapus sesi');
+        throw new Error(t('Gagal menghapus sesi', 'Failed to delete the session'));
       }
 
       setIsOpen(false);
@@ -89,8 +91,8 @@ export function DeleteSessionButton({
         type="button"
         onClick={handleOpenModal}
         className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-rose-500/50 cursor-pointer"
-        title="Hapus Histori Sesi"
-        aria-label="Hapus histori sesi"
+        title={t('Hapus Histori Sesi', 'Delete session history')}
+        aria-label={t('Hapus histori sesi', 'Delete session history')}
       >
         <Trash weight="bold" className="w-3.5 h-3.5" />
       </button>
@@ -114,7 +116,7 @@ export function DeleteSessionButton({
                   <Warning weight="fill" className="w-4 h-4" />
                 </div>
                 <h3 id={`delete-title-${sessionId}`} className="font-sans font-semibold text-base text-zinc-100">
-                  Hapus Histori Proyek
+                  {t('Hapus Histori Proyek', 'Delete Project History')}
                 </h3>
               </div>
               <button
@@ -122,7 +124,7 @@ export function DeleteSessionButton({
                 onClick={handleCloseModal}
                 disabled={isDeleting}
                 className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.06] rounded-md transition-colors disabled:opacity-50 cursor-pointer"
-                title="Tutup"
+                title={t('Tutup', 'Close')}
               >
                 ✕
               </button>
@@ -131,12 +133,12 @@ export function DeleteSessionButton({
             {/* Modal Content */}
             <div className="p-6 flex flex-col gap-4">
               <p className="font-sans text-sm leading-relaxed text-zinc-300">
-                Apakah Anda yakin ingin menghapus histori <strong>The Grill</strong> ini? Sesi dan data terkait akan dihapus secara permanen.
+                {t('Apakah Anda yakin ingin menghapus histori', 'Are you sure you want to delete the history for')} <strong>The Grill</strong> {t('ini? Sesi dan data terkait akan dihapus secara permanen.', 'This session and related data will be permanently deleted.')}
               </p>
 
               {sessionTitle && (
                 <div className="border border-white/10 bg-zinc-950/60 rounded-lg p-3 font-mono text-xs">
-                  <span className="font-semibold block text-[10px] uppercase text-zinc-500 mb-1">Target Proyek:</span>
+                  <span className="font-semibold block text-[10px] uppercase text-zinc-500 mb-1">{t('Target Proyek:', 'Project Target:')}</span>
                   <span className="font-medium text-sm text-zinc-200 break-words line-clamp-2">
                     {sessionTitle}
                   </span>
@@ -152,7 +154,7 @@ export function DeleteSessionButton({
                   onClick={handleCloseModal}
                   disabled={isDeleting}
                 >
-                  Batal
+                  {t('Batal', 'Cancel')}
                 </Button>
                 <Button 
                   type="button" 
@@ -163,7 +165,7 @@ export function DeleteSessionButton({
                   className="gap-2"
                 >
                   <Trash weight="bold" />
-                  {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
+                  {isDeleting ? t('Menghapus...', 'Deleting...') : t('Ya, Hapus', 'Yes, delete')}
                 </Button>
               </div>
             </div>

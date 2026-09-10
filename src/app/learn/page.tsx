@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { House, GraduationCap, Sparkle, ArrowRight, Trash, Spinner, Fire, CheckCircle, Checks, X } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 
@@ -23,33 +22,31 @@ export default function LearnHubPage() {
 
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [statusText, setStatusText] = useState('');
+  const [statusKey, setStatusKey] = useState<'connecting' | 'mapping' | 'generated' | null>(null);
   const [roadmaps, setRoadmaps] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const availableGoals = language === 'en' ? [
-    'Build a Production Project',
-    'Career Transition & Job Interview Prep',
-    'Academic & Research Deep-Dive',
-    'General Mastery & Core Concepts',
-  ] : [
-    'Membangun Proyek Produksi (Hands-on)',
-    'Persiapan Karir & Interview Kerja',
-    'Riset & Pendalaman Akademis',
-    'Pemahaman Konsep & Teori Dasar',
+  const availableGoals = [
+    t('Membangun Proyek Produksi (Hands-on)', 'Build a Production Project'),
+    t('Persiapan Karir & Interview Kerja', 'Career Transition & Job Interview Prep'),
+    t('Riset & Pendalaman Akademis', 'Academic & Research Deep-Dive'),
+    t('Pemahaman Konsep & Teori Dasar', 'General Mastery & Core Concepts'),
   ];
 
-  const availableFamiliarity = language === 'en' ? [
-    'Complete Beginner (No prior knowledge)',
-    'Heard of it / Basic Concepts Known',
-    'Hands-on Experience / Have Fundamentals',
-    'Experienced / Target Advanced Level',
-  ] : [
-    'Nol Besar (Belum paham sama sekali)',
-    'Pernah Dengar / Tahu Konsep Dasar',
-    'Pernah Coba Praktik / Punya Dasar',
-    'Sudah Berpengalaman / Level Advanced',
+  const availableFamiliarity = [
+    t('Nol Besar (Belum paham sama sekali)', 'Complete Beginner (No prior knowledge)'),
+    t('Pernah Dengar / Tahu Konsep Dasar', 'Heard of it / Basic Concepts Known'),
+    t('Pernah Coba Praktik / Punya Dasar', 'Hands-on Experience / Have Fundamentals'),
+    t('Sudah Berpengalaman / Level Advanced', 'Experienced / Target Advanced Level'),
   ];
+
+  const statusText = statusKey === 'connecting'
+    ? t('Menghubungkan ke AI Learning Engine...', 'Connecting to AI Learning Engine...')
+    : statusKey === 'mapping'
+      ? t('Memetakan tahapan & kurikulum micro-lesson...', 'Mapping micro-lessons curriculum...')
+      : statusKey === 'generated'
+        ? t('Roadmap berhasil dibuat! Membuka canvas...', 'Roadmap generated! Opening workspace...')
+        : '';
 
   const toggleGoal = (goalToToggle: number) => {
     setGoals(prev => {
@@ -90,7 +87,7 @@ export default function LearnHubPage() {
     setLoading(true);
     setError(null);
     setProgress(10);
-    setStatusText(t('Menghubungkan ke AI Learning Engine...', 'Connecting to AI Learning Engine...'));
+    setStatusKey('connecting');
 
     const progressTimer = setInterval(() => {
       setProgress(p => {
@@ -101,7 +98,7 @@ export default function LearnHubPage() {
     }, 400);
 
     const stepTimer = setTimeout(() => {
-      setStatusText(t('Memetakan tahapan & kurikulum micro-lesson...', 'Mapping micro-lessons curriculum...'));
+      setStatusKey('mapping');
     }, 2500);
 
     try {
@@ -121,12 +118,12 @@ export default function LearnHubPage() {
       if (!res.ok) throw new Error(data.error);
 
       setProgress(100);
-      setStatusText(t('Roadmap berhasil dibuat! Membuka canvas...', 'Roadmap generated! Opening workspace...'));
+      setStatusKey('generated');
       setTimeout(() => {
         router.push(`/learn/${data.roadmapId}`);
       }, 400);
     } catch (err: any) {
-      setError(err.message || 'Failed to generate roadmap');
+      setError(err.message || t('Gagal membuat roadmap.', 'Failed to generate roadmap.'));
       setLoading(false);
     } finally {
       clearInterval(progressTimer);
@@ -172,11 +169,11 @@ export default function LearnHubPage() {
               </h1>
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-white/15 bg-white/5 font-mono text-[10px] text-zinc-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Active
+                {t('Aktif', 'Active')}
               </span>
             </div>
             <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider hidden sm:block">
-              roadmap.sh-style interactive trees
+              {t('pohon interaktif bergaya roadmap.sh', 'roadmap.sh-style interactive trees')}
             </p>
           </div>
         </div>
@@ -185,7 +182,7 @@ export default function LearnHubPage() {
           <Link href="/">
             <Button variant="secondary" size="sm" className="gap-1.5 text-xs">
               <House weight="bold" className="w-3.5 h-3.5" />
-              <span>Dashboard</span>
+              <span>{t('Dashboard', 'Dashboard')}</span>
             </Button>
           </Link>
         </div>
@@ -200,7 +197,7 @@ export default function LearnHubPage() {
             <div className="flex flex-col gap-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 font-mono text-[11px] text-zinc-300 w-fit">
                 <Sparkle weight="fill" className="w-3 h-3 text-zinc-200" />
-                <span>Adaptive Curriculum Architect</span>
+                <span>{t('Arsitek Kurikulum Adaptif', 'Adaptive Curriculum Architect')}</span>
               </div>
               <h2 className="font-sans font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
                 {t('Buat Roadmap Pembelajaran Baru', 'Generate New Learning Roadmap')}
@@ -222,6 +219,7 @@ export default function LearnHubPage() {
             <form onSubmit={handleOpenGrill} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
+                aria-label={t('Topik roadmap', 'Roadmap topic')}
                 placeholder={t('Contoh: Machine Learning, Blockchain, Python Backend...', 'e.g. Machine Learning, Blockchain, Python Backend...')}
                 value={topic}
                 onChange={e => setTopic(e.target.value)}
@@ -294,7 +292,7 @@ export default function LearnHubPage() {
                           {rm.topic}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono text-zinc-500">{new Date(rm.createdAt).toLocaleDateString()}</span>
+                          <span className="text-[10px] font-mono text-zinc-500">{new Date(rm.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')}</span>
                           <button
                             type="button"
                             onClick={(e) => handleDelete(e, rm.id)}
@@ -339,6 +337,7 @@ export default function LearnHubPage() {
               <button
                 type="button"
                 onClick={() => setShowGrillModal(false)}
+                aria-label={t('Tutup dialog', 'Close dialog')}
                 className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <X weight="bold" className="w-4 h-4" />
@@ -421,6 +420,7 @@ export default function LearnHubPage() {
                 </label>
                 <input
                   type="text"
+                  aria-label={t('Fokus pembelajaran tambahan', 'Additional learning focus')}
                   placeholder={t(
                     'Contoh: Fokus pada PyTorch & Vision, atau Solidity & Foundry...',
                     'e.g. Focus on PyTorch & Vision, or Solidity & Foundry...'

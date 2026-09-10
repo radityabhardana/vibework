@@ -46,6 +46,9 @@ type ProviderStatus = {
 type PlaybackState = 'idle' | 'queued' | 'playing' | 'paused' | 'error';
 type LanguageFilter = 'all' | 'id' | 'en';
 type AddMode = 'clone' | 'design';
+type PageError =
+  | { type: 'translated'; id: string; en: string }
+  | { type: 'raw'; message: string };
 
 const MAX_TEXT_LENGTH = 3_000;
 const MAX_SAMPLE_SIZE = 10 * 1024 * 1024;
@@ -79,8 +82,67 @@ function voiceInitials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join('') || 'VO';
 }
 
-function optionLabel(value: string) {
-  return value.replaceAll('-', ' ');
+const DESIGN_LABELS: Record<string, [string, string]> = {
+  gender: ['Jenis Kelamin', 'Gender'],
+  age: ['Usia', 'Age'],
+  pitch: ['Nada', 'Pitch'],
+  pace: ['Kecepatan', 'Pace'],
+  tone: ['Karakter Nada', 'Tone'],
+  texture: ['Tekstur', 'Texture'],
+  condition: ['Kondisi', 'Condition'],
+  intensity: ['Intensitas', 'Intensity'],
+  useCase: ['Penggunaan', 'Use Case'],
+  male: ['Pria', 'Male'],
+  female: ['Wanita', 'Female'],
+  neutral: ['Netral', 'Neutral'],
+  child: ['Anak-anak', 'Child'],
+  teen: ['Remaja', 'Teen'],
+  'young-adult': ['Dewasa Muda', 'Young Adult'],
+  'middle-aged': ['Paruh Baya', 'Middle-aged'],
+  senior: ['Lansia', 'Senior'],
+  'very-low': ['Sangat Rendah', 'Very Low'],
+  low: ['Rendah', 'Low'],
+  medium: ['Sedang', 'Medium'],
+  high: ['Tinggi', 'High'],
+  'very-high': ['Sangat Tinggi', 'Very High'],
+  'very-slow': ['Sangat Lambat', 'Very Slow'],
+  slow: ['Lambat', 'Slow'],
+  fast: ['Cepat', 'Fast'],
+  'very-fast': ['Sangat Cepat', 'Very Fast'],
+  warm: ['Hangat', 'Warm'],
+  calm: ['Tenang', 'Calm'],
+  authoritative: ['Berwibawa', 'Authoritative'],
+  cheerful: ['Ceria', 'Cheerful'],
+  dramatic: ['Dramatis', 'Dramatic'],
+  empathetic: ['Empatik', 'Empathetic'],
+  mysterious: ['Misterius', 'Mysterious'],
+  clear: ['Jernih', 'Clear'],
+  airy: ['Ringan', 'Airy'],
+  velvety: ['Selembut Beludru', 'Velvety'],
+  raspy: ['Serak', 'Raspy'],
+  breathy: ['Bernapas', 'Breathy'],
+  resonant: ['Bergema', 'Resonant'],
+  crisp: ['Tajam', 'Crisp'],
+  healthy: ['Sehat', 'Healthy'],
+  sleepy: ['Mengantuk', 'Sleepy'],
+  tired: ['Lelah', 'Tired'],
+  whispered: ['Berbisik', 'Whispered'],
+  hoarse: ['Parau', 'Hoarse'],
+  excited: ['Bersemangat', 'Excited'],
+  subtle: ['Halus', 'Subtle'],
+  moderate: ['Sedang', 'Moderate'],
+  strong: ['Kuat', 'Strong'],
+  narration: ['Narasi', 'Narration'],
+  commercial: ['Iklan', 'Commercial'],
+  audiobook: ['Buku Audio', 'Audiobook'],
+  assistant: ['Asisten', 'Assistant'],
+  character: ['Karakter', 'Character'],
+  education: ['Edukasi', 'Education'],
+};
+
+function optionLabel(value: string, translate: (idText: string, enText?: string) => string) {
+  const label = DESIGN_LABELS[value];
+  return label ? translate(label[0], label[1]) : value.replaceAll('-', ' ');
 }
 
 async function responseError(response: Response) {
@@ -106,7 +168,7 @@ export default function VoiceStudioPage() {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [loadingVoices, setLoadingVoices] = useState(true);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PageError | null>(null);
   const [showAddVoice, setShowAddVoice] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>('clone');
   const [voiceName, setVoiceName] = useState('');
@@ -117,6 +179,10 @@ export default function VoiceStudioPage() {
   const [savingVoice, setSavingVoice] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const locale = language === 'id' ? 'id-ID' : 'en-US';
+  const formatInteger = new Intl.NumberFormat(locale);
+  const formatDecimal = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const formatIndex = new Intl.NumberFormat(locale, { minimumIntegerDigits: 2, useGrouping: false });
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +210,7 @@ export default function VoiceStudioPage() {
         setProviderStatus(configData);
         setSelectedVoiceId(current => current || entries.find(entry => entry.profile?.status === 'ready')?.id || '');
       } catch {
-        if (!cancelled) setError(t('Gudang suara provider gagal dimuat.', 'The provider voice warehouse could not be loaded.'));
+        if (!cancelled) setError({ type: 'translated', id: 'Gudang suara provider gagal dimuat.', en: 'The provider voice warehouse could not be loaded.' });
       } finally {
         if (!cancelled) setLoadingVoices(false);
       }
@@ -259,7 +325,7 @@ export default function VoiceStudioPage() {
     audio.onerror = () => {
       audioRef.current = null;
       setPlaybackState('error');
-      setError(t('Audio gagal diputar.', 'The audio could not be played.'));
+      setError({ type: 'translated', id: 'Audio gagal diputar.', en: 'The audio could not be played.' });
     };
     audioRef.current = audio;
     setError(null);
@@ -267,13 +333,13 @@ export default function VoiceStudioPage() {
     void audio.play().catch(() => {
       audioRef.current = null;
       setPlaybackState('error');
-      setError(t('Browser memblokir pemutaran audio.', 'The browser blocked audio playback.'));
+      setError({ type: 'translated', id: 'Browser memblokir pemutaran audio.', en: 'The browser blocked audio playback.' });
     });
   };
 
   const speakWithSystemVoice = (voice: VoiceEntry, content: string) => {
     if (!supported) {
-      setError(t('Voice engine tidak tersedia pada browser ini.', 'The voice engine is unavailable in this browser.'));
+      setError({ type: 'translated', id: 'Mesin suara tidak tersedia di browser ini.', en: 'The voice engine is unavailable in this browser.' });
       return;
     }
     stopPlayback();
@@ -290,7 +356,7 @@ export default function VoiceStudioPage() {
     utterance.onerror = event => {
       if (event.error === 'canceled' || event.error === 'interrupted') return;
       setPlaybackState('error');
-      setError(t('Suara gagal dibuat. Coba voice lain.', 'Speech generation failed. Try another voice.'));
+      setError({ type: 'translated', id: 'Pembuatan suara gagal. Coba suara lain.', en: 'Speech generation failed. Try another voice.' });
     };
     utteranceRef.current = utterance;
     setError(null);
@@ -306,7 +372,7 @@ export default function VoiceStudioPage() {
       return;
     }
     if (selectedVoice.profile?.status !== 'ready') {
-      setError(t('Voice provider belum siap digunakan.', 'The provider voice is not ready.'));
+      setError({ type: 'translated', id: 'Suara provider belum siap digunakan.', en: 'The provider voice is not ready.' });
       return;
     }
 
@@ -330,7 +396,9 @@ export default function VoiceStudioPage() {
       if (data.generation.audioUrl) playAudio(data.generation.audioUrl);
     } catch (reason: unknown) {
       setPlaybackState('error');
-      setError(reason instanceof Error ? reason.message : t('Generate suara gagal.', 'Voice generation failed.'));
+      setError(reason instanceof Error
+        ? { type: 'raw', message: reason.message }
+        : { type: 'translated', id: 'Pembuatan suara gagal.', en: 'Voice generation failed.' });
     }
   };
 
@@ -380,15 +448,15 @@ export default function VoiceStudioPage() {
     event.preventDefault();
     const normalizedName = voiceName.trim();
     if (!normalizedName || !voiceLang.trim() || !consentConfirmed) {
-      setError(t('Nama, bahasa, dan konfirmasi izin wajib diisi.', 'Name, language, and consent confirmation are required.'));
+      setError({ type: 'translated', id: 'Nama, bahasa, dan konfirmasi izin wajib diisi.', en: 'Name, language, and consent confirmation are required.' });
       return;
     }
     if (addMode === 'clone' && (!voiceFile || !voiceFile.type.startsWith('audio/') || voiceFile.size > MAX_SAMPLE_SIZE)) {
-      setError(t('Pilih file audio yang valid dengan ukuran maksimal 10 MB.', 'Choose a valid audio file up to 10 MB.'));
+      setError({ type: 'translated', id: 'Pilih file audio yang valid dengan ukuran maksimal 10 MB.', en: 'Choose a valid audio file up to 10 MB.' });
       return;
     }
     if (!providerStatus?.configured) {
-      setError(t('Lengkapi konfigurasi Model Studio dan OSS terlebih dahulu.', 'Configure Model Studio and OSS first.'));
+      setError({ type: 'translated', id: 'Lengkapi konfigurasi Model Studio dan OSS terlebih dahulu.', en: 'Configure Model Studio and OSS first.' });
       return;
     }
 
@@ -425,7 +493,9 @@ export default function VoiceStudioPage() {
       setSelectedVoiceId(entry.id);
       resetAddForm();
     } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : t('Voice gagal dibuat.', 'The voice could not be created.'));
+      setError(reason instanceof Error
+        ? { type: 'raw', message: reason.message }
+        : { type: 'translated', id: 'Suara gagal dibuat.', en: 'The voice could not be created.' });
     } finally {
       setSavingVoice(false);
     }
@@ -435,8 +505,8 @@ export default function VoiceStudioPage() {
     const voice = allVoices.find(entry => entry.id === event.currentTarget.dataset.voiceId);
     if (!voice) return;
     const message = voice.source === 'provider'
-      ? t(`Hapus voice provider "${voice.name}" beserta hasil audionya?`, `Delete provider voice "${voice.name}" and its generated audio?`)
-      : t(`Sembunyikan voice bawaan "${voice.name}" dari gudang?`, `Hide the system voice "${voice.name}" from the warehouse?`);
+      ? t(`Hapus suara provider "${voice.name}" beserta hasil audionya?`, `Delete provider voice "${voice.name}" and its generated audio?`)
+      : t(`Sembunyikan suara bawaan "${voice.name}" dari gudang?`, `Hide the system voice "${voice.name}" from the warehouse?`);
     if (!window.confirm(message)) return;
     stopPlayback();
 
@@ -449,7 +519,9 @@ export default function VoiceStudioPage() {
         setGenerations(current => current.filter(generation => generation.voiceId !== voice.profile?.id));
         if (selectedVoiceId === voice.id) setSelectedVoiceId(remaining[0]?.id || visibleSystemVoices[0]?.id || '');
       } catch (reason: unknown) {
-        setError(reason instanceof Error ? reason.message : t('Voice gagal dihapus.', 'The voice could not be deleted.'));
+        setError(reason instanceof Error
+          ? { type: 'raw', message: reason.message }
+          : { type: 'translated', id: 'Suara gagal dihapus.', en: 'The voice could not be deleted.' });
       }
       return;
     }
@@ -494,9 +566,9 @@ export default function VoiceStudioPage() {
           </Link>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="truncate font-sans text-base font-bold text-white sm:text-lg">Voice Warehouse</h1>
+              <h1 className="truncate font-sans text-base font-bold text-white sm:text-lg">{t('Gudang Suara', 'Voice Warehouse')}</h1>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-full border border-white/15 bg-white/5 font-mono text-[10px] text-zinc-300">
-                AI Studio
+                {t('Studio AI', 'AI Studio')}
               </span>
             </div>
             <p className="hidden font-sans text-xs text-zinc-400 sm:block">
@@ -507,7 +579,7 @@ export default function VoiceStudioPage() {
         <div className="flex shrink-0 items-center gap-3">
           <span className={`hidden px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold md:inline-flex items-center gap-1.5 ${providerStatus?.configured ? 'border border-white/15 bg-white/5 text-zinc-300' : 'border border-white/10 bg-white/5 text-zinc-400'}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${providerStatus?.configured ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
-            {providerStatus?.configured ? 'QWEN DIRECT ACTIVE' : t('Provider belum siap', 'Provider not ready')}
+            {providerStatus?.configured ? t('QWEN LANGSUNG AKTIF', 'QWEN DIRECT ACTIVE') : t('Provider belum siap', 'Provider not ready')}
           </span>
           <LanguageSwitcher />
         </div>
@@ -529,17 +601,17 @@ export default function VoiceStudioPage() {
                     <h2 className="font-sans text-xl font-bold text-white sm:text-2xl">{t('Gudang Suara', 'Voice Warehouse')}</h2>
                   </div>
                   <p className="max-w-2xl font-sans text-xs text-zinc-400 leading-relaxed">
-                    {t('Clone sampel berizin, rancang karakter original, atau gunakan voice perangkat.', 'Clone a consented sample, design an original character, or use a device voice.')}
+                    {t('Clone sampel berizin, rancang karakter original, atau gunakan suara perangkat.', 'Clone a consented sample, design an original character, or use a device voice.')}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {hiddenVoiceIds.length > 0 && (
                     <button type="button" onClick={restoreSystemVoices} className="font-mono text-[11px] text-zinc-400 hover:text-white underline underline-offset-4 cursor-pointer">
-                      {t(`Pulihkan ${hiddenVoiceIds.length}`, `Restore ${hiddenVoiceIds.length}`)}
+                      {t(`Pulihkan ${formatInteger.format(hiddenVoiceIds.length)}`, `Restore ${formatInteger.format(hiddenVoiceIds.length)}`)}
                     </button>
                   )}
                   <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-zinc-300">
-                    {allVoices.length} {t('SUARA', 'VOICES')}
+                    {formatInteger.format(allVoices.length)} {t('SUARA', 'VOICES')}
                   </span>
                   <Button type="button" variant="primary" size="sm" onClick={() => setShowAddVoice(current => !current)} className="gap-1.5 text-xs font-sans">
                     <Plus weight="bold" size={14} /> {t('Buat Suara', 'Create Voice')}
@@ -573,13 +645,13 @@ export default function VoiceStudioPage() {
 
                   {!providerStatus?.configured && (
                     <div className="mb-4 rounded-xl border border-amber-500/30 bg-white/[0.02] p-3 font-mono text-xs text-amber-300">
-                      {t('Set DASHSCOPE_* dan ALIYUN_OSS_* pada server untuk mengaktifkan clone dan design.', 'Set DASHSCOPE_* and ALIYUN_OSS_* on the server to enable clone and design.')}
+                      {t('Set DASHSCOPE_* dan ALIYUN_OSS_* di server untuk mengaktifkan kloning dan desain.', 'Set DASHSCOPE_* and ALIYUN_OSS_* on the server to enable clone and design.')}
                     </div>
                   )}
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="font-mono text-xs text-zinc-300">
-                      <span className="block mb-1.5 uppercase text-[10px] text-zinc-400 tracking-wider">{t('Nama Voice', 'Voice Name')}</span>
+                      <span className="block mb-1.5 uppercase text-[10px] text-zinc-400 tracking-wider">{t('Nama Suara', 'Voice Name')}</span>
                       <input
                         value={voiceName}
                         onChange={event => setVoiceName(event.target.value)}
@@ -594,7 +666,7 @@ export default function VoiceStudioPage() {
                         value={voiceLang}
                         onChange={event => setVoiceLang(event.target.value)}
                         maxLength={20}
-                        placeholder="id-ID"
+                        placeholder={language === 'id' ? 'id-ID' : 'en-US'}
                         className="w-full rounded-xl border border-white/10 bg-black/60 px-3.5 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 font-sans"
                       />
                     </label>
@@ -614,13 +686,13 @@ export default function VoiceStudioPage() {
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {(Object.keys(DESIGN_OPTIONS) as Array<keyof typeof DESIGN_OPTIONS>).map(key => (
                         <label key={key} className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
-                          <span className="block mb-1">{optionLabel(key)}</span>
+                          <span className="block mb-1">{optionLabel(key, t)}</span>
                           <select
                             value={design[key]}
                             onChange={event => updateDesign(key, event.target.value as never)}
                             className="w-full rounded-lg border border-white/10 bg-black/70 px-2.5 py-1.5 font-sans text-xs text-white capitalize focus:outline-none focus:border-white/30"
                           >
-                            {DESIGN_OPTIONS[key].map(option => <option key={option} value={option}>{optionLabel(option)}</option>)}
+                            {DESIGN_OPTIONS[key].map(option => <option key={option} value={option}>{optionLabel(option, t)}</option>)}
                           </select>
                         </label>
                       ))}
@@ -654,14 +726,16 @@ export default function VoiceStudioPage() {
 
                   <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center border-t border-white/10 pt-3">
                     <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider">
-                      {addMode === 'clone' ? 'QWEN AUDIO ENROLLMENT' : 'QWEN VOICE DESIGN + ENROLLMENT'}
+                      {addMode === 'clone'
+                        ? t('PENDAFTARAN AUDIO QWEN', 'QWEN AUDIO ENROLLMENT')
+                        : t('DESAIN SUARA + PENDAFTARAN QWEN', 'QWEN VOICE DESIGN + ENROLLMENT')}
                     </p>
                     <div className="flex gap-2">
                       <Button type="button" variant="secondary" size="sm" onClick={resetAddForm}>
                         {t('Batal', 'Cancel')}
                       </Button>
                       <Button type="submit" variant="primary" size="sm" disabled={savingVoice || !providerStatus?.configured}>
-                        {savingVoice ? t('Memproses...', 'Processing...') : addMode === 'clone' ? t('Clone Voice', 'Clone Voice') : t('Rancang Voice', 'Design Voice')}
+                        {savingVoice ? t('Memproses...', 'Processing...') : addMode === 'clone' ? t('Clone Suara', 'Clone Voice') : t('Rancang Suara', 'Design Voice')}
                       </Button>
                     </div>
                   </div>
@@ -690,7 +764,7 @@ export default function VoiceStudioPage() {
                         languageFilter === filter ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'
                       }`}
                     >
-                      {filter === 'all' ? t('Semua', 'All') : filter}
+                      {filter === 'all' ? t('Semua', 'All') : filter === 'id' ? t('Indonesia', 'Indonesian') : t('Inggris', 'English')}
                     </button>
                   ))}
                 </div>
@@ -742,7 +816,7 @@ export default function VoiceStudioPage() {
                             {voice.name}
                           </span>
                           <span className="mt-0.5 block font-mono text-[10px] text-zinc-400 uppercase">
-                            {voice.lang} · {voice.source === 'provider' ? `${voice.profile?.kind}` : voice.local ? t('Perangkat', 'Device') : t('Jaringan', 'Network')} · #{String(index + 1).padStart(2, '0')}
+                            {voice.lang} · {voice.source === 'provider' ? `${voice.profile?.kind}` : voice.local ? t('Perangkat', 'Device') : t('Jaringan', 'Network')} · #{formatIndex.format(index + 1)}
                           </span>
                         </span>
                       </button>
@@ -754,7 +828,7 @@ export default function VoiceStudioPage() {
                           onClick={previewVoice}
                           disabled={!ready || playbackState === 'queued'}
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors cursor-pointer"
-                          aria-label={`${t('Preview', 'Preview')} ${voice.name}`}
+                          aria-label={`${t('Pratinjau', 'Preview')} ${voice.name}`}
                         >
                           <Play weight="fill" size={16} />
                         </button>
@@ -782,7 +856,7 @@ export default function VoiceStudioPage() {
                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
                   <Waveform weight="fill" size={20} />
                 </div>
-                <h2 className="font-sans text-lg font-bold text-white tracking-tight">Voice Studio</h2>
+                <h2 className="font-sans text-lg font-bold text-white tracking-tight">{t('Studio Suara', 'Voice Studio')}</h2>
               </div>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[10px] font-semibold uppercase border ${
@@ -814,14 +888,14 @@ export default function VoiceStudioPage() {
                     {selectedVoice?.name || t('Memuat suara...', 'Loading voices...')}
                   </div>
                   <p className="font-mono text-[11px] text-zinc-400 mt-0.5">
-                    {selectedVoice?.lang || '---'} · {selectedVoice?.source === 'provider' ? `MODEL STUDIO · ${selectedVoice.profile?.targetModel}` : t('TTS Perangkat', 'Device TTS')}
+                    {selectedVoice?.lang || '---'} · {selectedVoice?.source === 'provider' ? `${t('MODEL STUDIO', 'MODEL STUDIO')} · ${selectedVoice.profile?.targetModel}` : t('TTS Perangkat', 'Device TTS')}
                   </p>
                 </div>
               </div>
 
               {selectedVoice?.source === 'provider' && selectedVoice.profile?.status !== 'ready' && (
                 <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-200 text-xs">
-                  <p className="font-sans font-bold uppercase">{t('Voice Belum Siap', 'Voice Not Ready')}</p>
+                  <p className="font-sans font-bold uppercase">{t('Suara Belum Siap', 'Voice Not Ready')}</p>
                   <p className="mt-0.5 font-mono text-[11px]">{selectedVoice.profile?.errorMessage || selectedVoice.profile?.status}</p>
                 </div>
               )}
@@ -830,7 +904,7 @@ export default function VoiceStudioPage() {
               <div>
                 <label htmlFor="voice-script" className="mb-2 flex items-center justify-between gap-3 font-sans text-xs font-semibold text-zinc-300">
                   <span className="flex items-center gap-1.5"><TextT weight="bold" size={16} /> {t('Teks Narasi', 'Narration Text')}</span>
-                  <span className="font-mono text-[10px] tabular-nums text-zinc-500">{text.length}/{MAX_TEXT_LENGTH}</span>
+                  <span className="font-mono text-[10px] tabular-nums text-zinc-500">{formatInteger.format(text.length)}/{formatInteger.format(MAX_TEXT_LENGTH)}</span>
                 </label>
                 <textarea
                   id="voice-script"
@@ -853,7 +927,7 @@ export default function VoiceStudioPage() {
                   <label className="block font-mono text-xs text-zinc-400">
                     <span className="flex justify-between text-[11px]">
                       <span>{t('Kecepatan', 'Speed')}</span>
-                      <span className="tabular-nums font-bold text-white">{rate.toFixed(1)}x</span>
+                      <span className="tabular-nums font-bold text-white">{formatDecimal.format(rate)}x</span>
                     </span>
                     <input
                       type="range"
@@ -868,7 +942,7 @@ export default function VoiceStudioPage() {
                   <label className="block font-mono text-xs text-zinc-400">
                     <span className="flex justify-between text-[11px]">
                       <span>{t('Nada', 'Pitch')}</span>
-                      <span className="tabular-nums font-bold text-white">{pitch.toFixed(1)}</span>
+                      <span className="tabular-nums font-bold text-white">{formatDecimal.format(pitch)}</span>
                     </span>
                     <input
                       type="range"
@@ -885,7 +959,7 @@ export default function VoiceStudioPage() {
 
               {error && (
                 <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 font-mono text-xs text-rose-200">
-                  {error}
+                  {error?.type === 'translated' ? t(error.id, error.en) : error?.message}
                 </div>
               )}
 
@@ -899,7 +973,7 @@ export default function VoiceStudioPage() {
                   className="min-w-0 gap-2 font-sans font-semibold text-xs"
                 >
                   <Play weight="fill" size={16} />
-                  <span className="truncate">{selectedVoice?.source === 'provider' ? t('Generate Qwen', 'Generate with Qwen') : t('Putar Perangkat', 'Play on Device')}</span>
+                  <span className="truncate">{selectedVoice?.source === 'provider' ? t('Buat dengan Qwen', 'Generate with Qwen') : t('Putar di Perangkat', 'Play on Device')}</span>
                 </Button>
                 <Button
                   type="button"

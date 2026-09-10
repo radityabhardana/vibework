@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import dagre from 'dagre';
 import { nodeTypes, edgeTypes, ViewerModal } from '@/components/flow/FlowNodes';
 import { Button } from '@/components/ui/Button';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   TreeStructure,
   Article,
@@ -36,9 +37,9 @@ type WorkspaceTab = 'tree' | 'prd' | 'agents' | 'architecture' | 'prompts';
 const hasMeaningfulText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
-const getGenerationErrorMessage = async (res: Response, fallback: string) => {
+const getGenerationErrorMessage = async (res: Response, fallback: string, timeoutMessage: string) => {
   if (res.status === 504) {
-    return 'Generation timed out. Please try again.';
+    return timeoutMessage;
   }
 
   const body: unknown = await res.json().catch(() => null);
@@ -71,6 +72,7 @@ export function ProjectWorkspace({
   appFlowchart?: any;
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('tree');
   const [loadingFlowchart, setLoadingFlowchart] = useState(false);
@@ -201,7 +203,7 @@ export function ProjectWorkspace({
         body: JSON.stringify({ projectId: project.id }),
       });
       if (!res.ok) {
-        throw new Error(await getGenerationErrorMessage(res, 'Unable to generate the schema. Please try again.'));
+        throw new Error(await getGenerationErrorMessage(res, t('Schema gagal dibuat. Silakan coba lagi.', 'Unable to generate the schema. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.')));
       }
       setPromptsInvalidatedBySchema(true);
       router.refresh();
@@ -224,7 +226,7 @@ export function ProjectWorkspace({
         body: JSON.stringify({ projectId: project.id }),
       });
       if (!res.ok) {
-        throw new Error(await getGenerationErrorMessage(res, 'Unable to generate prompts. Please try again.'));
+        throw new Error(await getGenerationErrorMessage(res, t('Prompt gagal dibuat. Silakan coba lagi.', 'Unable to generate prompts. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.')));
       }
       router.refresh();
     } catch (e: any) {
@@ -305,9 +307,9 @@ export function ProjectWorkspace({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         data: {
-          label: prd ? `✅ PRD` : `PRD: Pending`,
+          label: prd ? `✅ PRD` : `PRD: ${t('Menunggu', 'Pending')}`,
           onView: prd
-            ? () => setViewerData({ title: 'Product Requirements Document', content: prd.documentContent })
+            ? () => setViewerData({ title: t('Product Requirements Document', 'Product Requirements Document'), content: prd.documentContent })
             : undefined,
         },
       },
@@ -324,7 +326,7 @@ export function ProjectWorkspace({
           label: '✅ Interactive Tree',
           onView: () =>
             setViewerData({
-              title: 'Application Tree Flowchart',
+              title: t('Application Tree Flowchart', 'Application Tree Flowchart'),
               content: JSON.stringify(appFlowchart.nodes, null, 2),
             }),
         },
@@ -337,8 +339,8 @@ export function ProjectWorkspace({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         data: {
-          label: 'Tree Not Generated',
-          buttonText: 'Generate Tree',
+          label: t('Tree Not Generated', 'Tree Not Generated'),
+          buttonText: t('Generate Tree', 'Generate Tree'),
           onAction: generateFlowchart,
           isLoading: loadingFlowchart,
           progress: generationProgress,
@@ -358,7 +360,7 @@ export function ProjectWorkspace({
           label: '✅ AGENTS.md',
           onView: () =>
             setViewerData({
-              title: 'AGENTS.md Directive & Rules',
+              title: t('AGENTS.md Directive & Rules', 'AGENTS.md Directive & Rules'),
               content: project.agentsDocument,
             }),
         },
@@ -375,7 +377,7 @@ export function ProjectWorkspace({
         data: {
           label: '✅ Architecture ADR',
           onView: () =>
-            setViewerData({ title: 'Architecture Decision Record', content: adr.adrDocument }),
+            setViewerData({ title: t('Architecture Decision Record', 'Architecture Decision Record'), content: adr.adrDocument }),
         },
       });
     } else {
@@ -386,8 +388,8 @@ export function ProjectWorkspace({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         data: {
-          label: 'Architecture Not Generated',
-          buttonText: 'Generate ADR',
+          label: t('Architecture Not Generated', 'Architecture Not Generated'),
+          buttonText: t('Generate ADR', 'Generate ADR'),
           onAction: generateADR,
           isLoading: loadingAdr,
           progress: generationProgress,
@@ -407,7 +409,7 @@ export function ProjectWorkspace({
           label: '✅ Schema & API',
           onView: () =>
             setViewerData({
-              title: 'Database Schema & API Contract',
+              title: t('Database Schema & API Contract', 'Database Schema & API Contract'),
               content: `### Database Schema\n\n${schemaContent}\n\n### API Contract\n\n${JSON.stringify(schema.apiContract, null, 2)}`,
             }),
         },
@@ -420,8 +422,8 @@ export function ProjectWorkspace({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         data: {
-          label: 'Database Schema Not Generated',
-          buttonText: 'Generate Schema',
+          label: t('Database Schema Not Generated', 'Database Schema Not Generated'),
+          buttonText: t('Generate Schema', 'Generate Schema'),
           onAction: generateSchema,
           isLoading: loadingSchema,
           progress: generationProgress,
@@ -438,10 +440,10 @@ export function ProjectWorkspace({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         data: {
-          label: `✅ ${prompts.length} Atomic Prompts`,
+          label: `✅ ${prompts.length} ${t('Atomic Prompts', 'Atomic Prompts')}`,
           onView: () =>
             setViewerData({
-              title: 'AI Atomic Prompts',
+              title: t('AI Atomic Prompts', 'AI Atomic Prompts'),
               content: effectivePromptMd,
             }),
         },
@@ -454,8 +456,8 @@ export function ProjectWorkspace({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         data: {
-          label: 'AI Prompts Not Generated',
-          buttonText: 'Generate Prompts',
+          label: t('AI Prompts Not Generated', 'AI Prompts Not Generated'),
+          buttonText: t('Generate Prompts', 'Generate Prompts'),
           onAction: generatePrompts,
           isLoading: loadingPrompts,
           progress: generationProgress,
@@ -499,7 +501,7 @@ export function ProjectWorkspace({
           data: {
             label: n.label,
             onView: () => {
-              const content = `Node: ${n.label}\nDescription: ${n.description || 'No description provided.'}`;
+              const content = `${t('Node:', 'Node:')} ${n.label}\n${t('Description:', 'Description:')} ${n.description || t('No description provided.', 'No description provided.')}`;
               setViewerData({ title: n.label, content });
             },
           },
@@ -564,15 +566,16 @@ export function ProjectWorkspace({
     schemaContent,
     promptsReady,
     schemaOrPromptsBusy,
+    t,
   ]);
 
   // Artifact tabs — numbering (01–05) replaces per-type color coding
   const TABS: { id: WorkspaceTab; num: string; label: string; icon: typeof TreeStructure; ready: boolean }[] = [
-    { id: 'tree', num: '01', label: 'Interactive Tree', icon: TreeStructure, ready: !!appFlowchart },
-    { id: 'prd', num: '02', label: 'PRD', icon: Article, ready: !!prd },
-    { id: 'agents', num: '03', label: 'AGENTS.md', icon: Robot, ready: !!project.agentsDocument },
-    { id: 'architecture', num: '04', label: 'Architecture & Schema', icon: Cpu, ready: !!adr && schemaReady },
-    { id: 'prompts', num: '05', label: 'Prompt.md', icon: Lightning, ready: promptsReady },
+    { id: 'tree', num: '01', label: t('Interactive Tree', 'Interactive Tree'), icon: TreeStructure, ready: !!appFlowchart },
+    { id: 'prd', num: '02', label: t('PRD', 'PRD'), icon: Article, ready: !!prd },
+    { id: 'agents', num: '03', label: t('AGENTS.md', 'AGENTS.md'), icon: Robot, ready: !!project.agentsDocument },
+    { id: 'architecture', num: '04', label: t('Arsitektur & Schema', 'Architecture & Schema'), icon: Cpu, ready: !!adr && schemaReady },
+    { id: 'prompts', num: '05', label: t('Prompt.md', 'Prompt.md'), icon: Lightning, ready: promptsReady },
   ];
 
   return (
@@ -581,7 +584,7 @@ export function ProjectWorkspace({
       <div className="bg-[#0f1314] border-b border-white/[0.08] px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20">
         <div className="hidden xl:block min-w-0 pr-3">
           <p className="truncate font-sans text-sm font-semibold text-white">{project.name}</p>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">{TABS.filter(tab => tab.ready).length}/5 {project.status || 'Workspace'}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">{TABS.filter(tab => tab.ready).length}/5 {project.status || t('Workspace', 'Workspace')}</p>
         </div>
         <div className="flex items-center gap-1.5 overflow-x-auto min-w-0">
           {TABS.map(({ id, num, label, icon: TabIcon, ready }) => (
@@ -610,10 +613,10 @@ export function ProjectWorkspace({
           type="button"
           onClick={handleExportAll}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] ring ring-white/30 hover:bg-white/10 text-white font-mono text-xs font-medium rounded-lg transition-all duration-300 cursor-pointer shrink-0"
-          title="Download semua spesifikasi menjadi file Markdown lengkap"
+          title={t('Download semua spesifikasi menjadi file Markdown lengkap', 'Download all specifications as a complete Markdown file')}
         >
           <DownloadSimple weight="bold" className="w-3.5 h-3.5" />
-          <span>Export All Specs (.md)</span>
+          <span>{t('Export All Specs (.md)', 'Export All Specs (.md)')}</span>
         </button>
       </div>
 
@@ -622,10 +625,10 @@ export function ProjectWorkspace({
         <div className="bg-rose-950/80 text-rose-200 border-b border-rose-500/30 font-sans text-xs p-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <WarningCircle weight="bold" className="w-4 h-4 text-rose-400" />
-            <span>Error: {error}</span>
+            <span>{t('Error:', 'Error:')} {error}</span>
           </div>
           <button type="button" onClick={() => setError(null)} className="underline uppercase text-[10px] font-semibold text-rose-300 hover:text-rose-100">
-            Dismiss
+            {t('Tutup', 'Dismiss')}
           </button>
         </div>
       )}
@@ -638,9 +641,9 @@ export function ProjectWorkspace({
             {!appFlowchart && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[#14191a]/95 border border-white/15 p-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-[calc(100%-2rem)]">
                 <div>
-                  <p className="font-sans font-semibold text-sm text-zinc-100">Interactive Tree Belum Digenerate</p>
-                  <p className="font-sans text-xs text-zinc-400">Klik tombol untuk memetakan alur screen dan modul aplikasi.</p>
-                  {!prd && <p className="mt-1 font-mono text-[10px] text-amber-200">PRD perlu dibuat lebih dulu untuk membuka langkah ini.</p>}
+                  <p className="font-sans font-semibold text-sm text-zinc-100">{t('Interactive Tree Belum Digenerate', 'Interactive Tree Not Generated')}</p>
+                  <p className="font-sans text-xs text-zinc-400">{t('Klik tombol untuk memetakan alur screen dan modul aplikasi.', 'Click the button to map application screens and modules.')}</p>
+                  {!prd && <p className="mt-1 font-mono text-[10px] text-amber-200">{t('PRD perlu dibuat lebih dulu untuk membuka langkah ini.', 'The PRD must be created first to unlock this step.')}</p>}
                 </div>
                 <Button
                   variant="primary"
@@ -648,7 +651,7 @@ export function ProjectWorkspace({
                   onClick={generateFlowchart}
                   disabled={loadingFlowchart}
                 >
-                  {loadingFlowchart ? `Membuat Tree (${Math.round(generationProgress)}%)...` : 'Generate Tree Sekarang'}
+                  {loadingFlowchart ? `${t('Membuat Tree', 'Creating Tree')} (${Math.round(generationProgress)}%)...` : t('Generate Tree Sekarang', 'Generate Tree Now')}
                 </Button>
               </div>
             )}
@@ -678,10 +681,10 @@ export function ProjectWorkspace({
               <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
-                    Product Requirements Document (PRD)
+                    {t('Product Requirements Document (PRD)', 'Product Requirements Document (PRD)')}
                   </h2>
                   <p className="font-sans text-xs text-zinc-400 mt-1">
-                    Target: {prd?.targetUser || 'General User'} &bull; Monetization: {prd?.monetizationModel || 'N/A'}
+                    {t('Target:', 'Target:')} {prd?.targetUser || t('General User', 'General User')} &bull; {t('Monetisasi:', 'Monetization:')} {prd?.monetizationModel || 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -692,7 +695,7 @@ export function ProjectWorkspace({
                     className="gap-1.5 text-xs"
                   >
                     {copiedKey === 'prd' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
-                    <span>{copiedKey === 'prd' ? 'Tersalin!' : 'Copy PRD'}</span>
+                    <span>{copiedKey === 'prd' ? t('Tersalin!', 'Copied!') : t('Copy PRD', 'Copy PRD')}</span>
                   </Button>
                   <Button
                     variant="secondary"
@@ -701,13 +704,13 @@ export function ProjectWorkspace({
                     className="gap-1.5 text-xs"
                   >
                     <DownloadSimple weight="bold" />
-                    <span>Download PRD.md</span>
+                    <span>{t('Download PRD.md', 'Download PRD.md')}</span>
                   </Button>
                 </div>
               </div>
 
               <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                {prd?.documentContent || 'PRD belum digenerate.'}
+                {prd?.documentContent || t('PRD belum digenerate.', 'PRD has not been generated yet.')}
               </div>
             </div>
           </div>
@@ -721,14 +724,14 @@ export function ProjectWorkspace({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-white/5 text-zinc-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] rounded-full border border-white/10">
-                      AI Pair Programmer Directive
+                      {t('AI Pair Programmer Directive', 'AI Pair Programmer Directive')}
                     </span>
                   </div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
-                    AGENTS.md (Pedoman & Guardrails)
+                    {t('AGENTS.md (Pedoman & Guardrails)', 'AGENTS.md (Guidelines & Guardrails)')}
                   </h2>
                   <p className="font-sans text-xs text-zinc-400 mt-1">
-                    Petunjuk operasional coding untuk Cursor, Windsurf, Claude Code, Antigravity, dan Copilot.
+                    {t('Petunjuk operasional coding untuk Cursor, Windsurf, Claude Code, Antigravity, dan Copilot.', 'Operational coding guidance for Cursor, Windsurf, Claude Code, Antigravity, and Copilot.')}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -740,7 +743,7 @@ export function ProjectWorkspace({
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingAgents ? 'animate-spin' : ''} />
-                    <span>{loadingAgents ? 'Merumuskan AGENTS.md...' : project.agentsDocument ? 'Regenerate AGENTS.md' : 'Generate AGENTS.md'}</span>
+                    <span>{loadingAgents ? t('Merumuskan AGENTS.md...', 'Drafting AGENTS.md...') : project.agentsDocument ? t('Regenerate AGENTS.md', 'Regenerate AGENTS.md') : t('Generate AGENTS.md', 'Generate AGENTS.md')}</span>
                   </Button>
                   {project.agentsDocument && (
                     <>
@@ -751,7 +754,7 @@ export function ProjectWorkspace({
                         className="gap-1.5 text-xs"
                       >
                         {copiedKey === 'agents' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
-                        <span>{copiedKey === 'agents' ? 'Tersalin!' : 'Copy AGENTS.md'}</span>
+                        <span>{copiedKey === 'agents' ? t('Tersalin!', 'Copied!') : t('Copy AGENTS.md', 'Copy AGENTS.md')}</span>
                       </Button>
                       <Button
                         variant="secondary"
@@ -760,7 +763,7 @@ export function ProjectWorkspace({
                         className="gap-1.5 text-xs"
                       >
                         <DownloadSimple weight="bold" />
-                        <span>Download AGENTS.md</span>
+                        <span>{t('Download AGENTS.md', 'Download AGENTS.md')}</span>
                       </Button>
                     </>
                   )}
@@ -777,9 +780,9 @@ export function ProjectWorkspace({
                     <Robot weight="duotone" className="w-8 h-8" />
                   </div>
                   <div>
-                    <h3 className="font-sans font-bold text-lg text-zinc-100">AGENTS.md Belum Dibuat</h3>
+                    <h3 className="font-sans font-bold text-lg text-zinc-100">{t('AGENTS.md Belum Dibuat', 'AGENTS.md Has Not Been Created')}</h3>
                     <p className="font-sans text-xs text-zinc-400 max-w-md mt-1">
-                      Buat aturan standar coding, pencegah halusinasi, dan guardrails teknis untuk coding agent kamu.
+                      {t('Buat aturan standar coding, pencegah halusinasi, dan guardrails teknis untuk coding agent kamu.', 'Create standard coding rules, hallucination prevention, and technical guardrails for your coding agent.')}
                     </p>
                   </div>
                   <Button
@@ -788,7 +791,7 @@ export function ProjectWorkspace({
                     onClick={generateAgents}
                     disabled={loadingAgents}
                   >
-                    {loadingAgents ? `Generating AGENTS.md (${Math.round(generationProgress)}%)...` : 'Buat AGENTS.md Sekarang'}
+                    {loadingAgents ? `${t('Generating AGENTS.md', 'Generating AGENTS.md')} (${Math.round(generationProgress)}%)...` : t('Buat AGENTS.md Sekarang', 'Create AGENTS.md Now')}
                   </Button>
                 </div>
               )}
@@ -804,10 +807,10 @@ export function ProjectWorkspace({
               <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
-                    Architecture & Tech Stack (ADR)
+                    {t('Architecture & Tech Stack (ADR)', 'Architecture & Tech Stack (ADR)')}
                   </h2>
                   <p className="font-sans text-xs text-zinc-400 mt-1">
-                    Stack: {adr?.frontendStack || 'Next.js'} &bull; Backend: {adr?.backendStack || 'Node.js'} &bull; DB: {adr?.database || 'SQLite / PostgreSQL'}
+                    {t('Stack:', 'Stack:')} {adr?.frontendStack || 'Next.js'} &bull; {t('Backend:', 'Backend:')} {adr?.backendStack || 'Node.js'} &bull; {t('DB:', 'DB:')} {adr?.database || 'SQLite / PostgreSQL'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -819,7 +822,7 @@ export function ProjectWorkspace({
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingAdr ? 'animate-spin' : ''} />
-                    <span>{loadingAdr ? 'Merancang ADR...' : adr ? 'Regenerate ADR' : 'Generate ADR'}</span>
+                    <span>{loadingAdr ? t('Merancang ADR...', 'Designing ADR...') : adr ? t('Regenerate ADR', 'Regenerate ADR') : t('Generate ADR', 'Generate ADR')}</span>
                   </Button>
                   {adr?.adrDocument && (
                     <Button
@@ -829,7 +832,7 @@ export function ProjectWorkspace({
                       className="gap-1.5 text-xs"
                     >
                       {copiedKey === 'adr' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
-                      <span>{copiedKey === 'adr' ? 'Tersalin!' : 'Copy ADR'}</span>
+                      <span>{copiedKey === 'adr' ? t('Tersalin!', 'Copied!') : t('Copy ADR', 'Copy ADR')}</span>
                     </Button>
                   )}
                 </div>
@@ -846,10 +849,10 @@ export function ProjectWorkspace({
               <div className="bg-zinc-900/80 border border-white/10 p-4 md:p-5 rounded-2xl shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-sans font-bold text-lg text-zinc-100">
-                    Database Schema & API Contract
+                    {t('Database Schema & API Contract', 'Database Schema & API Contract')}
                   </h3>
                   <p className="font-sans text-xs text-zinc-400 mt-1">
-                    Struktur tabel relasional dan spesifikasi endpoint API.
+                    {t('Struktur tabel relasional dan spesifikasi endpoint API.', 'Relational table structure and API endpoint specifications.')}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -861,7 +864,7 @@ export function ProjectWorkspace({
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingSchema ? 'animate-spin' : ''} />
-                    <span>{loadingSchema ? 'Merancang Schema...' : schemaReady ? 'Regenerate Schema' : 'Generate Schema'}</span>
+                    <span>{loadingSchema ? t('Merancang Schema...', 'Designing Schema...') : schemaReady ? t('Regenerate Schema', 'Regenerate Schema') : t('Generate Schema', 'Generate Schema')}</span>
                   </Button>
                   {schemaReady && (
                     <Button
@@ -871,7 +874,7 @@ export function ProjectWorkspace({
                       className="gap-1.5 text-xs"
                     >
                       {copiedKey === 'schema' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
-                      <span>{copiedKey === 'schema' ? 'Tersalin!' : 'Copy Schema'}</span>
+                      <span>{copiedKey === 'schema' ? t('Tersalin!', 'Copied!') : t('Copy Schema', 'Copy Schema')}</span>
                     </Button>
                   )}
                 </div>
@@ -890,7 +893,7 @@ export function ProjectWorkspace({
                 </div>
               ) : (
                 <div className="bg-zinc-900/50 border border-dashed border-white/10 rounded-2xl p-6 text-center font-sans text-xs text-zinc-500">
-                  Database Schema & API Contract belum digenerate.
+                  {t('Database Schema & API Contract belum digenerate.', 'Database Schema & API Contract has not been generated yet.')}
                 </div>
               )}
             </div>
@@ -905,17 +908,17 @@ export function ProjectWorkspace({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-white/5 text-zinc-400 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] rounded-full border border-white/10">
-                      Sequential Coding Plan
+                      {t('Sequential Coding Plan', 'Sequential Coding Plan')}
                     </span>
                     <span className="font-mono text-xs text-zinc-500">
-                      {promptsReady ? `${prompts.length} Atomic Steps` : 'Master Prompt Mode'}
+                      {promptsReady ? `${prompts.length} ${t('Langkah Atomik', 'Atomic Steps')}` : t('Mode Master Prompt', 'Master Prompt Mode')}
                     </span>
                   </div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
-                    Master Prompt.md
+                    {t('Master Prompt.md', 'Master Prompt.md')}
                   </h2>
                   <p className="font-sans text-xs text-zinc-400 mt-1">
-                    Prompt step-by-step siap di-copy langsung ke terminal atau editor AI untuk eksekusi kode.
+                    {t('Prompt step-by-step siap di-copy langsung ke terminal atau editor AI untuk eksekusi kode.', 'Step-by-step prompts ready to copy into a terminal or AI editor for code execution.')}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -927,7 +930,7 @@ export function ProjectWorkspace({
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingPrompts ? 'animate-spin' : ''} />
-                    <span>{loadingPrompts ? 'Membuat Atomic Prompts...' : promptsReady ? 'Regenerate Prompts' : 'Generate Atomic Prompts'}</span>
+                    <span>{loadingPrompts ? t('Membuat Atomic Prompts...', 'Creating Atomic Prompts...') : promptsReady ? t('Regenerate Prompts', 'Regenerate Prompts') : t('Generate Atomic Prompts', 'Generate Atomic Prompts')}</span>
                   </Button>
                   {effectivePromptMd && (
                     <>
@@ -938,7 +941,7 @@ export function ProjectWorkspace({
                         className="gap-1.5 text-xs"
                       >
                         {copiedKey === 'prompt' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
-                        <span>{copiedKey === 'prompt' ? 'Tersalin!' : 'Copy Prompt.md'}</span>
+                        <span>{copiedKey === 'prompt' ? t('Tersalin!', 'Copied!') : t('Copy Prompt.md', 'Copy Prompt.md')}</span>
                       </Button>
                       <Button
                         variant="secondary"
@@ -947,7 +950,7 @@ export function ProjectWorkspace({
                         className="gap-1.5 text-xs"
                       >
                         <DownloadSimple weight="bold" />
-                        <span>Download Prompt.md</span>
+                        <span>{t('Download Prompt.md', 'Download Prompt.md')}</span>
                       </Button>
                     </>
                   )}
@@ -964,9 +967,9 @@ export function ProjectWorkspace({
                     <Lightning weight="duotone" className="w-8 h-8" />
                   </div>
                   <div>
-                    <h3 className="font-sans font-bold text-lg text-zinc-100">Atomic Prompts Belum Dibuat</h3>
+                    <h3 className="font-sans font-bold text-lg text-zinc-100">{t('Atomic Prompts Belum Dibuat', 'Atomic Prompts Have Not Been Created')}</h3>
                     <p className="font-sans text-xs text-zinc-400 max-w-md mt-1">
-                      Pecah implementasi sistem ke dalam rangkaian prompt atomik berurutan untuk AI Coder.
+                      {t('Pecah implementasi sistem ke dalam rangkaian prompt atomik berurutan untuk AI Coder.', 'Break the system implementation into a sequence of atomic prompts for an AI Coder.')}
                     </p>
                   </div>
                   <Button
@@ -975,7 +978,7 @@ export function ProjectWorkspace({
                     onClick={generatePrompts}
                     disabled={schemaOrPromptsBusy || !schemaReady}
                   >
-                    {loadingPrompts ? `Generating Prompts (${Math.round(generationProgress)}%)...` : 'Buat Atomic Prompts'}
+                    {loadingPrompts ? `${t('Generating Prompts', 'Generating Prompts')} (${Math.round(generationProgress)}%)...` : t('Buat Atomic Prompts', 'Create Atomic Prompts')}
                   </Button>
                 </div>
               )}

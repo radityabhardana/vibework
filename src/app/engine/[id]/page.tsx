@@ -3,6 +3,7 @@ import { IdeaStudio } from '@/components/ui/IdeaStudio';
 import { db } from '@/lib/db';
 import { chatSessions, chatMessages, projects, prds, adrs, appFlowcharts } from '@/lib/db/schema';
 import { eq, asc, sql } from 'drizzle-orm';
+import { EngineNotFound } from '@/components/ui/EngineNotFound';
 
 async function fetchSessionData(id: string) {
   const session = await db.select().from(chatSessions).where(eq(chatSessions.id, id)).get();
@@ -60,11 +61,7 @@ export default async function EngineHistoryPage({ params }: { params: Promise<{ 
   const data = await fetchSessionData(id);
 
   if (!data) {
-    return (
-      <div className="flex-1 w-full flex overflow-hidden items-center justify-center bg-background text-zinc-400 font-sans text-sm">
-        Session Not Found
-      </div>
-    );
+    return <EngineNotFound />;
   }
 
   const initialIdea = data.messages.find(m => m.role === 'user')?.content || '';
