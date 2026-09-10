@@ -29,24 +29,20 @@ export default async function EngineLayout({
       <EngineSidebar initialSessions={sessions} />
       <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         {/* Top Studio App Bar */}
-        <header className="h-16 border-b border-white/[0.08] bg-[#0b0d0f]/95 px-4 sm:px-6 flex items-center justify-between z-10 shrink-0">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-              <Link href="/" className="hover:text-white transition-colors">
+        <header className="h-16 shrink-0 border-b border-white/[0.08] bg-[#0d1011] px-4 sm:px-6 flex items-center justify-between z-10">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="truncate font-sans text-sm font-semibold tracking-tight text-zinc-100">The Grill</span>
+            <div className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600 sm:flex">
+              <span>/</span>
+              <Link href="/" className="transition-colors hover:text-zinc-300">
                 Vibework
               </Link>
-              <span className="text-zinc-700">/</span>
-              <span className="text-zinc-200 font-semibold">The Grill</span>
-              <span className="hidden sm:inline-block text-zinc-700">/</span>
-              <span className="hidden sm:inline-block text-zinc-400">Spec Studio</span>
+              <span>/</span>
+              <span className="text-zinc-500">Spec Studio</span>
             </div>
-            <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-white/10 bg-white/5 font-mono text-[10px] text-zinc-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Engine Active</span>
-            </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <LanguageSwitcher />
           </div>
         </header>
