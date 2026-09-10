@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { PaperPlaneRight, Lightning, Robot } from '@phosphor-icons/react';
+import { PaperPlaneRight, Lightning, Robot, CheckCircle, CircleNotch, WarningCircle } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -58,19 +58,22 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
   const [error, setError] = useState<string | null>(null);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStep, setGenerationStep] = useState('init');
+  const [generationStepLabel, setGenerationStepLabel] = useState('Menghubungkan ke System Architect...');
+  const [generationElapsedSec, setGenerationElapsedSec] = useState(0);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [projectName, setProjectName] = useState('');
 
+  // Live elapsed seconds counter during architecture generation
   useEffect(() => {
-    if (status !== 'generating') return;
-    const interval = setInterval(() => {
-      setGenerationProgress(prev => {
-        if (prev >= 95) return 95;
-        const increment = Math.max(0.5, (95 - prev) * 0.05);
-        return Math.min(95, prev + increment);
-      });
-    }, 500);
-    return () => clearInterval(interval);
+    if (status !== 'generating') {
+      setGenerationElapsedSec(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setGenerationElapsedSec(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
   }, [status]);
 
   const initialMaxPhase = React.useMemo(() => {
@@ -362,34 +365,123 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
     setShowNamePrompt(true);
   };
 
-  const executeGenerateWorkflow = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!projectName.trim()) {
-      setError('Project name is required');
+  const executeGenerateWorkflow = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const effectiveName = projectName.trim() || messages.find(m => m.role === 'user')?.content.trim().slice(0, 35) || 'Arsitektur Proyek';
+    if (!effectiveName) {
+      setError('Nama proyek wajib diisi');
       return;
     }
     setShowNamePrompt(false);
-    setGenerationProgress(0);
+    setGenerationProgress(5);
+    setGenerationStep('init');
+    setGenerationStepLabel('Menghubungkan ke System Architect...');
     setStatus('generating');
     setError(null);
+
     try {
       const res = await fetch('/api/projects/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, projectName: projectName.trim(), regenerate: true })
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify({
+          sessionId,
+          projectName: effectiveName,
+          regenerate: true,
+          stream: true
+        })
       });
+
       if (!res.ok) {
-        throw new Error(await getApiError(res, 'Failed to generate workflow.'));
+        throw new Error(await getApiError(res, 'Gagal menghasilkan spesifikasi proyek.'));
       }
-      const data: unknown = await res.json();
-      if (typeof data !== 'object' || data === null || !('projectId' in data) || typeof data.projectId !== 'string') {
-        throw new Error('The workflow response was invalid.');
+
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('text/event-stream') && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let targetProjectId: string | null = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || '';
+
+          let currentEvent = 'message';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) {
+              // Keep-alive heartbeat from server
+              continue;
+            }
+            if (trimmed.startsWith('event:')) {
+              currentEvent = trimmed.slice(6).trim();
+              continue;
+            }
+            if (trimmed.startsWith('data:')) {
+              const dataStr = trimmed.slice(5).trim();
+              try {
+                const payload = JSON.parse(dataStr);
+                if (currentEvent === 'progress') {
+                  if (typeof payload.percent === 'number') {
+                    setGenerationProgress(payload.percent);
+                  }
+                  if (typeof payload.step === 'string') {
+                    setGenerationStep(payload.step);
+                  }
+                  if (typeof payload.message === 'string') {
+                    setGenerationStepLabel(payload.message);
+                  }
+                } else if (currentEvent === 'complete') {
+                  setGenerationProgress(100);
+                  setGenerationStep('complete');
+                  if (typeof payload.message === 'string') {
+                    setGenerationStepLabel(payload.message);
+                  }
+                  if (typeof payload.projectId === 'string') {
+                    targetProjectId = payload.projectId;
+                  }
+                } else if (currentEvent === 'error') {
+                  throw new Error(typeof payload.error === 'string' ? payload.error : 'Gagal menghasilkan spesifikasi proyek.');
+                }
+              } catch (parseErr) {
+                if (parseErr instanceof Error && currentEvent === 'error') {
+                  throw parseErr;
+                }
+              }
+            }
+          }
+        }
+
+        if (targetProjectId) {
+          router.push('/projects/' + targetProjectId);
+        } else {
+          throw new Error('Generasi selesai namun project ID tidak ditemukan. Silakan periksa dashboard proyek Anda.');
+        }
+      } else {
+        // Fallback for standard non-streaming response
+        const data: unknown = await res.json();
+        if (typeof data !== 'object' || data === null || !('projectId' in data) || typeof data.projectId !== 'string') {
+          throw new Error('Respon workflow tidak valid.');
+        }
+        setGenerationProgress(100);
+        router.push('/projects/' + data.projectId);
       }
-      router.push('/projects/' + data.projectId);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to generate workflow.');
+      console.error('Failed to generate workflow:', e);
+      setError(e instanceof Error ? e.message : 'Gagal menghasilkan workflow.');
       setStatus('idle');
     }
+  };
+
+  const handleRetryGeneration = () => {
+    executeGenerateWorkflow();
   };
 
   const messagesWithPhase = React.useMemo(() => {
@@ -599,10 +691,182 @@ export function InterviewChat({ initialSessionId, initialMessages, initialProjec
                     </div>
                   </div>
                 )}
+
+                {/* Architect Generation Terminal (Live State) */}
+                {status === 'generating' && (
+                  <div className="my-2 w-full rounded-2xl border border-white/15 bg-gradient-to-b from-[#0c0c11] to-[#060608] p-5 sm:p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden text-white">
+                    <div aria-hidden className="absolute -top-32 -right-32 w-72 h-72 bg-white/[0.04] rounded-full blur-3xl pointer-events-none" />
+                    
+                    {/* Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-2.5 font-mono text-xs text-zinc-300">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                        </span>
+                        <span className="font-bold tracking-wider uppercase text-white">Architect Engine Active</span>
+                      </div>
+                      <div className="flex items-center gap-2 font-mono text-xs text-zinc-400">
+                        <span className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1">
+                          {Math.floor(generationElapsedSec / 60).toString().padStart(2, '0')}:{(generationElapsedSec % 60).toString().padStart(2, '0')} elapsed
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Main Title */}
+                    <div className="mt-4 flex flex-col gap-1">
+                      <h3 className="font-sans font-bold text-base sm:text-lg text-white">
+                        Merancang Arsitektur & Spesifikasi Sistem
+                      </h3>
+                      <p className="font-sans text-xs text-zinc-400">
+                        Target Proyek: <span className="font-mono text-zinc-200 font-semibold">{projectName || 'Arsitektur Proyek'}</span>
+                      </p>
+                    </div>
+
+                    {/* 4-Stage Stepper Grid */}
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-sans">
+                      {/* Stage 1: PRD */}
+                      <div className={`p-3 rounded-xl border transition-all ${
+                        generationProgress >= 40 ? 'border-emerald-500/30 bg-emerald-500/5 text-zinc-300' :
+                        generationStep === 'prd' || generationProgress < 40 ? 'border-white/30 bg-white/[0.06] text-white shadow-lg shadow-white/5' :
+                        'border-white/5 bg-white/[0.02] text-zinc-500'
+                      }`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">01 · PRD & Scope</span>
+                          {generationProgress >= 40 ? (
+                            <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
+                          ) : (
+                            <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
+                          )}
+                        </div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">Product Requirements Document</div>
+                        <div className="text-[11px] text-zinc-400">Persona, MVP scope, & alur bisnis</div>
+                      </div>
+
+                      {/* Stage 2: Database / Spec */}
+                      <div className={`p-3 rounded-xl border transition-all ${
+                        generationProgress >= 65 ? 'border-emerald-500/30 bg-emerald-500/5 text-zinc-300' :
+                        generationStep === 'db' ? 'border-white/30 bg-white/[0.06] text-white shadow-lg shadow-white/5' :
+                        'border-white/5 bg-white/[0.02] text-zinc-500'
+                      }`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">02 · Database & Spec</span>
+                          {generationProgress >= 65 ? (
+                            <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
+                          ) : generationStep === 'db' ? (
+                            <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
+                          ) : (
+                            <span className="text-[10px] font-mono text-zinc-600">Pending</span>
+                          )}
+                        </div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">Penyimpanan Spesifikasi</div>
+                        <div className="text-[11px] text-zinc-400">Persistensi skema & entitas relasional</div>
+                      </div>
+
+                      {/* Stage 3: Flowchart & ADR */}
+                      <div className={`p-3 rounded-xl border transition-all ${
+                        generationProgress >= 88 ? 'border-emerald-500/30 bg-emerald-500/5 text-zinc-300' :
+                        generationStep === 'architecture' ? 'border-white/30 bg-white/[0.06] text-white shadow-lg shadow-white/5' :
+                        'border-white/5 bg-white/[0.02] text-zinc-500'
+                      }`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">03 · Flowchart & Tech Stack</span>
+                          {generationProgress >= 88 ? (
+                            <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
+                          ) : generationStep === 'architecture' ? (
+                            <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
+                          ) : (
+                            <span className="text-[10px] font-mono text-zinc-600">Pending</span>
+                          )}
+                        </div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">Application Tree & ADR</div>
+                        <div className="text-[11px] text-zinc-400">Node alur pengguna & stack teknologi</div>
+                      </div>
+
+                      {/* Stage 4: AGENTS.md & Master Prompt */}
+                      <div className={`p-3 rounded-xl border transition-all ${
+                        generationProgress >= 100 ? 'border-emerald-500/30 bg-emerald-500/5 text-zinc-300' :
+                        generationStep === 'agents' ? 'border-white/30 bg-white/[0.06] text-white shadow-lg shadow-white/5' :
+                        'border-white/5 bg-white/[0.02] text-zinc-500'
+                      }`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">04 · AI Coding Agent</span>
+                          {generationProgress >= 100 ? (
+                            <CheckCircle weight="fill" className="w-4 h-4 text-emerald-400 shrink-0" />
+                          ) : generationStep === 'agents' ? (
+                            <CircleNotch weight="bold" className="w-4 h-4 text-white animate-spin shrink-0" />
+                          ) : (
+                            <span className="text-[10px] font-mono text-zinc-600">Pending</span>
+                          )}
+                        </div>
+                        <div className="mt-1 font-semibold text-xs text-zinc-100">AGENTS.md & Prompt.md</div>
+                        <div className="text-[11px] text-zinc-400">Guardrails dan instruksi coding agent</div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar Container */}
+                    <div className="mt-5 flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-zinc-300 truncate">{generationStepLabel}</span>
+                        <span className="font-bold text-white shrink-0">{Math.round(generationProgress)}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden relative">
+                        <div
+                          className="h-full bg-gradient-to-r from-zinc-300 via-white to-zinc-100 rounded-full transition-all duration-300 ease-out shadow-[0_0_12px_rgba(255,255,255,0.7)]"
+                          style={{ width: `${Math.max(5, generationProgress)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Dynamic tip */}
+                    <div className="mt-3.5 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
+                      <Lightning weight="fill" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>
+                        {generationElapsedSec > 35
+                          ? 'AI sedang memvalidasi relasi dependensi arsitektur dan aturan anti-halusinasi...'
+                          : 'Setiap spesifikasi dirancang dan divalidasi langsung agar siap dipakai oleh AI coding agent.'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error / Timeout Recovery Card */}
                 {error && (
-                  <div className="flex justify-center">
-                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 font-mono text-xs text-rose-200">
-                      Error: {error}
+                  <div className="my-3 w-full rounded-2xl border border-rose-500/30 bg-gradient-to-b from-rose-950/20 to-black/40 p-5 sm:p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden text-white">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="size-8 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+                          <WarningCircle weight="bold" className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-sans font-bold text-sm sm:text-base text-rose-100">
+                            Generasi Arsitektur Memerlukan Waktu Lebih Lama
+                          </h4>
+                          <p className="font-sans text-xs text-zinc-300 mt-1 leading-relaxed">
+                            {error.includes('timed out')
+                              ? 'Layanan AI membutuhkan waktu lebih lama untuk menyelesaikan sintesis arsitektur. Data sesi dan transkrip Anda aman.'
+                              : error}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-3 pt-3 border-t border-rose-500/20">
+                        <Button
+                          variant="primary"
+                          onClick={handleRetryGeneration}
+                          className="gap-2 bg-white text-black hover:bg-zinc-200 text-xs font-semibold shadow-md"
+                        >
+                          <Lightning weight="fill" className="w-3.5 h-3.5" />
+                          <span>⚡ Coba Lagi Sekarang</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setError(null)}
+                          className="text-xs text-zinc-400 hover:text-white"
+                        >
+                          Lanjut Edit Obrolan
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}

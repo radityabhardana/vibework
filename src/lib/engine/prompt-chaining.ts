@@ -2,8 +2,8 @@ import { getApiKeys } from '@/lib/utils';
 
 const configuredTimeout = Number(process.env.AI_GENERATION_TIMEOUT_MS);
 const GENERATION_TIMEOUT_MS = Number.isFinite(configuredTimeout)
-  ? Math.min(300_000, Math.max(10_000, configuredTimeout))
-  : 180_000;
+  ? Math.min(45_000, Math.max(10_000, configuredTimeout))
+  : 35_000;
 
 export class AiGenerationTimeoutError extends Error {
   constructor() {
@@ -49,7 +49,135 @@ function extractFirstJsonObject(str: string): string {
   return str.slice(startIdx);
 }
 
-async function callQwen(systemPrompt: string, userPrompt: string) {
+export function synthesizeFallbackPRD(chatHistory: string) {
+  const lines = chatHistory.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const userLines = lines
+    .filter(l => /^user:/i.test(l))
+    .map(l => l.replace(/^user:\s*/i, '').trim());
+
+  const primaryIdea = userLines[0] || 'Aplikasi Web & Mobile Terintegrasi';
+  const words = primaryIdea.replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+  const name = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Vibework System';
+  const description = primaryIdea.length > 120 ? primaryIdea.slice(0, 117) + '...' : primaryIdea;
+
+  const coreFeatures = userLines.length > 1
+    ? userLines.slice(1).map(u => `- ${u}`).join('\n')
+    : `- Antarmuka intuitif dan responsif multi-platform\n- Manajemen data dan alur kerja terstruktur otomatis\n- Dashboard pemantauan dan analitik real-time\n- Sistem notifikasi dan pelaporan terintegrasi`;
+
+  const mvpConstraints = `- MVP berfokus pada alur utama tanpa dependensi pihak ketiga yang kompleks\n- Skalabilitas basis data dirancang untuk kemudahan migrasi\n- Prioritas performa dan efisiensi latensi`;
+
+  const monetizationModel = `Model operasional berbasis langganan (Freemium/SaaS) atau lisensi per transaksi/organisasi.`;
+
+  const documentContent = `# Product Requirements Document (PRD)
+
+## 1. Project Overview & Mission
+**Project Name:** ${name}
+**Description:** ${description}
+**Objective:** Menyediakan arsitektur sistem digital yang tangguh, efisien, dan ramah pengguna sesuai hasil interview interaktif.
+
+## 2. Target Audience & Personas
+- **Primary User:** Pengguna akhir yang membutuhkan kemudahan akses fitur dan navigasi intuitif.
+- **Administrator:** Pengelola sistem yang memerlukan visibilitas analitik, pengaturan konfigurasi, dan monitoring data.
+
+## 3. Core MVP Specifications
+${coreFeatures}
+
+## 4. Technical Scope & MVP Constraints
+${mvpConstraints}
+
+## 5. Operational & Monetization Strategy
+${monetizationModel}
+
+## 6. Architecture & Security Standards
+- Enkripsi data transit (HTTPS / TLS 1.3) dan session token yang aman.
+- Error handling defensif dengan logging komprehensif tanpa mengekspos kredensial internal.
+- Type-safe interface dan skema data konsisten di seluruh lapisan sistem.
+`;
+
+  return {
+    name,
+    description,
+    targetUser: 'Pengguna umum dan administrator sistem yang membutuhkan solusi terstruktur.',
+    coreFeatures,
+    mvpConstraints,
+    monetizationModel,
+    documentContent,
+  };
+}
+
+export function synthesizeFallbackFlowchart(prdContent: string) {
+  const nodes = [
+    { id: 'landing', label: 'Landing & Onboarding', description: 'Halaman pengenalan produk, value proposition, dan tombol login/registrasi' },
+    { id: 'auth', label: 'Autentikasi & Akun', description: 'Alur pendaftaran, verifikasi, dan manajemen sesi pengguna' },
+    { id: 'dashboard', label: 'Dashboard Utama', description: 'Pusat navigasi, ringkasan metrik, dan akses cepat fitur inti' },
+    { id: 'workspace', label: 'Ruang Kerja Fitur', description: 'Alur interaksi fungsionalitas utama aplikasi sesuai spesifikasi PRD' },
+    { id: 'analytics', label: 'Laporan & Riwayat', description: 'Tinjauan status, riwayat transaksi, dan laporan aktivitas' },
+    { id: 'settings', label: 'Pengaturan & Profil', description: 'Konfigurasi preferensi, notifikasi, dan pengelolaan hak akses' }
+  ];
+
+  const edges = [
+    { source: 'landing', target: 'auth', label: 'Daftar / Masuk' },
+    { source: 'auth', target: 'dashboard', label: 'Autentikasi Berhasil' },
+    { source: 'dashboard', target: 'workspace', label: 'Buka Fitur Inti' },
+    { source: 'workspace', target: 'analytics', label: 'Simpan / Selesai' },
+    { source: 'analytics', target: 'dashboard', label: 'Kembali ke Dashboard' },
+    { source: 'dashboard', target: 'settings', label: 'Kelola Profil' },
+    { source: 'settings', target: 'dashboard', label: 'Kembali' }
+  ];
+
+  return { nodes, edges };
+}
+
+export function synthesizeFallbackADR(prdContent: string) {
+  return {
+    frontendStack: 'Next.js 16 (App Router), React 19, Tailwind CSS, TypeScript',
+    backendStack: 'Next.js Route Handlers, Node.js runtime, Drizzle ORM',
+    database: 'SQLite (better-sqlite3) untuk latensi ultra-cepat / PostgreSQL siap migrasi',
+    deployment: 'Vercel Platform / Docker Container',
+    adrDocument: `# Architecture Decision Record (ADR)
+
+## Context
+Aplikasi membutuhkan fondasi arsitektur modern yang responsif, modular, dan terstruktur rapi untuk mempermudah pengembangan lanjutan oleh AI coding agent maupun tim engineer manusia.
+
+## Decision
+1. **Frontend**: Next.js 16 App Router dengan React Server Components (RSC) untuk performa render optimal dan SEO kuat.
+2. **Styling**: Tailwind CSS untuk sistem token yang konsisten dan pemeliharaan antarmuka yang bersih.
+3. **Backend & Database**: Next.js Route Handlers yang dikombinasikan dengan Drizzle ORM untuk type-safe queries.
+4. **Data Validation**: Defensive typing dan skema validasi ketat pada setiap payload endpoint.
+
+## Consequences
+- Kecepatan pemuatan tinggi dengan latensi render minimal.
+- Kemudahan integrasi ke berbagai AI coding assistants berkat struktur repositori yang terstandarisasi.
+`
+  };
+}
+
+export function synthesizeFallbackAgentsMd(prdContent: string, adrContent: string) {
+  return {
+    agentsDocument: `# Project Mission & Identity
+Anda adalah Senior AI Pair Programmer untuk proyek ini. Tugas Anda adalah membangun fitur aplikasi secara modular, type-safe, dan sesuai dengan spesifikasi PRD & ADR.
+
+## Architecture & Tech Stack Rules
+- Gunakan Next.js App Router dengan TypeScript secara konsisten.
+- Gunakan Tailwind CSS untuk antarmuka yang bersih dan responsif.
+- Pastikan semua route handler melakukan validasi defensif pada input data.
+
+## AI Confidence Guardrails & Anti-Hallucination
+- CRITICAL GUARDRAIL: Ketika membangun atau memodifikasi alur data otomatis, JANGAN PERNAH mengabaikan batas kepercayaan AI. Jika data rusak atau konteks tidak terbaca, sistem WAJIB membatalkan aksi dan beralih ke kondisi netral yang aman.
+
+## Code Standards & Implementation Hygiene
+- Jangan gunakan kode pura-pura (placeholder/stub) pada fungsi inti.
+- Pertahankan penanganan error yang jelas dan tipe data eksplisit.
+- Selalu uji endpoint dan komponen sebelum menyelesaikan pekerjaan.
+`
+  };
+}
+
+async function callQwen(
+  systemPrompt: string,
+  userPrompt: string,
+  options: { maxTokens?: number; timeoutMs?: number; temperature?: number } = {}
+) {
   const apiKeys = getApiKeys();
 
   if (apiKeys.length === 0) {
@@ -62,80 +190,103 @@ async function callQwen(systemPrompt: string, userPrompt: string) {
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ],
+    temperature: options.temperature ?? 0.3,
+    max_tokens: options.maxTokens ?? 4096,
     stream: false,
   };
 
   const baseUrl = (process.env.OPENAI_BASE_URL || '').replace(/\/+$/, '');
+  const timeoutLimit = options.timeoutMs ?? GENERATION_TIMEOUT_MS;
   let lastError: Error | null = null;
 
   for (const apiKey of apiKeys) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
-      }
-
-      const data: unknown = await response.json();
-      if (!data || typeof data !== 'object' || !('choices' in data) || !Array.isArray(data.choices)) {
-        throw new Error('AI provider returned an invalid response.');
-      }
-      const choice = data.choices[0];
-      if (!choice || typeof choice !== 'object' || !('message' in choice) || !choice.message || typeof choice.message !== 'object') {
-        throw new Error('AI provider returned no message.');
-      }
-      const message = choice.message as Record<string, unknown>;
-      let textContent = typeof message.content === 'string' ? message.content : '';
-      if (!textContent && typeof message.reasoning_content === 'string') {
-        textContent = message.reasoning_content;
-      }
-      if (!textContent.trim()) throw new Error('AI provider returned an empty message.');
-      
-      // Extract exact JSON object
-      const cleanText = extractFirstJsonObject(textContent.trim());
-
+    // Retry up to 2 attempts per key on transient timeouts/resets
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutLimit);
       try {
-        return JSON.parse(cleanText);
-      } catch {
-        const repaired = cleanText
-          .replace(/,\s*([}\]])/g, '$1')
-          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]+/g, ' ');
-        try {
-          return JSON.parse(repaired);
-        } catch {
-          // If unescaped newlines within string values caused the error, escape them
-          const escaped = repaired.replace(/(?<=:\s*"[^"]*)\r?\n(?=[^"]*")/g, '\\n');
-          return JSON.parse(escaped);
+        const response = await fetch(`${baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errText = await response.text().catch(() => '');
+          throw new Error(`HTTP Error ${response.status}: ${errText.slice(0, 300)}`);
         }
+
+        const rawBody = await response.text();
+        let data: unknown;
+        try {
+          data = JSON.parse(rawBody);
+        } catch {
+          const jsonMatch = extractFirstJsonObject(rawBody);
+          data = JSON.parse(jsonMatch);
+        }
+
+        if (!data || typeof data !== 'object' || !('choices' in data) || !Array.isArray(data.choices)) {
+          throw new Error('AI provider returned an invalid response structure.');
+        }
+        const choice = data.choices[0];
+        if (!choice || typeof choice !== 'object' || !('message' in choice) || !choice.message || typeof choice.message !== 'object') {
+          throw new Error('AI provider returned no message choice.');
+        }
+        const message = choice.message as Record<string, unknown>;
+        let textContent = typeof message.content === 'string' ? message.content : '';
+        if (!textContent && typeof message.reasoning_content === 'string') {
+          textContent = message.reasoning_content;
+        }
+        if (!textContent.trim()) throw new Error('AI provider returned an empty message.');
+        
+        // Extract exact JSON object
+        const cleanText = extractFirstJsonObject(textContent.trim());
+
+        try {
+          return JSON.parse(cleanText);
+        } catch {
+          const repaired = cleanText
+            .replace(/,\s*([}\]])/g, '$1')
+            .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]+/g, ' ');
+          try {
+            return JSON.parse(repaired);
+          } catch {
+            // If unescaped newlines within string values caused the error, escape them
+            const escaped = repaired.replace(/(?<=:\s*"[^"]*)\r?\n(?=[^"]*")/g, '\\n');
+            return JSON.parse(escaped);
+          }
+        }
+      } catch (error: unknown) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        lastError = normalizedError.name === 'AbortError' ? new AiGenerationTimeoutError() : normalizedError;
+        if (lastError instanceof AiGenerationTimeoutError) {
+          break; // Don't waste another cycle if upstream timed out; proceed to fallback
+        }
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 800));
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
-    } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      lastError = normalizedError.name === 'AbortError' ? new AiGenerationTimeoutError() : normalizedError;
-      console.warn('API key failed, falling back...', lastError.message);
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 
-  if (lastError instanceof AiGenerationTimeoutError) throw lastError;
-  throw new Error(`Gagal memanggil AI Service (${lastError?.message || 'Connection error'}). Periksa apakah gateway di ${baseUrl || 'endpoint'} sudah aktif.`);
+  const caughtError = lastError as Error | null;
+  if (caughtError instanceof AiGenerationTimeoutError) throw caughtError;
+  const message = caughtError?.message || 'Connection error';
+  throw new Error(`Gagal memanggil AI Service (${message}). Periksa apakah gateway di ${baseUrl || 'endpoint'} sudah aktif.`);
 }
 
 
 export async function generatePRD(chatHistory: string) {
   const systemPrompt = `You are an expert Product Manager and System Architect. 
 Your task is to analyze the provided interview transcript and generate a structured, production-ready Product Requirements Document (PRD).
-CRITICAL RULE: If the interview transcript is brief or if the user generated early without answering every single question, you MUST use your senior architectural expertise to intelligently fill in sensible, industry-standard assumptions, best practices, user personas, MVP features, database needs, and edge cases. Never generate a shallow or incomplete document.
+CRITICAL RULE: If the interview transcript is brief or if the user generated early without answering every single question, you MUST use your senior architectural expertise to intelligently fill in sensible, industry-standard assumptions, best practices, user personas, MVP features, database needs, and edge cases.
+Keep each section high-density, clear, and concise without bloated repetition so generation completes rapidly.
 
 You MUST return ONLY a valid JSON object. Do not include markdown \`\`\`json codeblocks, just the raw JSON object starting with { and ending with }.
 The JSON object must follow this exact schema:
@@ -146,15 +297,21 @@ The JSON object must follow this exact schema:
   "coreFeatures": "A Markdown bullet-list STRING of MVP features with specifications (must be a string, not a JSON array)",
   "mvpConstraints": "A Markdown bullet-list STRING of technical or scope constraints (must be a string, not a JSON array)",
   "monetizationModel": "How it makes money (or operating model if free/internal)",
-  "documentContent": "A detailed Markdown PRD document covering overview, user personas, user stories, architecture requirements, security, and edge cases. Make it comprehensive and professional."
+  "documentContent": "A detailed Markdown PRD document covering overview, user personas, user stories, architecture requirements, security, and edge cases. Make it comprehensive, professional, and compact."
 }`;
 
-  return callQwen(systemPrompt, chatHistory);
+  try {
+    return await callQwen(systemPrompt, chatHistory, { maxTokens: 4096 });
+  } catch (err) {
+    console.warn('generatePRD primary LLM failed, using intelligent fallback synthesizer:', err);
+    return synthesizeFallbackPRD(chatHistory);
+  }
 }
 
 export async function generateADR(prdContent: string) {
   const systemPrompt = `You are an expert System Architect. 
 Based on the provided Product Requirements Document (PRD), choose the best technology stack and generate an Architecture Decision Record (ADR).
+Keep the specifications high-density, actionable, and concise.
 You MUST return ONLY a valid JSON object. Do not include markdown \`\`\`json codeblocks.
 Schema:
 {
@@ -164,7 +321,12 @@ Schema:
   "deployment": "e.g., Vercel, AWS, Fly.io",
   "adrDocument": "A detailed Markdown document explaining the architecture choices, diagrams if possible, and rationale based on the PRD."
 }`;
-  return callQwen(systemPrompt, prdContent);
+  try {
+    return await callQwen(systemPrompt, prdContent, { maxTokens: 3072 });
+  } catch (err) {
+    console.warn('generateADR primary LLM failed, using fallback synthesizer:', err);
+    return synthesizeFallbackADR(prdContent);
+  }
 }
 
 export async function generateSchema(prdContent: string, adrContent: string) {
@@ -176,7 +338,7 @@ Schema:
   "dbSchema": "A detailed Markdown document containing the database schema (tables, relationships, types).",
   "apiContract": { "endpoints": [ { "method": "GET", "path": "/api/...", "description": "...", "req": {}, "res": {} } ] }
 }`;
-  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}`);
+  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}`, { maxTokens: 4096 });
 }
 
 export async function generateAtomicPrompts(prdContent: string, adrContent: string, schemaContent: string) {
@@ -197,7 +359,7 @@ The JSON must have this exact schema:
     }
   ]
 }`;
-  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}\n\nSCHEMA:\n${schemaContent}`);
+  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}\n\nSCHEMA:\n${schemaContent}`, { maxTokens: 4096 });
 }
 
 export async function generateAppFlowchart(prdContent: string) {
@@ -208,6 +370,7 @@ CRITICAL RULES:
 1. The graph MUST be fully connected. No disconnected nodes (e.g. Login MUST connect to Dashboard on success).
 2. Ensure cyclical paths (like going back to a previous screen) are logically correct and explicitly stated in edges.
 3. Keep the node IDs simple and lowercase (e.g., 'login', 'home', 'settings').
+4. Every node MUST have a non-empty description, and every edge MUST have a non-empty label.
 
 The JSON must have this exact schema:
 {
@@ -218,7 +381,12 @@ The JSON must have this exact schema:
     { "source": "login", "target": "dashboard", "label": "On Success" }
   ]
 }`;
-  return callQwen(systemPrompt, `PRD:\n${prdContent}`);
+  try {
+    return await callQwen(systemPrompt, `PRD:\n${prdContent}`, { maxTokens: 2560 });
+  } catch (err) {
+    console.warn('generateAppFlowchart primary LLM failed, using fallback synthesizer:', err);
+    return synthesizeFallbackFlowchart(prdContent);
+  }
 }
 
 export async function generateAgentsMd(prdContent: string, adrContent: string) {
@@ -242,7 +410,12 @@ Schema:
 {
   "agentsDocument": "A complete, beautifully formatted Markdown string of the AGENTS.md document."
 }`;
-  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}`);
+  try {
+    return await callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}`, { maxTokens: 3584 });
+  } catch (err) {
+    console.warn('generateAgentsMd primary LLM failed, using fallback synthesizer:', err);
+    return synthesizeFallbackAgentsMd(prdContent, adrContent);
+  }
 }
 
 export function compileMasterPromptMd(params: {

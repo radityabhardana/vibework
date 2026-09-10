@@ -13,10 +13,6 @@ import {
   Kanban,
   CheckCircle,
   WarningCircle,
-  ArrowRight,
-  Buildings,
-  ChartLineUp,
-  Package,
   SlidersHorizontal,
 } from '@phosphor-icons/react';
 
@@ -32,41 +28,6 @@ const QUICK_TAGS = [
   { label: 'AI Agent', icon: Robot, snippet: 'Automasi AI Agent & Workflow Pintar' },
   { label: 'Marketplace', icon: Storefront, snippet: 'Marketplace & E-Commerce terintegrasi' },
   { label: 'Internal Tool', icon: Kanban, snippet: 'Internal Tool & Admin Dashboard' },
-];
-
-const STARTER_PROMPTS = [
-  {
-    icon: Buildings,
-    tag: 'PROPTECH AUTOMATION',
-    title: 'Manajemen Kos & Tagihan Otomatis',
-    desc: 'Pencatatan kamar, tagihan WhatsApp otomatis, scan meteran listrik AI.',
-    prompt: 'Buat aplikasi manajemen kos-kosan otomatis. Fiturnya meliputi pencatatan kamar dan penghuni, tagihan bulanan otomatis yang mengirim notifikasi via WhatsApp, sistem scan foto meteran listrik AI untuk hitung beban per kamar, dan dashboard ringkasan keuangan bulanan bagi pemilik kos.',
-    specs: '4 Nodes · PRD · Schema'
-  },
-  {
-    icon: Robot,
-    tag: 'AI WORKFLOW AGENT',
-    title: 'AI Customer Support Agent',
-    desc: 'Integrasi WhatsApp, auto-reply knowledge base dokumen, eskalasi agen manusia.',
-    prompt: 'Bangun platform AI Customer Support multi-channel (WhatsApp, Webchat, Telegram). Fitur utama: bot cerdas yang dilatih dengan dokumen SOP & FAQ internal perusahaan, auto-resolve tiket keluhan, dan tombol handover instan ke customer service manusia saat problem butuh eskalasi.',
-    specs: '5 Nodes · PRD · AGENTS.md'
-  },
-  {
-    icon: ChartLineUp,
-    tag: 'FINTECH SAAS',
-    title: 'B2B Subscription & Billing Portal',
-    desc: 'Integrasi Stripe/Midtrans, tiered pricing, invoice PDF, tim multi-role.',
-    prompt: 'Rancang platform SaaS B2B untuk billing & subscription. Fitur: registrasi organisasi, manajemen tim multi-role (Owner, Admin, Member), tier langganan (Free, Pro, Enterprise), integrasi payment gateway dengan generate invoice PDF otomatis, dan analitik pendapatan bulanan (MRR/ARR).',
-    specs: '6 Nodes · PRD · ADR'
-  },
-  {
-    icon: Package,
-    tag: 'LOGISTICS & WMS',
-    title: 'Inventory & Logistik Gudang',
-    desc: 'Scan barcode stock opname, notifikasi stok menipis, laporan keluar masuk.',
-    prompt: 'Buat sistem manajemen pergudangan (WMS) berbasis web dan mobile. Fitur: scan barcode kamera untuk barang masuk/keluar, pelacakan multi-gudang secara real-time, notifikasi otomatis jika stok di bawah threshold, serta export laporan inventaris mingguan dan bulanan.',
-    specs: '4 Nodes · PRD · Schema'
-  }
 ];
 
 const GENERATION_STEPS = [
@@ -188,10 +149,14 @@ export function IdeaStudio({
 
       const genRes = await fetch('/api/projects/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
+        },
         body: JSON.stringify({
           sessionId: activeSessionId,
           regenerate: !!projectId,
+          stream: true,
         }),
       });
 
@@ -204,10 +169,68 @@ export function IdeaStudio({
         throw new Error(message);
       }
 
-      const genData = await genRes.json();
-      setProgressPercent(100);
+      const contentType = genRes.headers.get('content-type') || '';
+      if (contentType.includes('text/event-stream') && genRes.body) {
+        const reader = genRes.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let targetProjectId: string | null = null;
 
-      router.push(`/projects/${genData.projectId}`);
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || '';
+
+          let currentEvent = 'message';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) continue;
+            if (trimmed.startsWith('event:')) {
+              currentEvent = trimmed.slice(6).trim();
+              continue;
+            }
+            if (trimmed.startsWith('data:')) {
+              const dataStr = trimmed.slice(5).trim();
+              try {
+                const payload = JSON.parse(dataStr);
+                if (currentEvent === 'progress') {
+                  if (typeof payload.percent === 'number') {
+                    setProgressPercent(payload.percent);
+                  }
+                  if (payload.step === 'prd') setProgressStepIndex(1);
+                  else if (payload.step === 'db') setProgressStepIndex(2);
+                  else if (payload.step === 'architecture') setProgressStepIndex(3);
+                  else if (payload.step === 'agents') setProgressStepIndex(4);
+                } else if (currentEvent === 'complete') {
+                  setProgressPercent(100);
+                  if (typeof payload.projectId === 'string') {
+                    targetProjectId = payload.projectId;
+                  }
+                } else if (currentEvent === 'error') {
+                  throw new Error(payload.error || 'Gagal generate spesifikasi proyek.');
+                }
+              } catch (parseErr) {
+                if (parseErr instanceof Error && currentEvent === 'error') {
+                  throw parseErr;
+                }
+              }
+            }
+          }
+        }
+
+        if (targetProjectId) {
+          router.push(`/projects/${targetProjectId}`);
+        } else {
+          throw new Error('Sesi pembuatan selesai namun projectId tidak ditemukan.');
+        }
+      } else {
+        const genData = await genRes.json();
+        setProgressPercent(100);
+        router.push(`/projects/${genData.projectId}`);
+      }
     } catch (err: unknown) {
       console.error('Generation failed:', err);
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan sistem.');
@@ -408,61 +431,6 @@ export function IdeaStudio({
             <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600">
               <Lightning weight="fill" className="w-3 h-3 text-zinc-400" />
               <span>Jangan tutup halaman ini sampai proses selesai</span>
-            </div>
-          </div>
-        )}
-
-        {/* Curated Architecture Blueprints */}
-        {status !== 'generating' && (
-          <div className="w-full flex flex-col gap-3 mt-2">
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
-                Contoh Blueprint Siap Pakai
-              </span>
-              <span aria-hidden className="h-px flex-1 bg-white/10" />
-              <span className="text-[10px] font-mono text-zinc-600 hidden sm:inline-block">
-                Klik untuk memuat
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {STARTER_PROMPTS.map((ex, idx) => {
-                const IconComponent = ex.icon;
-                return (
-                  <button
-                    key={ex.title}
-                    type="button"
-                    onClick={() => setIdea(ex.prompt)}
-                    className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/25 hover:-translate-y-0.5 transition-all duration-300 text-left flex items-start gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                  >
-                    <div className="flex flex-col items-center gap-2 shrink-0">
-                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white group-hover:bg-white group-hover:text-black transition-colors duration-300">
-                        <IconComponent weight="duotone" size={20} />
-                      </div>
-                      <span className="font-mono text-[9px] text-zinc-600">
-                        0{idx + 1}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500 font-semibold">
-                          {ex.tag}
-                        </span>
-                        <ArrowRight weight="bold" className="w-3 h-3 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100" />
-                      </div>
-                      <div className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors truncate">
-                        {ex.title}
-                      </div>
-                      <div className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
-                        {ex.desc}
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 font-mono text-[10px] text-zinc-500">
-                        <span>Output:</span>
-                        <span className="text-zinc-400 font-medium">{ex.specs}</span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
             </div>
           </div>
         )}
