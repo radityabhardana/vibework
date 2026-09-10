@@ -33,6 +33,28 @@ import {
 
 type WorkspaceTab = 'tree' | 'prd' | 'agents' | 'architecture' | 'prompts';
 
+const hasMeaningfulText = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
+
+const getGenerationErrorMessage = async (res: Response, fallback: string) => {
+  if (res.status === 504) {
+    return 'Generation timed out. Please try again.';
+  }
+
+  const body: unknown = await res.json().catch(() => null);
+  if (
+    typeof body === 'object'
+    && body !== null
+    && 'error' in body
+    && typeof body.error === 'string'
+    && body.error.trim().length > 0
+  ) {
+    return body.error;
+  }
+
+  return fallback;
+};
+
 export function ProjectWorkspace({
   project,
   prd,
@@ -60,6 +82,19 @@ export function ProjectWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [viewerData, setViewerData] = useState<{ title: string; content: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [promptsInvalidatedBySchema, setPromptsInvalidatedBySchema] = useState(false);
+
+  const schemaReady = hasMeaningfulText(schema?.dbSchema);
+  const schemaContent = schemaReady ? schema.dbSchema.trim() : '';
+  const hasAtomicPrompts = Array.isArray(prompts) && prompts.length > 0;
+  const promptsReady = schemaReady && hasAtomicPrompts && !loadingSchema && !promptsInvalidatedBySchema;
+  const schemaOrPromptsBusy = loadingSchema || loadingPrompts;
+
+  useEffect(() => {
+    if (promptsInvalidatedBySchema && prompts.length === 0) {
+      setPromptsInvalidatedBySchema(false);
+    }
+  }, [prompts.length, promptsInvalidatedBySchema]);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -155,6 +190,8 @@ export function ProjectWorkspace({
   };
 
   const generateSchema = async () => {
+    if (schemaOrPromptsBusy) return;
+
     setLoadingSchema(true);
     setError(null);
     try {
@@ -163,7 +200,10 @@ export function ProjectWorkspace({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
+      if (!res.ok) {
+        throw new Error(await getGenerationErrorMessage(res, 'Unable to generate the schema. Please try again.'));
+      }
+      setPromptsInvalidatedBySchema(true);
       router.refresh();
     } catch (e: any) {
       setError(e.message);
@@ -173,6 +213,8 @@ export function ProjectWorkspace({
   };
 
   const generatePrompts = async () => {
+    if (schemaOrPromptsBusy) return;
+
     setLoadingPrompts(true);
     setError(null);
     try {
@@ -181,7 +223,9 @@ export function ProjectWorkspace({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
+      if (!res.ok) {
+        throw new Error(await getGenerationErrorMessage(res, 'Unable to generate prompts. Please try again.'));
+      }
       router.refresh();
     } catch (e: any) {
       setError(e.message);
@@ -209,16 +253,17 @@ export function ProjectWorkspace({
   };
 
   // Build the master prompt fallback if project.promptDocument is not directly stored
-  const effectivePromptMd =
-    project.promptDocument ||
-    (prompts.length > 0
+  const generatedPromptMd = hasAtomicPrompts
       ? prompts
           .map(
             (p: any) =>
               `# PROMPT ${p.executionOrder}: ${p.title}\n\n**Context:** ${p.context}\n**Task:** ${p.task}\n**Constraints:** ${p.constraints}\n**Format:** ${p.format}\n**Dependencies:** ${(p.dependencies || []).join(', ')}\n`
           )
           .join('\n---\n\n')
-      : '');
+      : '';
+  const effectivePromptMd = promptsReady
+    ? (hasMeaningfulText(project.promptDocument) ? project.promptDocument : generatedPromptMd)
+    : '';
 
   // Master export for entire project
   const handleExportAll = () => {
@@ -237,8 +282,8 @@ export function ProjectWorkspace({
       bundle += `\n\n==================================================\n# 3. ARCHITECTURE DECISION RECORD (ADR)\n==================================================\n\n${adr.adrDocument.trim()}\n`;
     }
 
-    if (schema?.dbSchema) {
-      bundle += `\n\n==================================================\n# 4. DATABASE SCHEMA & API CONTRACT\n==================================================\n\n${schema.dbSchema.trim()}\n`;
+    if (schemaReady) {
+      bundle += `\n\n==================================================\n# 4. DATABASE SCHEMA & API CONTRACT\n==================================================\n\n${schemaContent}\n`;
     }
 
     if (effectivePromptMd) {
@@ -351,7 +396,7 @@ export function ProjectWorkspace({
       });
     }
 
-    if (schema) {
+    if (schemaReady) {
       newNodes.push({
         id: '3',
         position: { x: 50, y: 500 },
@@ -363,7 +408,7 @@ export function ProjectWorkspace({
           onView: () =>
             setViewerData({
               title: 'Database Schema & API Contract',
-              content: `### Database Schema\n\n${schema.dbSchema}\n\n### API Contract\n\n${JSON.stringify(schema.apiContract, null, 2)}`,
+              content: `### Database Schema\n\n${schemaContent}\n\n### API Contract\n\n${JSON.stringify(schema.apiContract, null, 2)}`,
             }),
         },
       });
@@ -380,12 +425,12 @@ export function ProjectWorkspace({
           onAction: generateSchema,
           isLoading: loadingSchema,
           progress: generationProgress,
-          disabled: !adr,
+          disabled: !adr || schemaOrPromptsBusy,
         },
       });
     }
 
-    if (prompts && prompts.length > 0) {
+    if (promptsReady) {
       newNodes.push({
         id: '4',
         position: { x: 50, y: 650 },
@@ -414,7 +459,7 @@ export function ProjectWorkspace({
           onAction: generatePrompts,
           isLoading: loadingPrompts,
           progress: generationProgress,
-          disabled: !schema,
+          disabled: !schemaReady || schemaOrPromptsBusy,
         },
       });
     }
@@ -515,6 +560,10 @@ export function ProjectWorkspace({
     loadingPrompts,
     loadingAgents,
     generationProgress,
+    schemaReady,
+    schemaContent,
+    promptsReady,
+    schemaOrPromptsBusy,
   ]);
 
   // Artifact tabs — numbering (01–05) replaces per-type color coding
@@ -522,8 +571,8 @@ export function ProjectWorkspace({
     { id: 'tree', num: '01', label: 'Interactive Tree', icon: TreeStructure, ready: !!appFlowchart },
     { id: 'prd', num: '02', label: 'PRD', icon: Article, ready: !!prd },
     { id: 'agents', num: '03', label: 'AGENTS.md', icon: Robot, ready: !!project.agentsDocument },
-    { id: 'architecture', num: '04', label: 'Architecture & Schema', icon: Cpu, ready: !!adr },
-    { id: 'prompts', num: '05', label: 'Prompt.md', icon: Lightning, ready: !!effectivePromptMd },
+    { id: 'architecture', num: '04', label: 'Architecture & Schema', icon: Cpu, ready: !!adr && schemaReady },
+    { id: 'prompts', num: '05', label: 'Prompt.md', icon: Lightning, ready: promptsReady },
   ];
 
   return (
@@ -808,17 +857,17 @@ export function ProjectWorkspace({
                     variant="primary"
                     size="sm"
                     onClick={generateSchema}
-                    disabled={loadingSchema || !adr}
+                    disabled={schemaOrPromptsBusy || !adr}
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingSchema ? 'animate-spin' : ''} />
-                    <span>{loadingSchema ? 'Merancang Schema...' : schema ? 'Regenerate Schema' : 'Generate Schema'}</span>
+                    <span>{loadingSchema ? 'Merancang Schema...' : schemaReady ? 'Regenerate Schema' : 'Generate Schema'}</span>
                   </Button>
-                  {schema?.dbSchema && (
+                  {schemaReady && (
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => copyToClipboard(schema.dbSchema, 'schema')}
+                      onClick={() => copyToClipboard(schemaContent, 'schema')}
                       className="gap-1.5 text-xs"
                     >
                       {copiedKey === 'schema' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -828,10 +877,10 @@ export function ProjectWorkspace({
                 </div>
               </div>
 
-              {schema?.dbSchema ? (
+              {schemaReady ? (
                 <div className="flex flex-col gap-4">
                   <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                    {schema.dbSchema}
+                    {schemaContent}
                   </div>
                   {schema.apiContract && (
                     <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed overflow-x-auto">
@@ -859,7 +908,7 @@ export function ProjectWorkspace({
                       Sequential Coding Plan
                     </span>
                     <span className="font-mono text-xs text-zinc-500">
-                      {prompts.length > 0 ? `${prompts.length} Atomic Steps` : 'Master Prompt Mode'}
+                      {promptsReady ? `${prompts.length} Atomic Steps` : 'Master Prompt Mode'}
                     </span>
                   </div>
                   <h2 className="font-sans font-bold text-xl text-zinc-100">
@@ -874,11 +923,11 @@ export function ProjectWorkspace({
                     variant="primary"
                     size="sm"
                     onClick={generatePrompts}
-                    disabled={loadingPrompts || !schema}
+                    disabled={schemaOrPromptsBusy || !schemaReady}
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingPrompts ? 'animate-spin' : ''} />
-                    <span>{loadingPrompts ? 'Membuat Atomic Prompts...' : prompts.length > 0 ? 'Regenerate Prompts' : 'Generate Atomic Prompts'}</span>
+                    <span>{loadingPrompts ? 'Membuat Atomic Prompts...' : promptsReady ? 'Regenerate Prompts' : 'Generate Atomic Prompts'}</span>
                   </Button>
                   {effectivePromptMd && (
                     <>
@@ -924,7 +973,7 @@ export function ProjectWorkspace({
                     variant="primary"
                     size="sm"
                     onClick={generatePrompts}
-                    disabled={loadingPrompts || !schema}
+                    disabled={schemaOrPromptsBusy || !schemaReady}
                   >
                     {loadingPrompts ? `Generating Prompts (${Math.round(generationProgress)}%)...` : 'Buat Atomic Prompts'}
                   </Button>

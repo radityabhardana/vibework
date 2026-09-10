@@ -4,10 +4,13 @@ const configuredTimeout = Number(process.env.AI_GENERATION_TIMEOUT_MS);
 const GENERATION_TIMEOUT_MS = Number.isFinite(configuredTimeout)
   ? Math.min(45_000, Math.max(10_000, configuredTimeout))
   : 35_000;
+// Leave headroom below the 90-second project-generation route limit for request
+// parsing, validation, and the atomic database write after provider generation.
+const TOTAL_GENERATION_BUDGET_MS = 80_000;
 
 export class AiGenerationTimeoutError extends Error {
   constructor() {
-    super('AI generation timed out. Please retry.');
+    super('AI generation timed out within the total provider budget of 80 seconds. Please retry.');
     this.name = 'AiGenerationTimeoutError';
   }
 }
@@ -197,13 +200,19 @@ async function callQwen(
 
   const baseUrl = (process.env.OPENAI_BASE_URL || '').replace(/\/+$/, '');
   const timeoutLimit = options.timeoutMs ?? GENERATION_TIMEOUT_MS;
+  const deadline = Date.now() + TOTAL_GENERATION_BUDGET_MS;
   let lastError: Error | null = null;
 
   for (const apiKey of apiKeys) {
+    if (Date.now() >= deadline) break;
+
     // Retry up to 2 attempts per key on transient timeouts/resets
     for (let attempt = 1; attempt <= 2; attempt++) {
+      const remainingTime = deadline - Date.now();
+      if (remainingTime <= 0) break;
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutLimit);
+      const timeoutId = setTimeout(() => controller.abort(), Math.min(timeoutLimit, remainingTime));
       try {
         const response = await fetch(`${baseUrl}/chat/completions`, {
           method: 'POST',
@@ -264,15 +273,22 @@ async function callQwen(
         const normalizedError = error instanceof Error ? error : new Error(String(error));
         lastError = normalizedError.name === 'AbortError' ? new AiGenerationTimeoutError() : normalizedError;
         if (lastError instanceof AiGenerationTimeoutError) {
-          break; // Don't waste another cycle if upstream timed out; proceed to fallback
+          break; // Don't waste another cycle if upstream timed out; proceed to the next key
         }
         if (attempt < 2) {
-          await new Promise(r => setTimeout(r, 800));
+          const retryDelay = Math.min(800, Math.max(0, deadline - Date.now()));
+          if (retryDelay > 0) {
+            await new Promise(r => setTimeout(r, retryDelay));
+          }
         }
       } finally {
         clearTimeout(timeoutId);
       }
     }
+  }
+
+  if (Date.now() >= deadline) {
+    throw new AiGenerationTimeoutError();
   }
 
   const caughtError = lastError as Error | null;

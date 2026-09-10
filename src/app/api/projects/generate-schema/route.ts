@@ -93,6 +93,7 @@ export async function POST(req: Request) {
       tx.delete(atomicPrompts).where(eq(atomicPrompts.projectId, projectId)).run();
 
       tx.update(projects).set({
+        promptDocument: null,
         status: 'Schema Generated',
         updatedAt: new Date().toISOString(),
       }).where(eq(projects.id, projectId)).run();
