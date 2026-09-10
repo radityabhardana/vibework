@@ -61,6 +61,33 @@ const GENERATION_STEPS = [
   'Mengompilasi Master Prompt.md Siap Pakai...',
 ];
 
+const ARCHITECTURAL_JUMPSTARTS = [
+  {
+    title: 'B2B SaaS Multi-tenant',
+    category: 'Web SaaS',
+    snippet: 'Bangun platform B2B SaaS multi-tenant dengan dashboard analitik, manajemen peran & hak akses (RBAC), integrasi subscription payment, dan webhook audit log.',
+    tech: 'Next.js 16, Supabase, Tailwind CSS',
+  },
+  {
+    title: 'AI Support & Handover',
+    category: 'AI Workflow',
+    snippet: 'Bangun platform AI Customer Support multi-channel (WhatsApp & Webchat). Bot cerdas dilatih dokumen SOP/FAQ internal, auto-triage tiket, dan handover instan ke CS manusia.',
+    tech: 'Next.js, FastAPI, Vector DB, WhatsApp API',
+  },
+  {
+    title: 'FinTech Expense Tracker',
+    category: 'Mobile App',
+    snippet: 'Aplikasi mobile manajemen arus kas & pengeluaran UMKM dengan pencatatan transaksi cepat, scan struk otomatis, grafik analitik keuangan, dan reminder tagihan.',
+    tech: 'React Native, Expo, SQLite, OCR API',
+  },
+  {
+    title: 'Team Collaboration Canvas',
+    category: 'Internal Tool',
+    snippet: 'Internal tool workspace kolaborasi tim dengan interactive kanban sprint, realtime status task, integrasi notifikasi, dan activity timeline.',
+    tech: 'Next.js App Router, Tailwind CSS, Realtime SSE',
+  },
+];
+
 export function IdeaStudio({
   initialSessionId,
   initialIdea = '',
@@ -114,6 +141,16 @@ export function IdeaStudio({
       if (trimmed.includes(snippet)) return prev;
       return `${trimmed}\n\n[Kategori: ${snippet}]`;
     });
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const handleApplyJumpstart = (template: (typeof ARCHITECTURAL_JUMPSTARTS)[0]) => {
+    setIdea(template.snippet);
+    if (template.tech) {
+      setTechStack(template.tech);
+    }
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -575,42 +612,61 @@ export function IdeaStudio({
           </div>
         )}
 
-        {/* Deliverables Preview if no spec yet (New Spec page) */}
+        {/* Architectural Jumpstarts & Inspiration (New Spec page) */}
         {!specSummary && (
-          <div className="w-full flex flex-col gap-3 pt-1 opacity-75">
-            <div className="flex items-center gap-2 px-1">
-              <Sparkle weight="bold" className="w-3 h-3 text-zinc-400" />
-              <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
-                Output Studio Yang Akan Dihasilkan
-              </span>
+          <div className="w-full flex flex-col gap-3.5 pt-1">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Sparkle weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
+                  Architectural Jumpstarts
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-500">Klik kartu untuk menggunakan template</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3.5 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
-                  <TreeStructure weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Interactive Flowchart</span>
-                </div>
-                <p className="font-sans text-[11px] text-zinc-500 leading-relaxed">
-                  Peta visual node layar, transisi aksi pengguna, dan percabangan logika aplikasi.
-                </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {ARCHITECTURAL_JUMPSTARTS.map((item) => (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => handleApplyJumpstart(item)}
+                  className="text-left rounded-xl border border-white/10 bg-white/[0.015] p-3.5 flex flex-col justify-between gap-2.5 hover:bg-white/[0.04] hover:border-white/20 transition-all duration-150 active:scale-[0.99] group cursor-pointer"
+                >
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-sans font-medium text-xs text-white group-hover:text-emerald-300 transition-colors">
+                        {item.title}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400">
+                        {item.category}
+                      </span>
+                    </div>
+                    <p className="font-sans text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
+                      {item.snippet}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-zinc-500 border-t border-white/5">
+                    <span className="truncate pr-2">{item.tech}</span>
+                    <span className="text-zinc-400 group-hover:text-white transition-colors">Pakai Template →</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Output Studio Capabilities Note */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 opacity-70">
+              <div className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 flex items-center gap-2">
+                <TreeStructure weight="bold" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span className="font-mono text-[10px] text-zinc-400 truncate">Interactive Flowchart Tree</span>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3.5 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
-                  <Article weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>PRD &amp; Schema Spec</span>
-                </div>
-                <p className="font-sans text-[11px] text-zinc-500 leading-relaxed">
-                  Dokumen user stories, batasan MVP, skema entitas relasional, dan arsitektur ADR.
-                </p>
+              <div className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 flex items-center gap-2">
+                <Article weight="bold" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span className="font-mono text-[10px] text-zinc-400 truncate">PRD &amp; Schema Spec</span>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3.5 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
-                  <Cpu weight="bold" className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Prompt.md &amp; AGENTS</span>
-                </div>
-                <p className="font-sans text-[11px] text-zinc-500 leading-relaxed">
-                  Instruksi kode modular siap pakai untuk Cursor/Claude/Copilot tanpa halusinasi.
-                </p>
+              <div className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 flex items-center gap-2">
+                <Cpu weight="bold" className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span className="font-mono text-[10px] text-zinc-400 truncate">AGENTS.md &amp; Prompt.md</span>
               </div>
             </div>
           </div>
