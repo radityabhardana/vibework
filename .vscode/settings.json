@@ -1,0 +1,6 @@
+{
+  "git.showOutput": "never",
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "git.enableSmartCommit": true
+}
