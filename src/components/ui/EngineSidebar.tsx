@@ -51,11 +51,11 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
   const draftCount = visibleSessions.length - readyCount;
 
   return (
-    <aside className="flex max-h-[min(48vh,28rem)] w-full shrink-0 flex-col border-b border-white/[0.08] bg-[#101516] lg:h-full lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
-      <div className="flex shrink-0 flex-col gap-5 border-b border-white/[0.08] bg-[#0c1011] px-5 py-5">
+    <aside className="flex max-h-[min(48vh,28rem)] w-full shrink-0 flex-col border-b border-white/[0.08] bg-[#0d1011] lg:h-full lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
+      <div className="flex shrink-0 flex-col gap-5 border-b border-white/[0.08] bg-[#0a0d0e] px-5 py-5">
         <div className="flex items-start justify-between gap-3">
           <Link href="/engine" className="group flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[#102016] shadow-[0_8px_24px_-12px_rgba(184,231,199,0.9)]">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.35)]">
               <Sparkle weight="fill" className="size-4" />
             </span>
             <span className="min-w-0 leading-tight">
@@ -67,7 +67,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
         </div>
 
         <Link href="/engine" className="block">
-          <Button variant="primary" size="sm" className="w-full !py-2.5 text-xs font-sans shadow-sm">
+          <Button variant="primary" size="sm" className="w-full !bg-zinc-100 !text-black !py-2.5 text-xs font-sans shadow-sm hover:!bg-white focus-visible:!ring-white/50">
             <Plus weight="bold" className="size-4" />
             <span>Spec baru</span>
           </Button>
@@ -100,8 +100,8 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
           <span className="font-mono text-[10px] text-zinc-600">{sessions.length}</span>
         </div>
         {sessions.length === 0 ? (
-          <div className="mx-1 my-3 rounded-xl bg-[#171d1e] px-4 py-5">
-            <div className="mb-3 flex size-8 items-center justify-center rounded-lg bg-white/[0.06] text-[var(--accent)]">
+          <div className="mx-1 my-3 rounded-xl bg-[#151819] px-4 py-5">
+            <div className="mb-3 flex size-8 items-center justify-center rounded-lg bg-white/[0.06] text-zinc-300">
               {filter === 'draft' ? <FileText weight="duotone" className="size-4" /> : <Sparkle weight="duotone" className="size-4" />}
             </div>
             <p className="font-sans text-xs font-semibold text-zinc-200">{filter === 'all' ? 'Belum ada sesi' : `Belum ada ${filter}`}</p>
@@ -113,7 +113,7 @@ export function EngineSidebar({ initialSessions }: { initialSessions: EngineSess
               const isActive = pathname === `/engine/${session.id}`;
               const sessionTitle = session.projectName || session.title || 'Spec tanpa judul';
               return (
-                <div key={session.id} className={`group relative flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${isActive ? 'bg-[rgba(184,231,199,0.12)] text-white ring-1 ring-[rgba(184,231,199,0.24)]' : 'text-zinc-400 hover:bg-white/[0.05] hover:text-white'}`}>
+                <div key={session.id} className={`group relative flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${isActive ? 'bg-white/[0.09] text-white ring-1 ring-white/[0.16]' : 'text-zinc-400 hover:bg-white/[0.05] hover:text-white'}`}>
                   <span className={`size-2 shrink-0 rounded-full ${session.projectId ? 'bg-emerald-300' : 'bg-zinc-600'}`} title={session.projectId ? 'Workspace siap' : 'Draft'} />
                   <Link href={`/engine/${session.id}`} className="min-w-0 flex-1 focus-visible:outline-none">
                     <span className="block truncate font-sans text-xs font-medium">{sessionTitle}</span>
