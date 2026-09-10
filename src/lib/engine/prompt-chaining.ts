@@ -359,7 +359,8 @@ Schema:
 
 export async function generateAtomicPrompts(prdContent: string, adrContent: string, schemaContent: string) {
   const systemPrompt = `You are an expert AI Coding Manager. 
-Based on the PRD, ADR, and Database Schema, break down the project implementation into a sequence of "Atomic Prompts". Each prompt will be given to a Junior AI Coder to implement.
+Based on the PRD, ADR, and Database Schema, break down the project implementation into a CONCISE implementation plan of "Atomic Prompts" (AT MOST 10 prompts, covering only the core MVP flow). Each prompt will be given to a Junior AI Coder to implement.
+Respond with the JSON immediately and keep it compact: at most 10 prompts (core MVP flow only), one short plain-text sentence per field (title <= 8 words, every other field <= 25 words), no markdown inside fields.
 You MUST return ONLY a valid JSON object. Do not include markdown \`\`\`json codeblocks.
 The JSON must have this exact schema:
 {
@@ -375,7 +376,8 @@ The JSON must have this exact schema:
     }
   ]
 }`;
-  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}\n\nSCHEMA:\n${schemaContent}`, { maxTokens: 4096 });
+  // ponytail: 2048 caps decode time inside the shared 80s budget (~10 concise prompts fit with headroom); raise when real plans legitimately need more.
+  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}\n\nSCHEMA:\n${schemaContent}`, { maxTokens: 2048 });
 }
 
 export async function generateAppFlowchart(prdContent: string) {
