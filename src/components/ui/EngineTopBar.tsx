@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useLanguage } from '@/context/LanguageContext';
+import { ReturnHomeLink } from '@/components/ui/ReturnHomeLink';
 
 export function EngineTopBar() {
   const { t } = useLanguage();
@@ -22,7 +23,8 @@ export function EngineTopBar() {
         </div>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-1">
+        <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
         <LanguageSwitcher />
       </div>
     </header>

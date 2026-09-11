@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowLeft,
   DownloadSimple,
   MagicWand,
   MagnifyingGlass,
@@ -22,6 +21,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useLanguage } from '@/context/LanguageContext';
+import { ReturnHomeLink } from '@/components/ui/ReturnHomeLink';
 import type { VoiceDesignSettings, VoiceGenerationDto, VoiceProfileDto } from '@/lib/voice/types';
 
 type VoiceEntry = {
@@ -559,11 +559,6 @@ export default function VoiceStudioPage() {
       {/* Top Navbar */}
       <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0b0d0f]/95 px-4 sm:px-6 z-10">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/" className="shrink-0">
-            <Button variant="secondary" size="sm" className="!p-2 text-zinc-400 hover:text-white" aria-label={t('Kembali ke dashboard', 'Back to dashboard')}>
-              <ArrowLeft weight="bold" size={18} />
-            </Button>
-          </Link>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="truncate font-sans text-base font-bold text-white sm:text-lg">{t('Gudang Suara', 'Voice Warehouse')}</h1>
@@ -581,6 +576,7 @@ export default function VoiceStudioPage() {
             <span className={`w-1.5 h-1.5 rounded-full ${providerStatus?.configured ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
             {providerStatus?.configured ? t('QWEN LANGSUNG AKTIF', 'QWEN DIRECT ACTIVE') : t('Provider belum siap', 'Provider not ready')}
           </span>
+          <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
           <LanguageSwitcher />
         </div>
       </header>

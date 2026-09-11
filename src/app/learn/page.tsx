@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { House, GraduationCap, Sparkle, ArrowRight, Trash, Spinner, Fire, CheckCircle, Checks, X } from '@phosphor-icons/react';
+import { GraduationCap, Sparkle, ArrowRight, Trash, Spinner, Fire, CheckCircle, Checks, X } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { ReturnHomeLink } from '@/components/ui/ReturnHomeLink';
 
 export default function LearnHubPage() {
   const router = useRouter();
@@ -177,14 +178,9 @@ export default function LearnHubPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
           <LanguageSwitcher />
-          <Link href="/">
-            <Button variant="secondary" size="sm" className="gap-1.5 text-xs">
-              <House weight="bold" className="w-3.5 h-3.5" />
-              <span>{t('Dashboard', 'Dashboard')}</span>
-            </Button>
-          </Link>
         </div>
       </header>
 

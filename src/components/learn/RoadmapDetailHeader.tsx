@@ -2,10 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
-import { House, GraduationCap } from '@phosphor-icons/react';
+import { GraduationCap } from '@phosphor-icons/react';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { ReturnHomeLink } from '@/components/ui/ReturnHomeLink';
 
 export function RoadmapDetailHeader({
   topic,
@@ -56,13 +56,7 @@ export function RoadmapDetailHeader({
           <GraduationCap weight="bold" className="w-3.5 h-3.5" />
           {t('Semua Roadmap', 'All Roadmaps')}
         </Link>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-zinc-200 transition-colors shadow-sm"
-        >
-          <House weight="bold" className="w-3.5 h-3.5" />
-          {t('Dashboard', 'Dashboard')}
-        </Link>
+        <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
       </div>
     </header>
   );
