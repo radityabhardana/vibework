@@ -252,7 +252,7 @@ export default function VoiceStudioPage() {
         local: voice.localService,
         voice,
         source: 'system',
-      })).sort((a, b) => {
+      })).filter((entry, index, all) => all.findIndex((v) => v.id === entry.id) === index).sort((a, b) => {
         const aPreferred = a.lang.toLowerCase().startsWith(preferredPrefix) ? 0 : 1;
         const bPreferred = b.lang.toLowerCase().startsWith(preferredPrefix) ? 0 : 1;
         return aPreferred - bPreferred || Number(b.local) - Number(a.local) || a.name.localeCompare(b.name);
