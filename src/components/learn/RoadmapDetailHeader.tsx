@@ -24,6 +24,7 @@ export function RoadmapDetailHeader({
   return (
     <header className="h-16 w-full border-b border-white/[0.08] bg-[#0b0d0f]/95 flex items-center px-4 sm:px-6 justify-between z-20 shrink-0">
       <div className="flex items-center gap-4 min-w-0">
+        <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
         <Link
           href="/learn"
           className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors shrink-0"
@@ -56,7 +57,6 @@ export function RoadmapDetailHeader({
           <GraduationCap weight="bold" className="w-3.5 h-3.5" />
           {t('Semua Roadmap', 'All Roadmaps')}
         </Link>
-        <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
       </div>
     </header>
   );

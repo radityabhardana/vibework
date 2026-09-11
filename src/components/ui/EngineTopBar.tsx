@@ -12,6 +12,7 @@ export function EngineTopBar() {
   return (
     <header className="h-16 shrink-0 border-b border-white/[0.08] bg-[#0d1011] px-4 sm:px-6 flex items-center justify-between z-10">
       <div className="flex min-w-0 items-center gap-3">
+        <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
         <span className="truncate font-sans text-sm font-semibold tracking-tight text-zinc-100">The Grill</span>
         <div className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600 sm:flex">
           <span>/</span>
@@ -24,7 +25,6 @@ export function EngineTopBar() {
       </div>
 
       <div className="flex items-center gap-1">
-        <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
         <LanguageSwitcher />
       </div>
     </header>

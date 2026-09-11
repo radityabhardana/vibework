@@ -160,6 +160,7 @@ export default function LearnHubPage() {
       {/* Header */}
       <header className="h-16 w-full border-b border-white/10 bg-[#030303]/80 backdrop-blur-md flex items-center px-4 sm:px-6 justify-between z-10 shrink-0">
         <div className="flex items-center gap-3">
+          <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
           <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-white">
             <GraduationCap weight="duotone" className="w-5 h-5" />
           </div>
@@ -179,7 +180,6 @@ export default function LearnHubPage() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <ReturnHomeLink label={t('Dashboard', 'Dashboard')} />
           <LanguageSwitcher />
         </div>
       </header>
