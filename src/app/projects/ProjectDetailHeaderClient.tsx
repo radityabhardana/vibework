@@ -21,8 +21,8 @@ export default function ProjectDetailHeaderClient({
   return (
     <header className="z-10 flex min-h-16 w-full shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md px-4 py-3 sm:px-6">
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-        <Link href="/" className="font-mono text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
-          {t('← Dasbor', '← Dashboard')}
+        <Link href={chatSessionId ? `/engine/${chatSessionId}` : '/engine'} className="font-mono text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+          {t('← Kembali ke The Grill', '← Back to The Grill')}
         </Link>
         <div className="h-4 w-[1px] bg-white/10" />
         <h1 className="truncate font-sans text-base font-bold text-zinc-100 sm:text-lg">{projectName}</h1>
