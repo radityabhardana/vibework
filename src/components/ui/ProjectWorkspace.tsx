@@ -51,6 +51,7 @@ type RecoveryRefreshPending = {
 };
 
 const EXPORT_ARTIFACT_NAMES = ['PRD.md', 'AGENTS.md', 'ADR.md', 'DATABASE_SCHEMA.md', 'PROMPT.md'];
+const REFRESH_RECONCILIATION_TIMEOUT_MS = 10_000;
 
 const hasMeaningfulText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
@@ -64,8 +65,6 @@ const readGenerationPayload = async (res: Response): Promise<Record<string, unkn
 };
 
 const getPayloadError = (body: Record<string, unknown>, fallback: string, timeoutMessage: string, status: number) => {
-  if (status === 504) return timeoutMessage;
-
   const error = asRecord(body.error);
   if (error && typeof error.message === 'string' && error.message.trim().length > 0) {
     return error.message;
@@ -76,6 +75,7 @@ const getPayloadError = (body: Record<string, unknown>, fallback: string, timeou
   if (typeof body.message === 'string' && body.message.trim().length > 0) {
     return body.message;
   }
+  if (status === 504) return timeoutMessage;
   return fallback;
 };
 
@@ -154,6 +154,7 @@ export function ProjectWorkspace({
   const [showSchemaConfirm, setShowSchemaConfirm] = useState(false);
   const [retryAction, setRetryAction] = useState<GenerationAction | null>(null);
   const [refreshPending, setRefreshPending] = useState<RefreshPending | null>(null);
+  const [refreshRequired, setRefreshRequired] = useState<RefreshPending | null>(null);
   const [recoveryRefreshPending, setRecoveryRefreshPending] = useState<RecoveryRefreshPending | null>(null);
   const schemaConfirmRef = useRef<HTMLDivElement>(null);
   const schemaTriggerRef = useRef<HTMLButtonElement>(null);
@@ -165,24 +166,50 @@ export function ProjectWorkspace({
   const hasAtomicPrompts = Array.isArray(prompts) && prompts.length > 0;
   const promptsReady = schemaReady && hasAtomicPrompts && !loadingSchema && !promptsInvalidatedBySchema;
   const generationInProgress = loadingFlowchart || loadingAdr || loadingSchema || loadingPrompts || loadingAgents;
-  const workspaceBusy = generationInProgress || !!refreshPending || !!recoveryRefreshPending;
+  const workspaceBusy = generationInProgress || !!refreshPending || !!refreshRequired || !!recoveryRefreshPending;
   const schemaOrPromptsBusy = workspaceBusy;
   workspaceBusyRef.current = workspaceBusy;
 
-  const hasPromptArtifacts = hasAtomicPrompts || hasMeaningfulText(project.promptDocument);
+  useEffect(() => {
+    const refreshTarget = refreshPending || refreshRequired;
+    if (!refreshTarget) return;
+    const currentRevision = getProjectRevision(project);
+    if (currentRevision === null || currentRevision < refreshTarget.revision) return;
+
+    if (refreshTarget.action === 'flowchart') setLoadingFlowchart(false);
+    if (refreshTarget.action === 'adr') setLoadingAdr(false);
+    if (refreshTarget.action === 'schema') setLoadingSchema(false);
+    if (refreshTarget.action === 'prompts') setLoadingPrompts(false);
+    if (refreshTarget.action === 'agents') setLoadingAgents(false);
+    setRefreshPending(null);
+    setRefreshRequired(null);
+  }, [project?.specRevision, refreshPending, refreshRequired]);
+
+  const requestWorkspaceRefresh = () => {
+    try {
+      router.refresh();
+    } catch {
+      // A successful POST remains authoritative even if requesting the RSC
+      // refresh throws synchronously. The bounded reconciliation state below
+      // keeps stale artifact actions locked until props catch up.
+    }
+  };
 
   useEffect(() => {
     if (!refreshPending) return;
-    const currentRevision = getProjectRevision(project);
-    if (currentRevision === null || currentRevision < refreshPending.revision) return;
-
-    if (refreshPending.action === 'flowchart') setLoadingFlowchart(false);
-    if (refreshPending.action === 'adr') setLoadingAdr(false);
-    if (refreshPending.action === 'schema') setLoadingSchema(false);
-    if (refreshPending.action === 'prompts') setLoadingPrompts(false);
-    if (refreshPending.action === 'agents') setLoadingAgents(false);
-    setRefreshPending(null);
-  }, [project?.specRevision, refreshPending]);
+    const pending = refreshPending;
+    const timeout = window.setTimeout(() => {
+      if (pending.action === 'flowchart') setLoadingFlowchart(false);
+      if (pending.action === 'adr') setLoadingAdr(false);
+      if (pending.action === 'schema') setLoadingSchema(false);
+      if (pending.action === 'prompts') setLoadingPrompts(false);
+      if (pending.action === 'agents') setLoadingAgents(false);
+      setRefreshPending(null);
+      setRefreshRequired(pending);
+      requestWorkspaceRefresh();
+    }, REFRESH_RECONCILIATION_TIMEOUT_MS);
+    return () => window.clearTimeout(timeout);
+  }, [refreshPending]);
 
   useEffect(() => {
     if (workspaceBusy) setViewerData(null);
@@ -351,6 +378,18 @@ export function ProjectWorkspace({
   const handleGenerationFailure = (action: GenerationAction, failure: unknown, fallback: string) => {
     const httpFailure = failure instanceof GenerationHttpError ? failure : null;
     const isConflict = httpFailure?.status === 409;
+    const isDefinitiveSchemaTimeout = action === 'schema'
+      && httpFailure?.status === 504
+      && httpFailure.code === 'GENERATION_TIMEOUT';
+
+    if (isDefinitiveSchemaTimeout) {
+      setError(failure instanceof Error && failure.message
+        ? failure.message
+        : t('Generasi schema timeout sebelum apa pun disimpan.', 'Schema generation timed out before anything was saved.'));
+      setRetryAction(action);
+      return;
+    }
+
     const requiresRefresh = !httpFailure || isConflict || httpFailure.status >= 500;
 
     if (requiresRefresh) {
@@ -363,7 +402,7 @@ export function ProjectWorkspace({
       });
       setRetryAction(null);
       setError(recoveryMessage(kind, false));
-      router.refresh();
+      requestWorkspaceRefresh();
       return;
     }
 
@@ -379,13 +418,13 @@ export function ProjectWorkspace({
         operation: getPayloadOperation(body, action),
         revision,
       });
-      router.refresh();
+      requestWorkspaceRefresh();
       return true;
     }
 
     // Legacy responses have no revision to fence against. Preserve their
     // existing refresh behavior rather than inventing a client-side target.
-    router.refresh();
+    requestWorkspaceRefresh();
     return false;
   };
 
@@ -462,7 +501,7 @@ export function ProjectWorkspace({
         throw new GenerationHttpError(
           res.status,
           getPayloadCode(body),
-          getPayloadError(body, t('Schema gagal dibuat. Silakan coba lagi.', 'Unable to generate the schema. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.'), res.status),
+          getPayloadError(body, t('Schema gagal dibuat. Silakan coba lagi.', 'Unable to generate the schema. Please try again.'), t('Generasi schema timeout sebelum apa pun disimpan.', 'Schema generation timed out before anything was saved.'), res.status),
         );
       }
       setPromptsInvalidatedBySchema(true);
@@ -477,7 +516,7 @@ export function ProjectWorkspace({
 
   const generateSchema = async () => {
     if (schemaOrPromptsBusy) return;
-    if (hasPromptArtifacts) {
+    if (schemaReady) {
       setShowSchemaConfirm(true);
       return;
     }
@@ -942,7 +981,9 @@ export function ProjectWorkspace({
         <div id="workspace-busy-status" role="status" aria-live="polite" className="shrink-0 border-b border-amber-300/20 bg-amber-950/40 px-4 py-2 font-mono text-[11px] text-amber-100">
           {refreshPending
             ? t(`Tersimpan (${refreshPending.operation}, revisi ${refreshPending.revision}). Menyegarkan workspace...`, `Saved (${refreshPending.operation}, revision ${refreshPending.revision}). Refreshing the workspace...`)
-            : recoveryRefreshPending
+            : refreshRequired
+              ? <span className="flex flex-wrap items-center gap-2">{t(`Tersimpan (${refreshRequired.operation}, revisi ${refreshRequired.revision}), tetapi tampilan belum mengejar revisi tersebut.`, `Saved (${refreshRequired.operation}, revision ${refreshRequired.revision}), but the view has not caught up yet.`)} <button type="button" onClick={requestWorkspaceRefresh} className="underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">{t('Segarkan workspace', 'Refresh workspace')}</button></span>
+              : recoveryRefreshPending
               ? recoveryMessage(recoveryRefreshPending.kind, false)
               : t('Generasi sedang berjalan. Kontrol artefak dan export dikunci hingga selesai.', 'Generation is in progress. Artifact controls and export are locked until it finishes.')}
         </div>

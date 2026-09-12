@@ -6,6 +6,11 @@ import {
   synthesizeFallbackFlowchart,
   synthesizeFallbackADR,
   synthesizeFallbackAgentsMd,
+  generateSchema,
+  AiGenerationTimeoutError,
+  SCHEMA_GENERATION_MAX_TOKENS,
+  SCHEMA_GENERATION_TIMEOUT_MS,
+  SCHEMA_GENERATION_TIMEOUT_RESPONSE,
 } from '../src/lib/engine/prompt-chaining';
 import { isValidAppFlowchart } from '../src/lib/flowchart';
 
@@ -80,4 +85,69 @@ test('synthesizeFallbackAgentsMd includes AI confidence guardrail and tech rules
   assert.ok(agents.agentsDocument.includes('# Project Mission & Identity'), 'Must define identity');
   assert.ok(agents.agentsDocument.includes('AI Confidence Guardrails'), 'Must enforce confidence guardrails');
   assert.ok(agents.agentsDocument.includes('CRITICAL GUARDRAIL'), 'Must enforce critical override rule');
+});
+
+test('generateSchema uses the bounded compact schema policy without fallback', async () => {
+  const previousKey = process.env.AI_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_API_KEY = 'test-schema-policy-key';
+
+  let request: Record<string, unknown> | null = null;
+  globalThis.fetch = (async (_input, init) => {
+    request = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify({ dbSchema: '# Schema', apiContract: { endpoints: [] } }) } }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    await generateSchema('FULL PRD SOURCE', 'FULL ADR SOURCE');
+    const capturedRequest = request as unknown as Record<string, unknown>;
+    assert.equal(capturedRequest.max_tokens, SCHEMA_GENERATION_MAX_TOKENS);
+    assert.equal(SCHEMA_GENERATION_TIMEOUT_MS, 70_000);
+    const messages = capturedRequest.messages as Array<{ content: string }>;
+    assert.match(messages[0].content, /MVP entities only/i);
+    assert.match(messages[0].content, /examples, tutorials/i);
+    assert.match(messages[1].content, /FULL PRD SOURCE/);
+    assert.match(messages[1].content, /FULL ADR SOURCE/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.AI_API_KEY;
+    else process.env.AI_API_KEY = previousKey;
+  }
+});
+
+test('generateSchema preserves a provider timeout instead of using a fallback', async () => {
+  const previousKey = process.env.AI_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_API_KEY = 'test-schema-timeout-key';
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls += 1;
+    const error = new Error('simulated timeout');
+    error.name = 'AbortError';
+    throw error;
+  }) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      generateSchema('FULL PRD SOURCE', 'FULL ADR SOURCE'),
+      AiGenerationTimeoutError,
+    );
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.AI_API_KEY;
+    else process.env.AI_API_KEY = previousKey;
+  }
+});
+
+test('schema timeout response is explicit about retryability and persistence', () => {
+  assert.deepEqual(SCHEMA_GENERATION_TIMEOUT_RESPONSE, {
+    error: 'Schema generation timed out before anything was saved.',
+    code: 'GENERATION_TIMEOUT',
+    operation: 'schema',
+    retryable: true,
+    persisted: false,
+  });
 });

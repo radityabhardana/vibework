@@ -71,6 +71,8 @@ Text can be played with a device voice or synthesized as audio through Alibaba M
    AI_MODEL_NAME=alims-intl/qwen3.5-flash(high)
    CHAT_MODEL_NAME=alims-intl/qwen3.5-flash(none)
    WORKFLOW_MODEL_NAME=alims-intl/qwen3.5-flash(none)
+   # Generic AI calls are clamped by the shared generation helper to 10–45 seconds.
+   # Schema generation uses a separate bounded 70-second policy (max 2560 tokens).
    AI_GENERATION_TIMEOUT_MS=180000
 
    # Alibaba Model Studio voice provider

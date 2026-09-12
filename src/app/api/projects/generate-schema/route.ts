@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prds, adrs, atomicPrompts, schemas, projects } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { AiGenerationTimeoutError, generateSchema } from '@/lib/engine/prompt-chaining';
+import { AiGenerationTimeoutError, generateSchema, SCHEMA_GENERATION_TIMEOUT_RESPONSE } from '@/lib/engine/prompt-chaining';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
 import {
   acquireGenerationLease,
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     console.error('Generate Schema Error:', error);
     if (error instanceof AiGenerationTimeoutError) {
-      return NextResponse.json({ error: error.message }, { status: 504 });
+      return NextResponse.json(SCHEMA_GENERATION_TIMEOUT_RESPONSE, { status: 504 });
     }
     if (error instanceof GenerationSourceChangedError) {
       return NextResponse.json({ error: error.message, code: 'GENERATION_SOURCE_CHANGED' }, { status: 409 });

@@ -1,12 +1,23 @@
 import { getApiKeys } from '@/lib/utils';
 
 const configuredTimeout = Number(process.env.AI_GENERATION_TIMEOUT_MS);
+// Generic generation calls remain bounded below the route limit; schema uses
+// the explicit 70-second policy below because its source payload is larger.
 const GENERATION_TIMEOUT_MS = Number.isFinite(configuredTimeout)
   ? Math.min(45_000, Math.max(10_000, configuredTimeout))
   : 35_000;
 // Leave headroom below the 90-second project-generation route limit for request
 // parsing, validation, and the atomic database write after provider generation.
 const TOTAL_GENERATION_BUDGET_MS = 80_000;
+export const SCHEMA_GENERATION_TIMEOUT_MS = 70_000;
+export const SCHEMA_GENERATION_MAX_TOKENS = 2560;
+export const SCHEMA_GENERATION_TIMEOUT_RESPONSE = {
+  error: 'Schema generation timed out before anything was saved.',
+  code: 'GENERATION_TIMEOUT',
+  operation: 'schema',
+  retryable: true,
+  persisted: false,
+} as const;
 
 export class AiGenerationTimeoutError extends Error {
   constructor() {
@@ -471,15 +482,23 @@ Schema:
 }
 
 export async function generateSchema(prdContent: string, adrContent: string) {
-  const systemPrompt = `You are an expert Database Designer and API Architect.
-Based on the provided PRD and ADR, generate the Database Schema and API Contracts.
-You MUST return ONLY a valid JSON object. Do not include markdown \`\`\`json codeblocks.
-Schema:
+  const systemPrompt = `You are an expert Database Designer and API Architect. Generate only the MVP database schema and API contract grounded in the PRD and ADR.
+
+Database schema requirements: include MVP entities only; for each table include columns and types, primary keys, foreign keys, nullability, unique constraints, indexes, and relationships/cardinality.
+API requirements: include endpoints needed for the core user journey, with compact request and response shapes, method, path, and a short purpose.
+
+Return ONLY one valid JSON object with this exact shape:
 {
-  "dbSchema": "A detailed Markdown document containing the database schema (tables, relationships, types).",
+  "dbSchema": "Compact Markdown schema specification",
   "apiContract": { "endpoints": [ { "method": "GET", "path": "/api/...", "description": "...", "req": {}, "res": {} } ] }
-}`;
-  return callQwen(systemPrompt, `PRD:\n${prdContent}\n\nADR:\n${adrContent}`, { maxTokens: 4096 });
+}
+
+Do not include examples, tutorials, filler prose, or repeated explanations. Do not add non-MVP entities or speculative endpoints. Do not include markdown code fences around the JSON.`;
+  return callQwen(
+    systemPrompt,
+    `PRD:\n${prdContent}\n\nADR:\n${adrContent}`,
+    { maxTokens: SCHEMA_GENERATION_MAX_TOKENS, timeoutMs: SCHEMA_GENERATION_TIMEOUT_MS },
+  );
 }
 
 export async function generateAtomicPrompts(prdContent: string, adrContent: string, schemaContent: string) {
