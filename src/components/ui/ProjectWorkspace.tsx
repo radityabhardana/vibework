@@ -56,6 +56,9 @@ const REFRESH_RECONCILIATION_TIMEOUT_MS = 10_000;
 const hasMeaningfulText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
+const normalizeMarkdown = (value: string) => value.replace(/\r\n?/g, '\n');
+const PRD_MAX_LENGTH = 50_000;
+
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
 
@@ -162,6 +165,7 @@ export function ProjectWorkspace({
   const [prdSaving, setPrdSaving] = useState(false);
   const [prdSaveError, setPrdSaveError] = useState<string | null>(null);
   const [prdNeedsRefresh, setPrdNeedsRefresh] = useState(false);
+  const [showPrdConfirm, setShowPrdConfirm] = useState(false);
   const schemaConfirmRef = useRef<HTMLDivElement>(null);
   const schemaTriggerRef = useRef<HTMLButtonElement>(null);
   const prdConfirmRef = useRef<HTMLDivElement>(null);
@@ -171,10 +175,16 @@ export function ProjectWorkspace({
 
   const schemaReady = hasMeaningfulText(schema?.dbSchema);
   const schemaContent = schemaReady ? schema.dbSchema.trim() : '';
+  const architectureContent = [
+    adr?.adrDocument ? `# ${t('Architecture Decision Record', 'Architecture Decision Record')}\n\n${adr.adrDocument.trim()}` : '',
+    schemaReady ? `# ${t('Database Schema', 'Database Schema')}\n\n${schemaContent}` : '',
+    schema?.apiContract ? `# ${t('API Contract', 'API Contract')}\n\n${JSON.stringify(schema.apiContract, null, 2)}` : '',
+  ].filter(Boolean).join('\n\n---\n\n');
   const hasAtomicPrompts = Array.isArray(prompts) && prompts.length > 0;
   const promptsReady = schemaReady && hasAtomicPrompts && !loadingSchema && !promptsInvalidatedBySchema;
   const generationInProgress = loadingFlowchart || loadingAdr || loadingSchema || loadingPrompts || loadingAgents;
-  const workspaceBusy = generationInProgress || !!refreshPending || !!refreshRequired || !!recoveryRefreshPending || isEditingPrd || prdSaving;
+  const workspaceOperationBusy = generationInProgress || !!refreshPending || !!refreshRequired || !!recoveryRefreshPending;
+  const workspaceBusy = workspaceOperationBusy || isEditingPrd || prdSaving;
   const schemaOrPromptsBusy = workspaceBusy;
   workspaceBusyRef.current = workspaceBusy;
 
@@ -189,6 +199,13 @@ export function ProjectWorkspace({
     if (refreshTarget.action === 'schema') setLoadingSchema(false);
     if (refreshTarget.action === 'prompts') setLoadingPrompts(false);
     if (refreshTarget.action === 'agents') setLoadingAgents(false);
+    if (refreshTarget.action === 'prd') {
+      setPrdDirty(false);
+      setIsEditingPrd(false);
+      setPrdSaving(false);
+      setPrdSaveError(null);
+      setPrdNeedsRefresh(false);
+    }
     setRefreshPending(null);
     setRefreshRequired(null);
   }, [project?.specRevision, refreshPending, refreshRequired]);
@@ -248,6 +265,10 @@ export function ProjectWorkspace({
     schemaConfirmRef.current?.focus();
   }, [showSchemaConfirm]);
 
+  useEffect(() => {
+    if (!prdDirty) setPrdDraft(normalizeMarkdown(prd?.documentContent || ''));
+  }, [prd?.documentContent, prdDirty]);
+
   const closeSchemaConfirm = () => {
     setShowSchemaConfirm(false);
     window.setTimeout(() => schemaTriggerRef.current?.focus(), 0);
@@ -277,6 +298,134 @@ export function ProjectWorkspace({
   };
 
   useEffect(() => {
+    if (!showPrdConfirm) return;
+    prdConfirmRef.current?.focus();
+  }, [showPrdConfirm]);
+
+  const closePrdConfirm = () => {
+    setShowPrdConfirm(false);
+    window.setTimeout(() => prdSaveTriggerRef.current?.focus(), 0);
+  };
+
+  const handlePrdDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closePrdConfirm();
+      return;
+    }
+    if (event.key !== 'Tab' || !prdConfirmRef.current) return;
+    const focusable = Array.from(prdConfirmRef.current.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === prdConfirmRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const startPrdEdit = () => {
+    if (workspaceOperationBusy || !prd) return;
+    setPrdDraft(normalizeMarkdown(prd.documentContent || ''));
+    setPrdDirty(false);
+    setPrdSaveError(null);
+    setPrdNeedsRefresh(false);
+    setIsEditingPrd(true);
+  };
+
+  const cancelPrdEdit = () => {
+    if (prdSaving) return;
+    setPrdDraft(normalizeMarkdown(prd?.documentContent || ''));
+    setPrdDirty(false);
+    setPrdSaveError(null);
+    setPrdNeedsRefresh(false);
+    setIsEditingPrd(false);
+  };
+
+  const runPrdSave = async () => {
+    if (workspaceOperationBusy || prdSaving) return;
+    const expectedRevision = getProjectRevision(project);
+    if (expectedRevision === null) {
+      setPrdSaveError(t('Revisi workspace tidak tersedia. Segarkan workspace sebelum menyimpan.', 'The workspace revision is unavailable. Refresh the workspace before saving.'));
+      setPrdNeedsRefresh(true);
+      return;
+    }
+
+    const documentContent = normalizeMarkdown(prdDraft);
+    setPrdSaving(true);
+    setPrdSaveError(null);
+    setPrdNeedsRefresh(false);
+    try {
+      const response = await fetch('/api/projects/update-prd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id, documentContent, expectedRevision }),
+      });
+      const body = await readGenerationPayload(response);
+      if (!response.ok || body.success === false) {
+        const message = getPayloadError(
+          body,
+          t('PRD gagal disimpan. Periksa isi lalu coba lagi.', 'The PRD could not be saved. Review the content and try again.'),
+          t('Penyimpanan PRD timeout. Tidak ada perubahan yang dikonfirmasi.', 'PRD save timed out. No change was confirmed.'),
+          response.status,
+        );
+        setPrdSaveError(message);
+        if (response.status === 409 || response.status >= 500) {
+          setPrdNeedsRefresh(true);
+          requestWorkspaceRefresh();
+        }
+        return;
+      }
+
+      const changed = body.changed === true;
+      if (!changed) {
+        setPrdDirty(false);
+        setIsEditingPrd(false);
+        setPrdDraft(documentContent);
+        return;
+      }
+
+      const committedRevision = getPayloadRevision(body);
+      if (committedRevision === null) {
+        setPrdSaveError(t('PRD tersimpan, tetapi revisi baru tidak dapat dipastikan. Segarkan workspace sebelum melanjutkan.', 'The PRD may be saved, but the committed revision is unknown. Refresh the workspace before continuing.'));
+        setPrdNeedsRefresh(true);
+        requestWorkspaceRefresh();
+        return;
+      }
+
+      setRefreshPending({ action: 'prd', operation: 'prd', revision: committedRevision });
+      requestWorkspaceRefresh();
+    } catch {
+      setPrdSaveError(t('Status penyimpanan PRD tidak dapat dipastikan. Segarkan workspace dan tinjau perubahan sebelum mencoba lagi.', 'The PRD save status is uncertain. Refresh the workspace and review the changes before trying again.'));
+      setPrdNeedsRefresh(true);
+      requestWorkspaceRefresh();
+    } finally {
+      setPrdSaving(false);
+    }
+  };
+
+  const requestPrdSave = () => {
+    if (workspaceOperationBusy || prdSaving) return;
+    const draft = normalizeMarkdown(prdDraft);
+    const server = normalizeMarkdown(prd?.documentContent || '');
+    if (draft === server) {
+      setPrdDirty(false);
+      setIsEditingPrd(false);
+      setPrdDraft(draft);
+      return;
+    }
+    setShowPrdConfirm(true);
+  };
+
+  const confirmPrdSave = async () => {
+    closePrdConfirm();
+    await runPrdSave();
+  };
+
+  useEffect(() => {
     if (promptsInvalidatedBySchema && prompts.length === 0) {
       setPromptsInvalidatedBySchema(false);
     }
@@ -284,9 +433,16 @@ export function ProjectWorkspace({
 
   const copyToClipboard = (text: string, key: string) => {
     if (workspaceBusyRef.current) return;
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
+    if (!navigator.clipboard) {
+      setError(t('Clipboard tidak tersedia. Salin teks secara manual.', 'Clipboard is unavailable. Copy the text manually.'));
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }).catch(() => {
+      setError(t('Clipboard tidak tersedia. Salin teks secara manual.', 'Clipboard is unavailable. Copy the text manually.'));
+    });
   };
 
   const downloadFile = (content: Blob | string, filename: string) => {
@@ -1093,13 +1249,16 @@ export function ProjectWorkspace({
                   <p className="font-sans text-xs text-zinc-400 mt-1">
                     {t('Target:', 'Target:')} {prd?.targetUser || t('General User', 'General User')} &bull; {t('Monetisasi:', 'Monetization:')} {prd?.monetizationModel || 'N/A'}
                   </p>
+                  {prdSaveError && <p role="alert" className="mt-2 max-w-xl font-mono text-[11px] leading-4 text-rose-200">{prdSaveError}</p>}
+                  {prdNeedsRefresh && <button type="button" onClick={requestWorkspaceRefresh} className="mt-2 font-mono text-[10px] text-amber-200 underline underline-offset-2 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">{t('Segarkan workspace sebelum mencoba lagi →', 'Refresh workspace before trying again →')}</button>}
                 </div>
                 <div className="flex items-center gap-2">
+                  {prd && !isEditingPrd && <Button variant="primary" size="sm" onClick={startPrdEdit} disabled={workspaceOperationBusy} className="gap-1.5 text-xs">{t('Edit PRD', 'Edit PRD')}</Button>}
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => copyToClipboard(prd?.documentContent || '', 'prd')}
-                    disabled={workspaceBusy}
+                    disabled={workspaceBusy || isEditingPrd}
                     className="gap-1.5 text-xs"
                   >
                     {copiedKey === 'prd' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -1109,7 +1268,7 @@ export function ProjectWorkspace({
                     variant="secondary"
                     size="sm"
                     onClick={() => downloadFile(prd?.documentContent || '', `${project.name}_PRD.md`)}
-                    disabled={workspaceBusy}
+                    disabled={workspaceBusy || isEditingPrd}
                     className="gap-1.5 text-xs"
                   >
                     <DownloadSimple weight="bold" />
@@ -1118,9 +1277,40 @@ export function ProjectWorkspace({
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                {prd?.documentContent || t('PRD belum digenerate.', 'PRD has not been generated yet.')}
-              </div>
+              {isEditingPrd ? (
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg">
+                  <label htmlFor="prd-editor" className="mb-2 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                    <span>{t('Edit Markdown PRD', 'Edit PRD Markdown')}</span>
+                    <span className={prdDraft.length > PRD_MAX_LENGTH ? 'text-rose-300' : 'text-zinc-500'}>{prdDraft.length.toLocaleString()}/{PRD_MAX_LENGTH.toLocaleString()}</span>
+                  </label>
+                  <textarea
+                    id="prd-editor"
+                    value={prdDraft}
+                    maxLength={PRD_MAX_LENGTH}
+                    disabled={workspaceOperationBusy || prdSaving}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setPrdDraft(value);
+                      setPrdDirty(normalizeMarkdown(value) !== normalizeMarkdown(prd?.documentContent || ''));
+                      setPrdSaveError(null);
+                      setPrdNeedsRefresh(false);
+                    }}
+                    aria-describedby="prd-editor-help"
+                    className="min-h-[28rem] w-full resize-y rounded-xl border border-white/10 bg-[#08090a] p-4 font-mono text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <p id="prd-editor-help" className="mt-2 font-sans text-xs text-zinc-500">{t('Markdown biasa. Perubahan PRD akan menghapus artefak turunan setelah dikonfirmasi.', 'Plain Markdown. Saving the PRD will remove derived artifacts after confirmation.')}</p>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={cancelPrdEdit} disabled={prdSaving}>{t('Batal', 'Cancel')}</Button>
+                    <Button ref={prdSaveTriggerRef} variant="primary" size="sm" onClick={(event) => { prdSaveTriggerRef.current = event.currentTarget; requestPrdSave(); }} disabled={workspaceOperationBusy || prdSaving || !prdDirty || prdDraft.length > PRD_MAX_LENGTH}>
+                      {prdSaving ? t('Menyimpan...', 'Saving...') : t('Simpan PRD', 'Save PRD')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                  {prd?.documentContent || t('PRD belum digenerate.', 'PRD has not been generated yet.')}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1283,6 +1473,18 @@ export function ProjectWorkspace({
                     <ArrowClockwise weight="bold" className={loadingSchema ? 'animate-spin' : ''} />
                     <span>{loadingSchema ? t('Merancang Schema...', 'Designing Schema...') : schemaReady ? t('Regenerate Schema', 'Regenerate Schema') : t('Generate Schema', 'Generate Schema')}</span>
                   </Button>
+                  {architectureContent && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => copyToClipboard(architectureContent, 'architecture')}
+                      disabled={workspaceBusy}
+                      className="gap-1.5 text-xs"
+                    >
+                      {copiedKey === 'architecture' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
+                      <span>{copiedKey === 'architecture' ? t('Tersalin!', 'Copied!') : t('Salin Arsitektur', 'Copy Architecture')}</span>
+                    </Button>
+                  )}
                   {schemaReady && (
                     <Button
                       variant="secondary"
@@ -1407,6 +1609,21 @@ export function ProjectWorkspace({
           </div>
         )}
       </div>
+
+      {showPrdConfirm && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="presentation">
+          <div ref={prdConfirmRef} tabIndex={-1} onKeyDown={handlePrdDialogKeyDown} role="alertdialog" aria-modal="true" aria-labelledby="prd-confirm-title" aria-describedby="prd-confirm-description" className="w-full max-w-md rounded-2xl border border-white/15 bg-[#14191a] p-5 shadow-2xl focus:outline-none">
+            <h2 id="prd-confirm-title" className="font-sans text-base font-semibold text-white">{t('Simpan perubahan PRD?', 'Save PRD changes?')}</h2>
+            <p id="prd-confirm-description" className="mt-2 font-sans text-xs leading-5 text-zinc-400">
+              {t('Menyimpan PRD akan menghapus ADR, Schema, Atomic Prompts, Flowchart, AGENTS.md, dan Prompt.md karena semuanya berasal dari PRD lama.', 'Saving the PRD will permanently remove the ADR, Schema, Atomic Prompts, Flowchart, AGENTS.md, and Prompt.md because they derive from the old PRD.')}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={closePrdConfirm} className="rounded-lg px-3 py-2 font-mono text-xs text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">{t('Batal', 'Cancel')}</button>
+              <button type="button" onClick={() => void confirmPrdSave()} disabled={prdSaving} className="rounded-lg bg-amber-200 px-3 py-2 font-mono text-xs font-semibold text-[#201a0d] transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 disabled:cursor-not-allowed disabled:opacity-50">{t('Simpan & hapus turunan', 'Save & remove derived')}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSchemaConfirm && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="presentation">

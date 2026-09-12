@@ -6,6 +6,7 @@ import { GenerationInProgressError } from '@/lib/generation-lease';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_DOCUMENT_CONTENT_LENGTH = 50_000;
+const INVALIDATED_ARTIFACTS = ['adr', 'schema', 'prompts', 'flowchart', 'agents'] as const;
 
 class ProjectRevisionConflictError extends Error {
   readonly currentRevision: number;
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
 
     const projectId = body.projectId;
     const expectedRevision = body.expectedRevision;
+    const nowMs = Date.now();
     const now = new Date().toISOString();
 
     const result = db.transaction((tx) => {
@@ -65,21 +67,25 @@ export async function POST(req: Request) {
 
       const liveLease = tx.select().from(generationLeases).where(and(
         eq(generationLeases.projectId, projectId),
-        gt(generationLeases.expiresAt, Date.now()),
+        gt(generationLeases.expiresAt, nowMs),
       )).get();
       if (liveLease) {
         throw new GenerationInProgressError(
           liveLease.operation,
           liveLease.expiresAt,
-          Date.now(),
+          nowMs,
         );
       }
 
-      if (prd.documentContent === documentContent) {
+      const currentDocumentContent = typeof prd.documentContent === 'string'
+        ? prd.documentContent.replace(/\r\n?/g, '\n')
+        : '';
+      if (currentDocumentContent === documentContent) {
         return {
           kind: 'saved' as const,
+          changed: false,
           committedRevision: currentRevision,
-          invalidated: false,
+          invalidated: [] as string[],
         };
       }
 
@@ -106,10 +112,11 @@ export async function POST(req: Request) {
 
       return {
         kind: 'saved' as const,
+        changed: true,
         committedRevision: committedProject!.specRevision,
-        invalidated: true,
+        invalidated: [...INVALIDATED_ARTIFACTS],
       };
-    });
+    }, { behavior: 'immediate' });
 
     if (result.kind === 'not-found') {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -119,7 +126,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      operation: 'update-prd',
+      success: true,
+      changed: result.changed,
+      operation: 'prd',
       committedRevision: result.committedRevision,
       invalidated: result.invalidated,
     });
