@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { voiceGenerations, voiceProfiles } from '@/lib/db/schema';
-import { QWEN_AUDIO_MODEL, synthesizeQwenAudio } from '@/lib/voice/model-studio';
+import { getProfileSynthesisModel, synthesizeQwenAudio } from '@/lib/voice/model-studio';
 import { buildSynthesisInstruction } from '@/lib/voice/prompt';
 import { toVoiceGenerationDto } from '@/lib/voice/repository';
 import { saveGenerationFile } from '@/lib/voice/storage';
@@ -34,6 +34,14 @@ export async function POST(request: Request) {
     return Response.json({ error: 'The selected voice is not ready.' }, { status: 409 });
   }
 
+  let model;
+  try {
+    model = getProfileSynthesisModel(profile.targetModel);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'The selected voice has an unsupported model.';
+    return Response.json({ error: message }, { status: 409 });
+  }
+
   const runtimeSettings = isRecord(body.settings) ? body.settings as Partial<VoiceDesignSettings> : {};
   const instruction = buildSynthesisInstruction(runtimeSettings);
   const id = crypto.randomUUID();
@@ -42,12 +50,13 @@ export async function POST(request: Request) {
     voiceId: profile.id,
     text: body.text.trim(),
     instruction,
-    model: QWEN_AUDIO_MODEL,
+    model,
     status: 'processing',
   }).run();
 
   try {
     const audio = await synthesizeQwenAudio({
+      model,
       voiceId: profile.providerVoiceId,
       text: body.text.trim(),
       instruction,

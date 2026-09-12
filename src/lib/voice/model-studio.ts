@@ -1,7 +1,12 @@
 import OSS from 'ali-oss';
 import WebSocket, { type RawData } from 'ws';
 
-export const QWEN_AUDIO_MODEL = 'qwen-audio-3.0-tts-flash';
+export const DEFAULT_QWEN_AUDIO_MODEL = 'qwen-audio-3.0-tts-plus';
+export const QWEN_AUDIO_MODELS = [
+  'qwen-audio-3.0-tts-plus',
+  'qwen-audio-3.0-tts-flash',
+] as const;
+export type QwenAudioModel = typeof QWEN_AUDIO_MODELS[number];
 export const QWEN_VOICE_DESIGN_MODEL = 'qwen3-tts-vd-2026-01-26';
 
 type VoiceConfig = {
@@ -9,7 +14,24 @@ type VoiceConfig = {
   workspaceId: string;
   region: string;
   domain: string;
+  ttsModel: QwenAudioModel;
 };
+
+export function resolveQwenAudioModel(value = process.env.DASHSCOPE_TTS_MODEL): QwenAudioModel | null {
+  const model = value || DEFAULT_QWEN_AUDIO_MODEL;
+  return QWEN_AUDIO_MODELS.includes(model as QwenAudioModel) ? model as QwenAudioModel : null;
+}
+
+// Kept for enrollment routes, which load environment configuration once at server start.
+export const QWEN_AUDIO_MODEL = resolveQwenAudioModel() || DEFAULT_QWEN_AUDIO_MODEL;
+
+export function getProfileSynthesisModel(targetModel: string): QwenAudioModel {
+  const model = resolveQwenAudioModel(targetModel);
+  if (!model || targetModel !== model) {
+    throw new Error(`Unsupported voice profile model: ${targetModel}.`);
+  }
+  return model;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -19,12 +41,13 @@ function readVoiceConfig(): VoiceConfig | null {
   const apiKey = process.env.DASHSCOPE_API_KEY;
   const workspaceId = process.env.DASHSCOPE_WORKSPACE_ID;
   const region = process.env.DASHSCOPE_REGION || 'ap-southeast-1';
-  if (!apiKey || !workspaceId) return null;
+  const ttsModel = resolveQwenAudioModel();
+  if (!apiKey || !workspaceId || !ttsModel) return null;
   if (region !== 'cn-beijing' && region !== 'ap-southeast-1') return null;
   const domain = region === 'cn-beijing'
     ? `${workspaceId}.cn-beijing.maas.aliyuncs.com`
     : `${workspaceId}.ap-southeast-1.maas.aliyuncs.com`;
-  return { apiKey, workspaceId, region, domain };
+  return { apiKey, workspaceId, region, domain, ttsModel };
 }
 
 function requireVoiceConfig() {
@@ -35,6 +58,7 @@ function requireVoiceConfig() {
 
 export function getVoiceProviderStatus() {
   const config = readVoiceConfig();
+  const configuredModel = resolveQwenAudioModel();
   const ossConfigured = Boolean(
     process.env.ALIYUN_OSS_REGION
     && process.env.ALIYUN_OSS_BUCKET
@@ -46,7 +70,8 @@ export function getVoiceProviderStatus() {
     modelStudioConfigured: Boolean(config),
     ossConfigured,
     region: config?.region || process.env.DASHSCOPE_REGION || 'ap-southeast-1',
-    cloneModel: QWEN_AUDIO_MODEL,
+    cloneModel: configuredModel,
+    modelError: configuredModel ? null : 'DASHSCOPE_TTS_MODEL must be qwen-audio-3.0-tts-plus or qwen-audio-3.0-tts-flash.',
     designModel: QWEN_VOICE_DESIGN_MODEL,
   };
 }
@@ -82,6 +107,7 @@ async function downloadProviderAudio(url: string) {
 }
 
 async function synthesizeQwenAudioHttp(options: {
+  model: QwenAudioModel;
   voiceId: string;
   text: string;
   instruction?: string;
@@ -97,7 +123,7 @@ async function synthesizeQwenAudioHttp(options: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: QWEN_AUDIO_MODEL,
+      model: options.model,
       input: {
         text: options.text,
         voice: options.voiceId,
@@ -147,11 +173,12 @@ export async function withTemporaryOssAudio<T>(data: Buffer, filename: string, c
 }
 
 export async function enrollQwenAudioVoice(sampleUrl: string, name: string) {
+  const config = requireVoiceConfig();
   const data = await customizationRequest({
     model: 'voice-enrollment',
     input: {
       action: 'create_voice',
-      target_model: QWEN_AUDIO_MODEL,
+      target_model: config.ttsModel,
       prefix: safeProviderName(name, 10),
       url: sampleUrl,
     },
@@ -209,6 +236,7 @@ function asBuffer(data: RawData) {
 }
 
 export function synthesizeQwenAudio(options: {
+  model: QwenAudioModel;
   voiceId: string;
   text: string;
   instruction?: string;
@@ -245,7 +273,7 @@ export function synthesizeQwenAudio(options: {
           task_group: 'audio',
           task: 'tts',
           function: 'SpeechSynthesizer',
-          model: QWEN_AUDIO_MODEL,
+          model: options.model,
           parameters: {
             text_type: 'PlainText',
             voice: options.voiceId,
