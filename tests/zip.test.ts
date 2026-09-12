@@ -20,6 +20,27 @@ test('zip starts with local header and ends with EOCD', async () => {
   assert.equal(readU32(bytes, eocdOffset), 0x06054b50);
 });
 
+test('empty zip is a valid archive with no entries', async () => {
+  const bytes = new Uint8Array(await createZip([]).arrayBuffer());
+
+  assert.equal(bytes.length, 22);
+  assert.equal(readU32(bytes, 0), 0x06054b50);
+  assert.equal(readU16(bytes, 8), 0);
+  assert.equal(readU16(bytes, 10), 0);
+  assert.equal(readU32(bytes, 12), 0);
+  assert.equal(readU32(bytes, 16), 0);
+});
+
+test('zip rejects duplicate entry filenames', () => {
+  assert.throws(
+    () => createZip([
+      { name: 'README.md', content: 'first' },
+      { name: 'README.md', content: 'second' },
+    ]),
+    /Duplicate ZIP entry name: README\.md/,
+  );
+});
+
 test('zip central directory lists entries and stored data round-trips', async () => {
   const entries = [
     { name: 'README.md', content: '# Demo\n\nSpec archive\n' },
@@ -37,12 +58,16 @@ test('zip central directory lists entries and stored data round-trips', async ()
   const names: string[] = [];
   for (const entry of entries) {
     assert.equal(readU32(bytes, p), 0x02014b50);
+    assert.equal(readU16(bytes, p + 8), 0x0800);
+    assert.equal(readU16(bytes, p + 10), 0);
     const nameLen = readU16(bytes, p + 28);
     const name = decoder.decode(bytes.slice(p + 46, p + 46 + nameLen));
     names.push(name);
 
     const localOffset = readU32(bytes, p + 42);
     assert.equal(readU32(bytes, localOffset), 0x04034b50);
+    assert.equal(readU16(bytes, localOffset + 6), 0x0800);
+    assert.equal(readU16(bytes, localOffset + 8), 0);
 
     const localNameLen = readU16(bytes, localOffset + 26);
     const size = readU32(bytes, localOffset + 22);

@@ -1,16 +1,29 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, check } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+
+export type GenerationOperation = 'adr' | 'schema' | 'prompts';
 
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   description: text('description'),
   status: text('status').default('draft'), 
+  specRevision: integer('spec_revision').notNull().default(sql`0`),
   agentsDocument: text('agents_document'),
   promptDocument: text('prompt_document'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const generationLeases = sqliteTable('generation_leases', {
+  projectId: text('project_id').primaryKey().references(() => projects.id, { onDelete: 'cascade' }),
+  operation: text('operation').$type<GenerationOperation>().notNull(),
+  ownerToken: text('owner_token').notNull(),
+  acquiredAt: integer('acquired_at').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+}, (table) => [
+  check('generation_leases_operation_check', sql`${table.operation} in ('adr', 'schema', 'prompts')`),
+]);
 
 export const prds = sqliteTable('prds', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),

@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prds, adrs, atomicPrompts, projects, schemas } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { AiGenerationTimeoutError, generateADR } from '@/lib/engine/prompt-chaining';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
+import {
+  acquireGenerationLease,
+  GenerationInProgressError,
+  GenerationLeaseLostError,
+  releaseGenerationLeaseBestEffort,
+  withFencedGenerationCommit,
+  type GenerationLease,
+} from '@/lib/generation-lease';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const maxDuration = 90;
@@ -34,6 +42,7 @@ function isAdrData(value: unknown): value is AdrData {
 }
 
 export async function POST(req: Request) {
+  let lease: GenerationLease | undefined;
   try {
     const body: unknown = await req.json().catch(() => null);
     if (!isRecord(body) || typeof body.projectId !== 'string' || !UUID_PATTERN.test(body.projectId)) {
@@ -45,6 +54,8 @@ export async function POST(req: Request) {
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
+
+    lease = acquireGenerationLease(projectId, 'adr');
 
     const prd = db.select().from(prds).where(eq(prds.projectId, projectId)).get();
     if (!prd || !prd.documentContent) {
@@ -63,7 +74,7 @@ export async function POST(req: Request) {
       deployment: adrData.deployment.trim(),
       adrDocument: adrData.adrDocument.trim(),
     };
-    const adrId = db.transaction((tx) => {
+    const { id: adrId, committedRevision } = withFencedGenerationCommit(lease, (tx) => {
       const currentPrd = tx.select().from(prds).where(eq(prds.projectId, projectId)).get();
       if (!currentPrd
         || currentPrd.id !== prd.id
@@ -87,20 +98,47 @@ export async function POST(req: Request) {
 
       tx.update(projects).set({
         status: 'ADR Generated',
+        specRevision: sql`${projects.specRevision} + 1`,
         updatedAt: new Date().toISOString(),
       }).where(eq(projects.id, projectId)).run();
-      return id;
+      const committedProject = tx.select({ specRevision: projects.specRevision })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .get();
+      return { id, committedRevision: committedProject!.specRevision };
     });
 
-    return NextResponse.json({ adrId });
+    return NextResponse.json({ adrId, operation: 'adr', committedRevision });
   } catch (error: unknown) {
     console.error('Generate ADR Error:', error);
     if (error instanceof AiGenerationTimeoutError) {
       return NextResponse.json({ error: error.message }, { status: 504 });
     }
     if (error instanceof GenerationSourceChangedError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return NextResponse.json({ error: error.message, code: 'GENERATION_SOURCE_CHANGED' }, { status: 409 });
+    }
+    if (error instanceof GenerationInProgressError) {
+      return NextResponse.json({
+        error: error.message,
+        code: 'GENERATION_IN_PROGRESS',
+        activeOperation: error.operation,
+        retryAfterSeconds: error.retryAfterSeconds,
+      }, {
+        status: 409,
+        headers: { 'Retry-After': String(error.retryAfterSeconds) },
+      });
+    }
+    if (error instanceof GenerationLeaseLostError) {
+      return NextResponse.json({
+        error: error.message,
+        code: 'GENERATION_LEASE_LOST',
+        operation: error.operation,
+      }, { status: 409 });
     }
     return NextResponse.json({ error: 'Unable to generate the ADR' }, { status: 500 });
+  } finally {
+    if (lease) {
+      releaseGenerationLeaseBestEffort(lease);
+    }
   }
 }

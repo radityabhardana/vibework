@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -34,28 +34,93 @@ import {
 } from '@phosphor-icons/react';
 
 type WorkspaceTab = 'tree' | 'prd' | 'agents' | 'architecture' | 'prompts';
+type GenerationAction = 'flowchart' | 'adr' | 'schema' | 'prompts' | 'agents';
+type RecoveryKind = 'generation-in-progress' | 'source-changed' | 'transport';
+
+type RefreshPending = {
+  action: GenerationAction;
+  operation: string;
+  revision: number;
+};
+
+type RecoveryRefreshPending = {
+  action: GenerationAction;
+  kind: RecoveryKind;
+  baselineProject: any;
+  baselineRevision: number | null;
+};
+
+const EXPORT_ARTIFACT_NAMES = ['PRD.md', 'AGENTS.md', 'ADR.md', 'DATABASE_SCHEMA.md', 'PROMPT.md'];
 
 const hasMeaningfulText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
-const getGenerationErrorMessage = async (res: Response, fallback: string, timeoutMessage: string) => {
-  if (res.status === 504) {
-    return timeoutMessage;
-  }
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
 
+const readGenerationPayload = async (res: Response): Promise<Record<string, unknown>> => {
   const body: unknown = await res.json().catch(() => null);
-  if (
-    typeof body === 'object'
-    && body !== null
-    && 'error' in body
-    && typeof body.error === 'string'
-    && body.error.trim().length > 0
-  ) {
+  return asRecord(body) || {};
+};
+
+const getPayloadError = (body: Record<string, unknown>, fallback: string, timeoutMessage: string, status: number) => {
+  if (status === 504) return timeoutMessage;
+
+  const error = asRecord(body.error);
+  if (error && typeof error.message === 'string' && error.message.trim().length > 0) {
+    return error.message;
+  }
+  if (typeof body.error === 'string' && body.error.trim().length > 0) {
     return body.error;
   }
-
+  if (typeof body.message === 'string' && body.message.trim().length > 0) {
+    return body.message;
+  }
   return fallback;
 };
+
+const getPayloadCode = (body: Record<string, unknown>) => {
+  const error = asRecord(body.error);
+  const code = error?.code ?? body.code ?? body.errorCode;
+  return typeof code === 'string' ? code.toUpperCase().replace(/[-\s]/g, '_') : null;
+};
+
+const getPayloadRevision = (body: Record<string, unknown>) => {
+  // `committedRevision` is accepted while older route deployments roll over
+  // to the Phase 2 `revision` field.
+  const revision = body.revision ?? body.committedRevision;
+  if (typeof revision === 'number' && Number.isInteger(revision) && revision >= 0) return revision;
+  if (typeof revision === 'string' && revision.trim().length > 0) {
+    const parsed = Number(revision);
+    if (Number.isInteger(parsed) && parsed >= 0) return parsed;
+  }
+  return null;
+};
+
+const getProjectRevision = (project: any) => {
+  const revision = project?.specRevision;
+  if (typeof revision === 'number' && Number.isInteger(revision) && revision >= 0) return revision;
+  if (typeof revision === 'string' && revision.trim().length > 0) {
+    const parsed = Number(revision);
+    if (Number.isInteger(parsed) && parsed >= 0) return parsed;
+  }
+  return null;
+};
+
+const getPayloadOperation = (body: Record<string, unknown>, fallback: GenerationAction) =>
+  typeof body.operation === 'string' && body.operation.trim().length > 0 ? body.operation : fallback;
+
+class GenerationHttpError extends Error {
+  readonly status: number;
+  readonly code: string | null;
+
+  constructor(status: number, code: string | null, message: string) {
+    super(message);
+    this.name = 'GenerationHttpError';
+    this.status = status;
+    this.code = code;
+  }
+}
 
 export function ProjectWorkspace({
   project,
@@ -86,12 +151,95 @@ export function ProjectWorkspace({
   const [viewerData, setViewerData] = useState<{ title: string; content: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [promptsInvalidatedBySchema, setPromptsInvalidatedBySchema] = useState(false);
+  const [showSchemaConfirm, setShowSchemaConfirm] = useState(false);
+  const [retryAction, setRetryAction] = useState<GenerationAction | null>(null);
+  const [refreshPending, setRefreshPending] = useState<RefreshPending | null>(null);
+  const [recoveryRefreshPending, setRecoveryRefreshPending] = useState<RecoveryRefreshPending | null>(null);
+  const schemaConfirmRef = useRef<HTMLDivElement>(null);
+  const schemaTriggerRef = useRef<HTMLButtonElement>(null);
+  const projectPropsRef = useRef(project);
+  const workspaceBusyRef = useRef(false);
 
   const schemaReady = hasMeaningfulText(schema?.dbSchema);
   const schemaContent = schemaReady ? schema.dbSchema.trim() : '';
   const hasAtomicPrompts = Array.isArray(prompts) && prompts.length > 0;
   const promptsReady = schemaReady && hasAtomicPrompts && !loadingSchema && !promptsInvalidatedBySchema;
-  const schemaOrPromptsBusy = loadingSchema || loadingPrompts;
+  const generationInProgress = loadingFlowchart || loadingAdr || loadingSchema || loadingPrompts || loadingAgents;
+  const workspaceBusy = generationInProgress || !!refreshPending || !!recoveryRefreshPending;
+  const schemaOrPromptsBusy = workspaceBusy;
+  workspaceBusyRef.current = workspaceBusy;
+
+  const hasPromptArtifacts = hasAtomicPrompts || hasMeaningfulText(project.promptDocument);
+
+  useEffect(() => {
+    if (!refreshPending) return;
+    const currentRevision = getProjectRevision(project);
+    if (currentRevision === null || currentRevision < refreshPending.revision) return;
+
+    if (refreshPending.action === 'flowchart') setLoadingFlowchart(false);
+    if (refreshPending.action === 'adr') setLoadingAdr(false);
+    if (refreshPending.action === 'schema') setLoadingSchema(false);
+    if (refreshPending.action === 'prompts') setLoadingPrompts(false);
+    if (refreshPending.action === 'agents') setLoadingAgents(false);
+    setRefreshPending(null);
+  }, [project?.specRevision, refreshPending]);
+
+  useEffect(() => {
+    if (workspaceBusy) setViewerData(null);
+  }, [workspaceBusy]);
+
+  useEffect(() => {
+    const propsChanged = projectPropsRef.current !== project;
+    projectPropsRef.current = project;
+
+    if (!recoveryRefreshPending || (!propsChanged && recoveryRefreshPending.baselineProject === project && getProjectRevision(project) === recoveryRefreshPending.baselineRevision)) {
+      return;
+    }
+
+    const { action, kind } = recoveryRefreshPending;
+    setRecoveryRefreshPending(null);
+    setError(
+      kind === 'generation-in-progress'
+        ? t('Generasi lain sedang berjalan. Workspace sudah diperbarui; coba lagi secara manual.', 'Another generation is in progress. The workspace has been refreshed; retry manually when ready.')
+        : kind === 'source-changed'
+          ? t('Sumber berubah saat generasi berlangsung. Workspace sudah diperbarui; tinjau perubahan sebelum mencoba lagi.', 'The source changed while generation was running. The workspace has been refreshed; review the changes before retrying.')
+          : t('Status generasi tidak dapat dipastikan. Workspace sudah diperbarui; tinjau artefak sebelum mencoba lagi.', 'The generation status is uncertain. The workspace has been refreshed; review the artifacts before retrying.'),
+    );
+    setRetryAction(action);
+  }, [project, recoveryRefreshPending, t]);
+
+  useEffect(() => {
+    if (!showSchemaConfirm) return;
+    schemaConfirmRef.current?.focus();
+  }, [showSchemaConfirm]);
+
+  const closeSchemaConfirm = () => {
+    setShowSchemaConfirm(false);
+    window.setTimeout(() => schemaTriggerRef.current?.focus(), 0);
+  };
+
+  const handleSchemaDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeSchemaConfirm();
+      return;
+    }
+    if (event.key !== 'Tab' || !schemaConfirmRef.current) return;
+    const focusable = Array.from(schemaConfirmRef.current.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'));
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === schemaConfirmRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   useEffect(() => {
     if (promptsInvalidatedBySchema && prompts.length === 0) {
@@ -100,12 +248,14 @@ export function ProjectWorkspace({
   }, [prompts.length, promptsInvalidatedBySchema]);
 
   const copyToClipboard = (text: string, key: string) => {
+    if (workspaceBusyRef.current) return;
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const downloadFile = (content: Blob | string, filename: string) => {
+    if (workspaceBusyRef.current) return;
     const blob = content instanceof Blob ? content : new Blob([content], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -115,6 +265,11 @@ export function ProjectWorkspace({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const openViewer = (data: { title: string; content: string }) => {
+    if (workspaceBusyRef.current) return;
+    setViewerData(data);
   };
 
   const layoutAppFlowchartDagre = (flowchart: any) => {
@@ -156,63 +311,182 @@ export function ProjectWorkspace({
     return () => clearInterval(interval);
   }, [loadingFlowchart, loadingAdr, loadingSchema, loadingPrompts, loadingAgents]);
 
+  const getRecoveryKind = (failure: unknown): RecoveryKind => {
+    const httpFailure = failure instanceof GenerationHttpError ? failure : null;
+    if (httpFailure && httpFailure.status >= 500) return 'transport';
+    const code = httpFailure?.code || '';
+    const message = failure instanceof Error ? failure.message.toLowerCase() : '';
+
+    if (code.includes('SOURCE_CHANGED') || code.includes('STALE_SOURCE') || /source changed|sumber berubah/.test(message)) {
+      return 'source-changed';
+    }
+    if (
+      code.includes('GENERATION_IN_PROGRESS')
+      || code.includes('CONCURRENT_GENERATION')
+      || code.includes('LEASE_HELD')
+      || code.includes('GENERATION_BUSY')
+      || code.includes('LOCKED')
+    ) {
+      return 'generation-in-progress';
+    }
+    return 'transport';
+  };
+
+  const recoveryMessage = (kind: RecoveryKind, refreshed: boolean) => {
+    if (kind === 'generation-in-progress') {
+      return refreshed
+        ? t('Generasi lain sedang berjalan. Workspace sudah diperbarui; coba lagi secara manual.', 'Another generation is in progress. The workspace has been refreshed; retry manually when ready.')
+        : t('Generasi lain sedang berjalan. Menyegarkan workspace sebelum menawarkan retry.', 'Another generation is in progress. Refreshing the workspace before offering a retry.');
+    }
+    if (kind === 'source-changed') {
+      return refreshed
+        ? t('Sumber berubah saat generasi berlangsung. Workspace sudah diperbarui; tinjau perubahan sebelum mencoba lagi.', 'The source changed while generation was running. The workspace has been refreshed; review the changes before retrying.')
+        : t('Sumber berubah saat generasi berlangsung. Menyegarkan workspace sebelum menawarkan retry.', 'The source changed while generation was running. Refreshing the workspace before offering a retry.');
+    }
+    return refreshed
+      ? t('Status generasi tidak dapat dipastikan. Workspace sudah diperbarui; tinjau artefak sebelum mencoba lagi.', 'The generation status is uncertain. The workspace has been refreshed; review the artifacts before retrying.')
+      : t('Status generasi tidak dapat dipastikan. Workspace harus diperbarui sebelum mencoba lagi.', 'The generation status is uncertain. The workspace must be refreshed before retrying.');
+  };
+
+  const handleGenerationFailure = (action: GenerationAction, failure: unknown, fallback: string) => {
+    const httpFailure = failure instanceof GenerationHttpError ? failure : null;
+    const isConflict = httpFailure?.status === 409;
+    const requiresRefresh = !httpFailure || isConflict || httpFailure.status >= 500;
+
+    if (requiresRefresh) {
+      const kind = getRecoveryKind(failure);
+      setRecoveryRefreshPending({
+        action,
+        kind,
+        baselineProject: project,
+        baselineRevision: getProjectRevision(project),
+      });
+      setRetryAction(null);
+      setError(recoveryMessage(kind, false));
+      router.refresh();
+      return;
+    }
+
+    setError(failure instanceof Error && failure.message ? failure.message : fallback);
+    setRetryAction(action);
+  };
+
+  const completeGeneration = (action: GenerationAction, body: Record<string, unknown>) => {
+    const revision = getPayloadRevision(body);
+    if (revision !== null) {
+      setRefreshPending({
+        action,
+        operation: getPayloadOperation(body, action),
+        revision,
+      });
+      router.refresh();
+      return true;
+    }
+
+    // Legacy responses have no revision to fence against. Preserve their
+    // existing refresh behavior rather than inventing a client-side target.
+    router.refresh();
+    return false;
+  };
+
   const generateFlowchart = async () => {
+    if (workspaceBusy) return;
     setLoadingFlowchart(true);
     setError(null);
+    let waitingForRefresh = false;
     try {
       const res = await fetch('/api/projects/generate-flowchart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
-      router.refresh();
-    } catch (e: any) {
-      setError(e.message);
+      const body = await readGenerationPayload(res);
+      if (!res.ok) {
+        throw new GenerationHttpError(
+          res.status,
+          getPayloadCode(body),
+          getPayloadError(body, t('Tree gagal dibuat. Silakan coba lagi.', 'Unable to generate the tree. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.'), res.status),
+        );
+      }
+      setRetryAction(null);
+      waitingForRefresh = completeGeneration('flowchart', body);
+    } catch (e: unknown) {
+      handleGenerationFailure('flowchart', e, t('Tree gagal dibuat. Silakan coba lagi.', 'Unable to generate the tree. Please try again.'));
     } finally {
-      setLoadingFlowchart(false);
+      if (!waitingForRefresh) setLoadingFlowchart(false);
     }
   };
 
   const generateADR = async () => {
+    if (!prd || workspaceBusy) return;
     setLoadingAdr(true);
     setError(null);
+    let waitingForRefresh = false;
     try {
       const res = await fetch('/api/projects/generate-adr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
-      router.refresh();
-    } catch (e: any) {
-      setError(e.message);
+      const body = await readGenerationPayload(res);
+      if (!res.ok) {
+        throw new GenerationHttpError(
+          res.status,
+          getPayloadCode(body),
+          getPayloadError(body, t('ADR gagal dibuat. Silakan coba lagi.', 'Unable to generate the ADR. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.'), res.status),
+        );
+      }
+      setRetryAction(null);
+      waitingForRefresh = completeGeneration('adr', body);
+    } catch (e: unknown) {
+      handleGenerationFailure('adr', e, t('ADR gagal dibuat. Silakan coba lagi.', 'Unable to generate the ADR. Please try again.'));
     } finally {
-      setLoadingAdr(false);
+      if (!waitingForRefresh) setLoadingAdr(false);
     }
   };
 
-  const generateSchema = async () => {
+  const runGenerateSchema = async () => {
     if (schemaOrPromptsBusy) return;
 
     setLoadingSchema(true);
     setError(null);
+    let waitingForRefresh = false;
     try {
       const res = await fetch('/api/projects/generate-schema', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
+      const body = await readGenerationPayload(res);
       if (!res.ok) {
-        throw new Error(await getGenerationErrorMessage(res, t('Schema gagal dibuat. Silakan coba lagi.', 'Unable to generate the schema. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.')));
+        throw new GenerationHttpError(
+          res.status,
+          getPayloadCode(body),
+          getPayloadError(body, t('Schema gagal dibuat. Silakan coba lagi.', 'Unable to generate the schema. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.'), res.status),
+        );
       }
       setPromptsInvalidatedBySchema(true);
-      router.refresh();
-    } catch (e: any) {
-      setError(e.message);
+      setRetryAction(null);
+      waitingForRefresh = completeGeneration('schema', body);
+    } catch (e: unknown) {
+      handleGenerationFailure('schema', e, t('Schema gagal dibuat. Silakan coba lagi.', 'Unable to generate the schema. Please try again.'));
     } finally {
-      setLoadingSchema(false);
+      if (!waitingForRefresh) setLoadingSchema(false);
     }
+  };
+
+  const generateSchema = async () => {
+    if (schemaOrPromptsBusy) return;
+    if (hasPromptArtifacts) {
+      setShowSchemaConfirm(true);
+      return;
+    }
+    await runGenerateSchema();
+  };
+
+  const confirmSchemaRegeneration = async () => {
+    closeSchemaConfirm();
+    await runGenerateSchema();
   };
 
   const generatePrompts = async () => {
@@ -220,38 +494,55 @@ export function ProjectWorkspace({
 
     setLoadingPrompts(true);
     setError(null);
+    let waitingForRefresh = false;
     try {
       const res = await fetch('/api/projects/generate-prompts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
+      const body = await readGenerationPayload(res);
       if (!res.ok) {
-        throw new Error(await getGenerationErrorMessage(res, t('Prompt gagal dibuat. Silakan coba lagi.', 'Unable to generate prompts. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.')));
+        throw new GenerationHttpError(
+          res.status,
+          getPayloadCode(body),
+          getPayloadError(body, t('Prompt gagal dibuat. Silakan coba lagi.', 'Unable to generate prompts. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.'), res.status),
+        );
       }
-      router.refresh();
-    } catch (e: any) {
-      setError(e.message);
+      setRetryAction(null);
+      waitingForRefresh = completeGeneration('prompts', body);
+    } catch (e: unknown) {
+      handleGenerationFailure('prompts', e, t('Prompt gagal dibuat. Silakan coba lagi.', 'Unable to generate prompts. Please try again.'));
     } finally {
-      setLoadingPrompts(false);
+      if (!waitingForRefresh) setLoadingPrompts(false);
     }
   };
 
   const generateAgents = async () => {
+    if (workspaceBusy) return;
     setLoadingAgents(true);
     setError(null);
+    let waitingForRefresh = false;
     try {
       const res = await fetch('/api/projects/generate-agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
-      router.refresh();
-    } catch (e: any) {
-      setError(e.message);
+      const body = await readGenerationPayload(res);
+      if (!res.ok) {
+        throw new GenerationHttpError(
+          res.status,
+          getPayloadCode(body),
+          getPayloadError(body, t('AGENTS.md gagal dibuat. Silakan coba lagi.', 'Unable to generate AGENTS.md. Please try again.'), t('Generasi timeout. Silakan coba lagi.', 'Generation timed out. Please try again.'), res.status),
+        );
+      }
+      setRetryAction(null);
+      waitingForRefresh = completeGeneration('agents', body);
+    } catch (e: unknown) {
+      handleGenerationFailure('agents', e, t('AGENTS.md gagal dibuat. Silakan coba lagi.', 'Unable to generate AGENTS.md. Please try again.'));
     } finally {
-      setLoadingAgents(false);
+      if (!waitingForRefresh) setLoadingAgents(false);
     }
   };
 
@@ -268,29 +559,26 @@ export function ProjectWorkspace({
     ? (hasMeaningfulText(project.promptDocument) ? project.promptDocument : generatedPromptMd)
     : '';
 
+  const exportableArtifacts: ZipEntry[] = [
+    hasMeaningfulText(prd?.documentContent) ? { name: 'PRD.md', content: prd.documentContent.trim() } : null,
+    hasMeaningfulText(project.agentsDocument) ? { name: 'AGENTS.md', content: project.agentsDocument.trim() } : null,
+    hasMeaningfulText(adr?.adrDocument) ? { name: 'ADR.md', content: adr.adrDocument.trim() } : null,
+    schemaReady ? { name: 'DATABASE_SCHEMA.md', content: schemaContent.trim() } : null,
+    effectivePromptMd ? { name: 'PROMPT.md', content: effectivePromptMd.trim() } : null,
+  ].filter((entry): entry is ZipEntry => entry !== null);
+  const exportableArtifactNames = exportableArtifacts.map((entry) => entry.name);
+  const hasExportableArtifacts = exportableArtifacts.length > 0;
+  const exportIsPartial = hasExportableArtifacts && exportableArtifacts.length < EXPORT_ARTIFACT_NAMES.length;
+  const exportStatus = !hasExportableArtifacts
+    ? t('Belum ada artefak Markdown yang siap diekspor.', 'No Markdown artifacts are ready to export.')
+    : exportIsPartial
+      ? t(`Arsip parsial: hanya artefak siap (${exportableArtifactNames.join(', ')}) yang akan disertakan.`, `Partial archive: only ready artifacts (${exportableArtifactNames.join(', ')}) will be included.`)
+      : t('Semua artefak Markdown siap diekspor.', 'All Markdown artifacts are ready to export.');
+
   // Master export for entire project
   const handleExportAll = () => {
-    const files: ZipEntry[] = [];
-
-    if (prd?.documentContent) {
-      files.push({ name: 'PRD.md', content: prd.documentContent.trim() });
-    }
-
-    if (project.agentsDocument) {
-      files.push({ name: 'AGENTS.md', content: project.agentsDocument.trim() });
-    }
-
-    if (adr?.adrDocument) {
-      files.push({ name: 'ADR.md', content: adr.adrDocument.trim() });
-    }
-
-    if (schemaReady) {
-      files.push({ name: 'DATABASE_SCHEMA.md', content: schemaContent.trim() });
-    }
-
-    if (effectivePromptMd) {
-      files.push({ name: 'PROMPT.md', content: effectivePromptMd.trim() });
-    }
+    if (workspaceBusyRef.current || !exportableArtifacts.length) return;
+    const files = [...exportableArtifacts];
 
     const manifest = [
       `# ${project.name} - Project Specification`,
@@ -319,8 +607,8 @@ export function ProjectWorkspace({
         targetPosition: Position.Top,
         data: {
           label: prd ? `✅ PRD` : `PRD: ${t('Menunggu', 'Pending')}`,
-          onView: prd
-            ? () => setViewerData({ title: t('Product Requirements Document', 'Product Requirements Document'), content: prd.documentContent })
+          onView: prd && !workspaceBusy
+            ? () => openViewer({ title: t('Product Requirements Document', 'Product Requirements Document'), content: prd.documentContent })
             : undefined,
         },
       },
@@ -335,11 +623,11 @@ export function ProjectWorkspace({
         targetPosition: Position.Top,
         data: {
           label: '✅ Interactive Tree',
-          onView: () =>
-            setViewerData({
+          onView: !workspaceBusy ? () =>
+            openViewer({
               title: t('Application Tree Flowchart', 'Application Tree Flowchart'),
               content: JSON.stringify(appFlowchart.nodes, null, 2),
-            }),
+            }) : undefined,
         },
       });
     } else {
@@ -355,7 +643,9 @@ export function ProjectWorkspace({
           onAction: generateFlowchart,
           isLoading: loadingFlowchart,
           progress: generationProgress,
-          disabled: !prd,
+          disabled: !prd || workspaceBusy,
+          prerequisite: !prd ? t('Buka PRD terlebih dahulu', 'Open the PRD first') : undefined,
+          onPrerequisite: !prd ? () => setActiveTab('prd') : undefined,
         },
       });
     }
@@ -369,11 +659,11 @@ export function ProjectWorkspace({
         targetPosition: Position.Top,
         data: {
           label: '✅ AGENTS.md',
-          onView: () =>
-            setViewerData({
+          onView: !workspaceBusy ? () =>
+            openViewer({
               title: t('AGENTS.md Directive & Rules', 'AGENTS.md Directive & Rules'),
               content: project.agentsDocument,
-            }),
+            }) : undefined,
         },
       });
     }
@@ -387,8 +677,8 @@ export function ProjectWorkspace({
         targetPosition: Position.Top,
         data: {
           label: '✅ Architecture ADR',
-          onView: () =>
-            setViewerData({ title: t('Architecture Decision Record', 'Architecture Decision Record'), content: adr.adrDocument }),
+          onView: !workspaceBusy ? () =>
+            openViewer({ title: t('Architecture Decision Record', 'Architecture Decision Record'), content: adr.adrDocument }) : undefined,
         },
       });
     } else {
@@ -404,7 +694,9 @@ export function ProjectWorkspace({
           onAction: generateADR,
           isLoading: loadingAdr,
           progress: generationProgress,
-          disabled: !prd,
+          disabled: !prd || workspaceBusy,
+          prerequisite: !prd ? t('Buka PRD terlebih dahulu', 'Open the PRD first') : undefined,
+          onPrerequisite: !prd ? () => setActiveTab('prd') : undefined,
         },
       });
     }
@@ -418,11 +710,11 @@ export function ProjectWorkspace({
         targetPosition: Position.Top,
         data: {
           label: '✅ Schema & API',
-          onView: () =>
-            setViewerData({
+          onView: !workspaceBusy ? () =>
+            openViewer({
               title: t('Database Schema & API Contract', 'Database Schema & API Contract'),
               content: `### Database Schema\n\n${schemaContent}\n\n### API Contract\n\n${JSON.stringify(schema.apiContract, null, 2)}`,
-            }),
+            }) : undefined,
         },
       });
     } else {
@@ -435,10 +727,15 @@ export function ProjectWorkspace({
         data: {
           label: t('Database Schema Not Generated', 'Database Schema Not Generated'),
           buttonText: t('Generate Schema', 'Generate Schema'),
-          onAction: generateSchema,
+          onAction: (event: React.MouseEvent<HTMLButtonElement>) => {
+            schemaTriggerRef.current = event.currentTarget;
+            void generateSchema();
+          },
           isLoading: loadingSchema,
           progress: generationProgress,
           disabled: !adr || schemaOrPromptsBusy,
+          prerequisite: !adr ? t('Buka ADR terlebih dahulu', 'Open the ADR first') : undefined,
+          onPrerequisite: !adr ? () => setActiveTab('architecture') : undefined,
         },
       });
     }
@@ -452,11 +749,11 @@ export function ProjectWorkspace({
         targetPosition: Position.Top,
         data: {
           label: `✅ ${prompts.length} ${t('Atomic Prompts', 'Atomic Prompts')}`,
-          onView: () =>
-            setViewerData({
+          onView: !workspaceBusy ? () =>
+            openViewer({
               title: t('AI Atomic Prompts', 'AI Atomic Prompts'),
               content: effectivePromptMd,
-            }),
+            }) : undefined,
         },
       });
     } else {
@@ -473,6 +770,8 @@ export function ProjectWorkspace({
           isLoading: loadingPrompts,
           progress: generationProgress,
           disabled: !schemaReady || schemaOrPromptsBusy,
+          prerequisite: !schemaReady ? t('Buat Schema terlebih dahulu', 'Create the schema first') : undefined,
+          onPrerequisite: !schemaReady ? () => setActiveTab('architecture') : undefined,
         },
       });
     }
@@ -511,10 +810,10 @@ export function ProjectWorkspace({
           type: 'promptNode',
           data: {
             label: n.label,
-            onView: () => {
+            onView: !workspaceBusy ? () => {
               const content = `${t('Node:', 'Node:')} ${n.label}\n${t('Description:', 'Description:')} ${n.description || t('No description provided.', 'No description provided.')}`;
-              setViewerData({ title: n.label, content });
-            },
+              openViewer({ title: n.label, content });
+            } : undefined,
           },
         });
       });
@@ -577,27 +876,45 @@ export function ProjectWorkspace({
     schemaContent,
     promptsReady,
     schemaOrPromptsBusy,
+    workspaceBusy,
     t,
   ]);
 
-  // Artifact tabs — numbering (01–05) replaces per-type color coding
+  // Artifact tabs: sequential workflow first; auxiliary artifacts follow without sequence numbers.
   const TABS: { id: WorkspaceTab; num: string; label: string; icon: typeof TreeStructure; ready: boolean }[] = [
-    { id: 'tree', num: '01', label: t('Interactive Tree', 'Interactive Tree'), icon: TreeStructure, ready: !!appFlowchart },
-    { id: 'prd', num: '02', label: t('PRD', 'PRD'), icon: Article, ready: !!prd },
-    { id: 'agents', num: '03', label: t('AGENTS.md', 'AGENTS.md'), icon: Robot, ready: !!project.agentsDocument },
-    { id: 'architecture', num: '04', label: t('Arsitektur & Schema', 'Architecture & Schema'), icon: Cpu, ready: !!adr && schemaReady },
-    { id: 'prompts', num: '05', label: t('Prompt.md', 'Prompt.md'), icon: Lightning, ready: promptsReady },
+    { id: 'prd', num: '01', label: t('PRD', 'PRD'), icon: Article, ready: !!prd },
+    { id: 'architecture', num: '02', label: t('Arsitektur & Schema', 'Architecture & Schema'), icon: Cpu, ready: !!adr && schemaReady },
+    { id: 'prompts', num: '03', label: t('Prompt.md', 'Prompt.md'), icon: Lightning, ready: promptsReady },
+    { id: 'tree', num: 'Aux', label: t('Interactive Tree', 'Interactive Tree'), icon: TreeStructure, ready: !!appFlowchart },
+    { id: 'agents', num: 'Aux', label: t('AGENTS.md', 'AGENTS.md'), icon: Robot, ready: !!project.agentsDocument },
   ];
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#0b0d0f] text-white relative">
+    <div aria-busy={workspaceBusy} className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#0b0d0f] text-white relative">
       {/* Top Workspace Tab Switcher Bar */}
-      <div className="bg-[#0f1314] border-b border-white/[0.08] px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20">
-        <div className="hidden xl:block min-w-0 pr-3">
+      <div className="bg-[#0f1314] border-b border-white/[0.08] px-4 py-3 flex flex-col gap-3 shrink-0 z-20">
+        <div className="flex items-center justify-between gap-3">
+          <div className="hidden min-w-0 pr-3 xl:block">
           <p className="truncate font-sans text-sm font-semibold text-white">{project.name}</p>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">{TABS.filter(tab => tab.ready).length}/5 {project.status || t('Workspace', 'Workspace')}</p>
+          </div>
+          <div className="flex min-w-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+            <span className="text-zinc-300">{t('Alur artefak', 'Artifact flow')}</span>
+            <span className={prd ? 'text-emerald-300' : 'text-zinc-600'}>01 PRD</span>
+            <span className="text-zinc-700">→</span>
+            <span className={adr && schemaReady ? 'text-emerald-300' : 'text-zinc-600'}>02 {t('Arsitektur/Schema', 'Architecture/Schema')}</span>
+            <span className="text-zinc-700">→</span>
+            <span className={promptsReady ? 'text-emerald-300' : 'text-zinc-600'}>03 Prompt</span>
+          </div>
+          <button type="button" onClick={handleExportAll} disabled={workspaceBusy || !hasExportableArtifacts} aria-describedby={workspaceBusy ? 'workspace-busy-status workspace-export-status' : 'workspace-export-status'} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white/[0.04] px-2.5 py-1.5 font-mono text-xs font-medium text-white ring-1 ring-white/30 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3" title={exportStatus}>
+            <DownloadSimple weight="bold" className="size-3.5" />
+            <span className="hidden sm:inline">{t('Export All Specs (.zip)', 'Export All Specs (.zip)')}</span>
+          </button>
         </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto min-w-0">
+        <p id="workspace-export-status" aria-live="polite" className="font-mono text-[10px] text-zinc-500">
+          {exportStatus}
+        </p>
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1" aria-label={t('Artefak proyek', 'Project artifacts')}>
           {TABS.map(({ id, num, label, icon: TabIcon, ready }) => (
             <button
               key={id}
@@ -619,17 +936,17 @@ export function ProjectWorkspace({
           ))}
         </div>
 
-        {/* Global Export Button */}
-        <button
-          type="button"
-          onClick={handleExportAll}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] ring ring-white/30 hover:bg-white/10 text-white font-mono text-xs font-medium rounded-lg transition-all duration-300 cursor-pointer shrink-0"
-          title={t('Unduh semua spesifikasi sebagai arsip ZIP berisi file Markdown terpisah', 'Download all specifications as a ZIP archive of separate Markdown files')}
-        >
-          <DownloadSimple weight="bold" className="w-3.5 h-3.5" />
-          <span>{t('Export All Specs (.zip)', 'Export All Specs (.zip)')}</span>
-        </button>
       </div>
+
+      {workspaceBusy && (
+        <div id="workspace-busy-status" role="status" aria-live="polite" className="shrink-0 border-b border-amber-300/20 bg-amber-950/40 px-4 py-2 font-mono text-[11px] text-amber-100">
+          {refreshPending
+            ? t(`Tersimpan (${refreshPending.operation}, revisi ${refreshPending.revision}). Menyegarkan workspace...`, `Saved (${refreshPending.operation}, revision ${refreshPending.revision}). Refreshing the workspace...`)
+            : recoveryRefreshPending
+              ? recoveryMessage(recoveryRefreshPending.kind, false)
+              : t('Generasi sedang berjalan. Kontrol artefak dan export dikunci hingga selesai.', 'Generation is in progress. Artifact controls and export are locked until it finishes.')}
+        </div>
+      )}
 
       {/* Global Error Notice */}
       {error && (
@@ -638,9 +955,26 @@ export function ProjectWorkspace({
             <WarningCircle weight="bold" className="w-4 h-4 text-rose-400" />
             <span>{t('Error:', 'Error:')} {error}</span>
           </div>
-          <button type="button" onClick={() => setError(null)} className="underline uppercase text-[10px] font-semibold text-rose-300 hover:text-rose-100">
-            {t('Tutup', 'Dismiss')}
-          </button>
+          <div className="flex items-center gap-3">
+            {retryAction && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (retryAction === 'flowchart') void generateFlowchart();
+                  if (retryAction === 'adr') void generateADR();
+                  if (retryAction === 'schema') void generateSchema();
+                  if (retryAction === 'prompts') void generatePrompts();
+                  if (retryAction === 'agents') void generateAgents();
+                }}
+                className="rounded-md bg-rose-200/10 px-2 py-1 font-mono text-[10px] font-semibold text-rose-100 transition-colors hover:bg-rose-200/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/70"
+              >
+                {t('Coba lagi', 'Retry')}
+              </button>
+            )}
+            <button type="button" onClick={() => { setError(null); setRetryAction(null); }} className="underline uppercase text-[10px] font-semibold text-rose-300 hover:text-rose-100">
+              {t('Tutup', 'Dismiss')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -654,13 +988,17 @@ export function ProjectWorkspace({
                 <div>
                   <p className="font-sans font-semibold text-sm text-zinc-100">{t('Interactive Tree Belum Digenerate', 'Interactive Tree Not Generated')}</p>
                   <p className="font-sans text-xs text-zinc-400">{t('Klik tombol untuk memetakan alur screen dan modul aplikasi.', 'Click the button to map application screens and modules.')}</p>
-                  {!prd && <p className="mt-1 font-mono text-[10px] text-amber-200">{t('PRD perlu dibuat lebih dulu untuk membuka langkah ini.', 'The PRD must be created first to unlock this step.')}</p>}
+                  {!prd && (
+                    <button type="button" onClick={() => setActiveTab('prd')} className="mt-1 font-mono text-[10px] text-amber-200 underline underline-offset-2 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">
+                      {t('Buka PRD untuk membuka Tree →', 'Open PRD to unlock Tree →')}
+                    </button>
+                  )}
                 </div>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={generateFlowchart}
-                  disabled={loadingFlowchart}
+                  disabled={workspaceBusy || !prd}
                 >
                   {loadingFlowchart ? `${t('Membuat Tree', 'Creating Tree')} (${Math.round(generationProgress)}%)...` : t('Generate Tree Sekarang', 'Generate Tree Now')}
                 </Button>
@@ -703,6 +1041,7 @@ export function ProjectWorkspace({
                     variant="secondary"
                     size="sm"
                     onClick={() => copyToClipboard(prd?.documentContent || '', 'prd')}
+                    disabled={workspaceBusy}
                     className="gap-1.5 text-xs"
                   >
                     {copiedKey === 'prd' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -712,6 +1051,7 @@ export function ProjectWorkspace({
                     variant="secondary"
                     size="sm"
                     onClick={() => downloadFile(prd?.documentContent || '', `${project.name}_PRD.md`)}
+                    disabled={workspaceBusy}
                     className="gap-1.5 text-xs"
                   >
                     <DownloadSimple weight="bold" />
@@ -750,7 +1090,7 @@ export function ProjectWorkspace({
                     variant="primary"
                     size="sm"
                     onClick={generateAgents}
-                    disabled={loadingAgents}
+                    disabled={workspaceBusy}
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingAgents ? 'animate-spin' : ''} />
@@ -762,6 +1102,7 @@ export function ProjectWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => copyToClipboard(project.agentsDocument, 'agents')}
+                        disabled={workspaceBusy}
                         className="gap-1.5 text-xs"
                       >
                         {copiedKey === 'agents' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -771,6 +1112,7 @@ export function ProjectWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => downloadFile(project.agentsDocument, 'AGENTS.md')}
+                        disabled={workspaceBusy}
                         className="gap-1.5 text-xs"
                       >
                         <DownloadSimple weight="bold" />
@@ -800,7 +1142,7 @@ export function ProjectWorkspace({
                     variant="primary"
                     size="sm"
                     onClick={generateAgents}
-                    disabled={loadingAgents}
+                    disabled={workspaceBusy}
                   >
                     {loadingAgents ? `${t('Generating AGENTS.md', 'Generating AGENTS.md')} (${Math.round(generationProgress)}%)...` : t('Buat AGENTS.md Sekarang', 'Create AGENTS.md Now')}
                   </Button>
@@ -823,13 +1165,14 @@ export function ProjectWorkspace({
                   <p className="font-sans text-xs text-zinc-400 mt-1">
                     {t('Stack:', 'Stack:')} {adr?.frontendStack || 'Next.js'} &bull; {t('Backend:', 'Backend:')} {adr?.backendStack || 'Node.js'} &bull; {t('DB:', 'DB:')} {adr?.database || 'SQLite / PostgreSQL'}
                   </p>
+                  {!prd && <button type="button" onClick={() => setActiveTab('prd')} className="mt-2 font-mono text-[10px] text-amber-200 underline underline-offset-2 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">{t('Buka PRD untuk membuka ADR →', 'Open PRD to unlock ADR →')}</button>}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={generateADR}
-                    disabled={loadingAdr}
+                    disabled={workspaceBusy || !prd}
                     className="gap-1.5 text-xs"
                   >
                     <ArrowClockwise weight="bold" className={loadingAdr ? 'animate-spin' : ''} />
@@ -840,6 +1183,7 @@ export function ProjectWorkspace({
                       variant="secondary"
                       size="sm"
                       onClick={() => copyToClipboard(adr.adrDocument, 'adr')}
+                      disabled={workspaceBusy}
                       className="gap-1.5 text-xs"
                     >
                       {copiedKey === 'adr' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -865,12 +1209,16 @@ export function ProjectWorkspace({
                   <p className="font-sans text-xs text-zinc-400 mt-1">
                     {t('Struktur tabel relasional dan spesifikasi endpoint API.', 'Relational table structure and API endpoint specifications.')}
                   </p>
+                  {!adr && <button type="button" disabled={workspaceBusy} onClick={() => { if (!prd) setActiveTab('prd'); else void generateADR(); }} className="mt-2 font-mono text-[10px] text-amber-200 underline underline-offset-2 transition-colors hover:text-amber-100 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">{!prd ? t('Buka PRD untuk membuka ADR →', 'Open PRD to unlock ADR →') : loadingAdr ? t('ADR sedang dibuat...', 'ADR is being created...') : t('Buat ADR untuk membuka Schema →', 'Create ADR to unlock Schema →')}</button>}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={generateSchema}
+                    onClick={(event) => {
+                      schemaTriggerRef.current = event.currentTarget;
+                      void generateSchema();
+                    }}
                     disabled={schemaOrPromptsBusy || !adr}
                     className="gap-1.5 text-xs"
                   >
@@ -882,6 +1230,7 @@ export function ProjectWorkspace({
                       variant="secondary"
                       size="sm"
                       onClick={() => copyToClipboard(schemaContent, 'schema')}
+                      disabled={workspaceBusy}
                       className="gap-1.5 text-xs"
                     >
                       {copiedKey === 'schema' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -931,6 +1280,7 @@ export function ProjectWorkspace({
                   <p className="font-sans text-xs text-zinc-400 mt-1">
                     {t('Prompt step-by-step siap di-copy langsung ke terminal atau editor AI untuk eksekusi kode.', 'Step-by-step prompts ready to copy into a terminal or AI editor for code execution.')}
                   </p>
+                  {!schemaReady && <button type="button" onClick={() => setActiveTab('architecture')} className="mt-2 font-mono text-[10px] text-amber-200 underline underline-offset-2 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">{t('Buka Arsitektur & Schema untuk membuka Prompt →', 'Open Architecture & Schema to unlock Prompt →')}</button>}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -949,6 +1299,7 @@ export function ProjectWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => copyToClipboard(effectivePromptMd, 'prompt')}
+                        disabled={workspaceBusy}
                         className="gap-1.5 text-xs"
                       >
                         {copiedKey === 'prompt' ? <Check weight="bold" className="text-emerald-400" /> : <Copy weight="bold" />}
@@ -958,6 +1309,7 @@ export function ProjectWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => downloadFile(effectivePromptMd, 'Prompt.md')}
+                        disabled={workspaceBusy}
                         className="gap-1.5 text-xs"
                       >
                         <DownloadSimple weight="bold" />
@@ -998,8 +1350,28 @@ export function ProjectWorkspace({
         )}
       </div>
 
+      {showSchemaConfirm && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="presentation">
+          <div ref={schemaConfirmRef} tabIndex={-1} onKeyDown={handleSchemaDialogKeyDown} role="alertdialog" aria-modal="true" aria-labelledby="schema-confirm-title" aria-describedby="schema-confirm-description" className="w-full max-w-md rounded-2xl border border-white/15 bg-[#14191a] p-5 shadow-2xl focus:outline-none">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-300/10 text-amber-200">!</div>
+              <div>
+                <h2 id="schema-confirm-title" className="font-sans text-base font-semibold text-white">{t('Regenerate Schema?', 'Regenerate schema?')}</h2>
+                <p id="schema-confirm-description" className="mt-2 font-sans text-xs leading-5 text-zinc-400">
+                  {t('Schema baru akan menghapus Atomic Prompts dan/atau Prompt.md yang sudah ada. Tindakan ini tidak dapat dibatalkan dari workspace.', 'A new schema will remove the existing Atomic Prompts and/or Prompt.md. This cannot be undone from the workspace.')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={closeSchemaConfirm} className="rounded-lg px-3 py-2 font-mono text-xs text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">{t('Batal', 'Cancel')}</button>
+              <button type="button" onClick={() => void confirmSchemaRegeneration()} disabled={workspaceBusy} className="rounded-lg bg-amber-200 px-3 py-2 font-mono text-xs font-semibold text-[#201a0d] transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 disabled:cursor-not-allowed disabled:opacity-50">{t('Lanjutkan & hapus', 'Continue & remove')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Popup Viewer when clicking nodes in ReactFlow */}
-      {viewerData && (
+      {viewerData && !workspaceBusy && (
         <ViewerModal
           title={viewerData.title}
           content={viewerData.content}

@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prds, adrs, atomicPrompts, schemas, projects } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { AiGenerationTimeoutError, generateSchema } from '@/lib/engine/prompt-chaining';
 import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
+import {
+  acquireGenerationLease,
+  GenerationInProgressError,
+  GenerationLeaseLostError,
+  releaseGenerationLeaseBestEffort,
+  withFencedGenerationCommit,
+  type GenerationLease,
+} from '@/lib/generation-lease';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const maxDuration = 90;
@@ -36,6 +44,7 @@ function isSchemaData(value: unknown): value is SchemaData {
 }
 
 export async function POST(req: Request) {
+  let lease: GenerationLease | undefined;
   try {
     const body: unknown = await req.json().catch(() => null);
     if (!isRecord(body) || typeof body.projectId !== 'string' || !UUID_PATTERN.test(body.projectId)) {
@@ -47,6 +56,8 @@ export async function POST(req: Request) {
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
+
+    lease = acquireGenerationLease(projectId, 'schema');
 
     const prd = db.select().from(prds).where(eq(prds.projectId, projectId)).get();
     if (!prd || !prd.documentContent) {
@@ -67,7 +78,7 @@ export async function POST(req: Request) {
       dbSchema: schemaData.dbSchema.trim(),
       apiContract: schemaData.apiContract,
     };
-    const schemaId = db.transaction((tx) => {
+    const { id: schemaId, committedRevision } = withFencedGenerationCommit(lease, (tx) => {
       const currentPrd = tx.select().from(prds).where(eq(prds.projectId, projectId)).get();
       const currentAdr = tx.select().from(adrs).where(eq(adrs.projectId, projectId)).get();
       if (!currentPrd
@@ -95,20 +106,47 @@ export async function POST(req: Request) {
       tx.update(projects).set({
         promptDocument: null,
         status: 'Schema Generated',
+        specRevision: sql`${projects.specRevision} + 1`,
         updatedAt: new Date().toISOString(),
       }).where(eq(projects.id, projectId)).run();
-      return id;
+      const committedProject = tx.select({ specRevision: projects.specRevision })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .get();
+      return { id, committedRevision: committedProject!.specRevision };
     });
 
-    return NextResponse.json({ schemaId });
+    return NextResponse.json({ schemaId, operation: 'schema', committedRevision });
   } catch (error: unknown) {
     console.error('Generate Schema Error:', error);
     if (error instanceof AiGenerationTimeoutError) {
       return NextResponse.json({ error: error.message }, { status: 504 });
     }
     if (error instanceof GenerationSourceChangedError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return NextResponse.json({ error: error.message, code: 'GENERATION_SOURCE_CHANGED' }, { status: 409 });
+    }
+    if (error instanceof GenerationInProgressError) {
+      return NextResponse.json({
+        error: error.message,
+        code: 'GENERATION_IN_PROGRESS',
+        activeOperation: error.operation,
+        retryAfterSeconds: error.retryAfterSeconds,
+      }, {
+        status: 409,
+        headers: { 'Retry-After': String(error.retryAfterSeconds) },
+      });
+    }
+    if (error instanceof GenerationLeaseLostError) {
+      return NextResponse.json({
+        error: error.message,
+        code: 'GENERATION_LEASE_LOST',
+        operation: error.operation,
+      }, { status: 409 });
     }
     return NextResponse.json({ error: 'Unable to generate the schema' }, { status: 500 });
+  } finally {
+    if (lease) {
+      releaseGenerationLeaseBestEffort(lease);
+    }
   }
 }

@@ -24,6 +24,7 @@ export function createZip(entries: ZipEntry[]): Blob {
   const encoder = new TextEncoder();
   const locals: Uint8Array<ArrayBuffer>[] = [];
   const centrals: Uint8Array<ArrayBuffer>[] = [];
+  const names = new Set<string>();
   let offset = 0;
 
   const u16 = (v: number) => new Uint8Array([v & 0xff, (v >>> 8) & 0xff]);
@@ -31,6 +32,11 @@ export function createZip(entries: ZipEntry[]): Blob {
     new Uint8Array([v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff]);
 
   for (const { name, content } of entries) {
+    if (names.has(name)) {
+      throw new Error(`Duplicate ZIP entry name: ${name}`);
+    }
+    names.add(name);
+
     const nameBytes = encoder.encode(name);
     const data = encoder.encode(content);
     const crc = crc32(data);

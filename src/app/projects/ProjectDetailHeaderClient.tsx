@@ -1,8 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { ChatCircle } from '@phosphor-icons/react';
-import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface ProjectDetailHeaderClientProps {
@@ -30,13 +28,6 @@ export default function ProjectDetailHeaderClient({
           {status}
         </span>
       </div>
-      <Link href={chatSessionId ? `/engine/${chatSessionId}` : '/engine'}>
-        <Button variant="secondary" size="sm" className="flex shrink-0 items-center gap-2 text-xs">
-          <ChatCircle weight="bold" />
-          <span className="hidden sm:inline">{t('Edit di Studio', 'Edit in Studio')}</span>
-          <span className="sm:hidden">{t('Studio', 'Studio')}</span>
-        </Button>
-      </Link>
     </header>
   );
 }

@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from './schema';
 import path from 'path';
+import { migrateDatabase } from './migrate';
 
 // For local MVP, use a sqlite file in the root project directory with singleton cache
 const globalForDb = globalThis as unknown as {
@@ -11,6 +12,7 @@ const globalForDb = globalThis as unknown as {
 const sqlite = globalForDb.sqlite ?? new Database(path.join(process.cwd(), 'vibework.db'));
 sqlite.pragma('foreign_keys = ON;');
 sqlite.pragma('journal_mode = WAL;');
+migrateDatabase(sqlite);
 
 try {
   const pragma = sqlite.pragma('table_info(projects)') as Array<{ name: string }>;
