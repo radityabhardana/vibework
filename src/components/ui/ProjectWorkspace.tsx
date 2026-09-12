@@ -34,7 +34,7 @@ import {
 } from '@phosphor-icons/react';
 
 type WorkspaceTab = 'tree' | 'prd' | 'agents' | 'architecture' | 'prompts';
-type GenerationAction = 'flowchart' | 'adr' | 'schema' | 'prompts' | 'agents';
+type GenerationAction = 'flowchart' | 'adr' | 'schema' | 'prompts' | 'agents' | 'prd';
 type RecoveryKind = 'generation-in-progress' | 'source-changed' | 'transport';
 
 type RefreshPending = {
@@ -156,8 +156,16 @@ export function ProjectWorkspace({
   const [refreshPending, setRefreshPending] = useState<RefreshPending | null>(null);
   const [refreshRequired, setRefreshRequired] = useState<RefreshPending | null>(null);
   const [recoveryRefreshPending, setRecoveryRefreshPending] = useState<RecoveryRefreshPending | null>(null);
+  const [isEditingPrd, setIsEditingPrd] = useState(false);
+  const [prdDraft, setPrdDraft] = useState('');
+  const [prdDirty, setPrdDirty] = useState(false);
+  const [prdSaving, setPrdSaving] = useState(false);
+  const [prdSaveError, setPrdSaveError] = useState<string | null>(null);
+  const [prdNeedsRefresh, setPrdNeedsRefresh] = useState(false);
   const schemaConfirmRef = useRef<HTMLDivElement>(null);
   const schemaTriggerRef = useRef<HTMLButtonElement>(null);
+  const prdConfirmRef = useRef<HTMLDivElement>(null);
+  const prdSaveTriggerRef = useRef<HTMLButtonElement>(null);
   const projectPropsRef = useRef(project);
   const workspaceBusyRef = useRef(false);
 
@@ -166,7 +174,7 @@ export function ProjectWorkspace({
   const hasAtomicPrompts = Array.isArray(prompts) && prompts.length > 0;
   const promptsReady = schemaReady && hasAtomicPrompts && !loadingSchema && !promptsInvalidatedBySchema;
   const generationInProgress = loadingFlowchart || loadingAdr || loadingSchema || loadingPrompts || loadingAgents;
-  const workspaceBusy = generationInProgress || !!refreshPending || !!refreshRequired || !!recoveryRefreshPending;
+  const workspaceBusy = generationInProgress || !!refreshPending || !!refreshRequired || !!recoveryRefreshPending || isEditingPrd || prdSaving;
   const schemaOrPromptsBusy = workspaceBusy;
   workspaceBusyRef.current = workspaceBusy;
 
@@ -928,6 +936,27 @@ export function ProjectWorkspace({
     { id: 'agents', num: 'Aux', label: t('AGENTS.md', 'AGENTS.md'), icon: Robot, ready: !!project.agentsDocument },
   ];
 
+  const renderArtifactTab = ({ id, num, label, icon: TabIcon, ready }: (typeof TABS)[number]) => (
+    <button
+      key={id}
+      type="button"
+      onClick={() => setActiveTab(id)}
+      className={`shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
+        activeTab === id
+          ? 'bg-[var(--accent)] text-[#102016] border-transparent shadow-sm'
+          : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
+      }`}
+      aria-label={label}
+    >
+      <TabIcon weight="bold" className="w-4 h-4" />
+      <span className="hidden lg:inline">{num}</span>
+      <span>{label}</span>
+      {ready && (
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === id ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>
+      )}
+    </button>
+  );
+
   return (
     <div aria-busy={workspaceBusy} className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#0b0d0f] text-white relative">
       {/* Top Workspace Tab Switcher Bar */}
@@ -953,26 +982,14 @@ export function ProjectWorkspace({
         <p id="workspace-export-status" aria-live="polite" className="font-mono text-[10px] text-zinc-500">
           {exportStatus}
         </p>
-        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1" aria-label={t('Artefak proyek', 'Project artifacts')}>
-          {TABS.map(({ id, num, label, icon: TabIcon, ready }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveTab(id)}
-              className={`shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs font-medium border transition-all duration-300 cursor-pointer ${
-                activeTab === id
-                  ? 'bg-[var(--accent)] text-[#102016] border-transparent shadow-sm'
-                  : 'bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] border-transparent'
-              }`}
-            >
-              <TabIcon weight="bold" className="w-4 h-4" />
-              <span className="hidden lg:inline">{num}</span>
-              <span>{label}</span>
-              {ready && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === id ? 'bg-black/10 text-black' : 'bg-white/10 text-white'}`}>✓</span>
-              )}
-            </button>
-          ))}
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1" aria-label={t('Alur artefak utama', 'Primary artifact flow')}>
+          {TABS.filter(tab => tab.num !== 'Aux').map(renderArtifactTab)}
+        </div>
+        <div className="flex min-w-0 items-center gap-3 border-t border-white/[0.06] pt-2" aria-label={t('Artefak tambahan', 'Auxiliary artifacts')}>
+          <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-600">{t('Artefak tambahan', 'Auxiliary artifacts')}</span>
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto">
+            {TABS.filter(tab => tab.num === 'Aux').map(renderArtifactTab)}
+          </div>
         </div>
 
       </div>

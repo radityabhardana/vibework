@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { prds, adrs, projects } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { AiGenerationTimeoutError, generateAgentsMd } from '@/lib/engine/prompt-chaining';
+import { GenerationSourceChangedError } from '@/lib/generation-snapshot';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const maxDuration = 90;
@@ -38,16 +39,32 @@ export async function POST(req: Request) {
     }
 
     const agentsDocument = agentResult.agentsDocument.trim();
-    db.update(projects)
-      .set({ agentsDocument, updatedAt: new Date().toISOString() })
-      .where(eq(projects.id, projectId))
-      .run();
+    db.transaction((tx) => {
+      const currentPrd = tx.select().from(prds).where(eq(prds.projectId, projectId)).get();
+      const currentAdr = tx.select().from(adrs).where(eq(adrs.projectId, projectId)).get();
+      if (!currentPrd
+        || currentPrd.id !== prd.id
+        || currentPrd.documentContent !== prd.documentContent
+        || currentPrd.updatedAt !== prd.updatedAt
+        || (adr && (!currentAdr || currentAdr.id !== adr.id || currentAdr.adrDocument !== adr.adrDocument))
+        || (!adr && currentAdr)) {
+        throw new GenerationSourceChangedError();
+      }
+
+      tx.update(projects)
+        .set({ agentsDocument, updatedAt: new Date().toISOString() })
+        .where(eq(projects.id, projectId))
+        .run();
+    });
 
     return NextResponse.json({ success: true, agentsDocument });
   } catch (error: unknown) {
     console.error('Error generating AGENTS.md:', error);
     if (error instanceof AiGenerationTimeoutError) {
       return NextResponse.json({ error: error.message }, { status: 504 });
+    }
+    if (error instanceof GenerationSourceChangedError) {
+      return NextResponse.json({ error: error.message, code: 'GENERATION_SOURCE_CHANGED' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Unable to generate AGENTS.md' }, { status: 500 });
   }
