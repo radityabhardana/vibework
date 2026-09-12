@@ -52,7 +52,58 @@ function extractFirstJsonObject(str: string): string {
   return str.slice(startIdx);
 }
 
-export function synthesizeFallbackPRD(chatHistory: string) {
+export const REQUIRED_PRD_SECTIONS = [
+  'Problem & Context',
+  'Goals & Non-Goals',
+  'Target Users & Jobs',
+  'Scope, MVP & Out of Scope',
+  'Prioritized Functional Requirements & Acceptance Criteria',
+  'Key User Journeys & UX States',
+  'Domain/Data Entities & Relationships',
+  'Integration & API Assumptions',
+  'Non-Functional Requirements',
+  'Analytics & Success Metrics',
+  'Risks & Dependencies',
+  'Open Questions & Assumptions',
+  'Release & Rollout Considerations',
+] as const;
+
+type PrdResult = {
+  name: string;
+  description: string;
+  targetUser: string;
+  coreFeatures: string;
+  mvpConstraints: string;
+  monetizationModel: string;
+  documentContent: string;
+};
+
+function hasRequiredPrdSections(documentContent: string) {
+  return REQUIRED_PRD_SECTIONS.every(section => {
+    const escapedSection = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^##\\s+(?:\\d+[.)]?\\s+)?${escapedSection}\\s*$`, 'im').test(documentContent);
+  });
+}
+
+function isProductionReadyPRD(value: unknown): value is PrdResult {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+
+  const candidate = value as Record<string, unknown>;
+  const requiredFields: Array<keyof PrdResult> = [
+    'name',
+    'description',
+    'targetUser',
+    'coreFeatures',
+    'mvpConstraints',
+    'monetizationModel',
+    'documentContent',
+  ];
+
+  return requiredFields.every(field => typeof candidate[field] === 'string' && candidate[field].trim().length > 0)
+    && hasRequiredPrdSections(candidate.documentContent as string);
+}
+
+export function synthesizeFallbackPRD(chatHistory: string): PrdResult {
   const lines = chatHistory.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const userLines = lines
     .filter(l => /^user:/i.test(l))
@@ -63,44 +114,99 @@ export function synthesizeFallbackPRD(chatHistory: string) {
   const name = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Vibework System';
   const description = primaryIdea.length > 120 ? primaryIdea.slice(0, 117) + '...' : primaryIdea;
 
+  const targetUser = userLines[1] || 'Pengguna utama yang mengalami masalah ini dan operator yang mengelola hasilnya.';
   const coreFeatures = userLines.length > 1
     ? userLines.slice(1).map(u => `- ${u}`).join('\n')
-    : `- Antarmuka intuitif dan responsif multi-platform\n- Manajemen data dan alur kerja terstruktur otomatis\n- Dashboard pemantauan dan analitik real-time\n- Sistem notifikasi dan pelaporan terintegrasi`;
+    : `- Alur utama untuk menyelesaikan masalah inti\n- Penyimpanan status dan riwayat yang dapat ditinjau\n- Akses operator untuk menangani pengecualian`;
 
-  const mvpConstraints = `- MVP berfokus pada alur utama tanpa dependensi pihak ketiga yang kompleks\n- Skalabilitas basis data dirancang untuk kemudahan migrasi\n- Prioritas performa dan efisiensi latensi`;
+  const mvpConstraints = `- MVP mencakup satu alur utama dan peran minimum yang diperlukan\n- Jangan menambahkan integrasi eksternal sebelum kontrak dan kebutuhan akses disepakati\n- Data harus dapat diekspor atau dimigrasikan tanpa kehilangan status penting`;
 
-  const monetizationModel = `Model operasional berbasis langganan (Freemium/SaaS) atau lisensi per transaksi/organisasi.`;
+  const monetizationModel = 'Model bisnis belum ditentukan; validasi willingness-to-pay atau nilai operasional sebelum memilih pricing.';
 
   const documentContent = `# Product Requirements Document (PRD)
 
-## 1. Project Overview & Mission
+## Problem & Context
 **Project Name:** ${name}
 **Description:** ${description}
-**Objective:** Menyediakan arsitektur sistem digital yang tangguh, efisien, dan ramah pengguna sesuai hasil interview interaktif.
+- **Problem:** Pengguna membutuhkan cara yang lebih jelas dan dapat ditindaklanjuti untuk menyelesaikan kebutuhan yang dirangkum dalam brief.
+- **Context:** Detail di bawah berasal dari brief; asumsi yang belum tervalidasi ditandai pada bagian open questions.
 
-## 2. Target Audience & Personas
-- **Primary User:** Pengguna akhir yang membutuhkan kemudahan akses fitur dan navigasi intuitif.
-- **Administrator:** Pengelola sistem yang memerlukan visibilitas analitik, pengaturan konfigurasi, dan monitoring data.
+## Goals & Non-Goals
+- **Goals:** Selesaikan alur inti dengan status yang dapat dilacak, kurangi pekerjaan manual, dan sediakan dasar yang aman untuk iterasi.
+- **Non-goals:** Multi-region, otomasi berisiko tinggi, dan integrasi tambahan di luar alur MVP sebelum ada validasi kebutuhan.
 
-## 3. Core MVP Specifications
+## Target Users & Jobs
+- **Primary user:** ${targetUser}
+- **Job to be done:** Memulai kebutuhan, menerima hasil/status yang jelas, lalu menyelesaikan atau menyerahkan pengecualian.
+- **Operator/admin job:** Mengawasi status, memperbaiki kegagalan, dan mengelola akses tanpa melihat data yang tidak diperlukan.
+
+## Scope, MVP & Out of Scope
+- **In scope:** Alur utama, autentikasi dan otorisasi minimum, persistensi status, penanganan gagal, serta audit event penting.
+- **MVP:**
 ${coreFeatures}
 
-## 4. Technical Scope & MVP Constraints
+## Prioritized Functional Requirements & Acceptance Criteria
+1. **P0 — Jalankan alur inti:** Pengguna dapat memulai, mengubah input yang valid, dan melihat status hasil. **Acceptance:** happy path selesai; input invalid ditolak dengan pesan yang dapat diperbaiki; refresh tidak menghilangkan status tersimpan.
+2. **P0 — Kelola akses:** Sistem membatasi data dan aksi sesuai peran. **Acceptance:** pengguna tanpa izin menerima respons aman dan tidak dapat membaca atau mengubah resource milik pihak lain.
+3. **P1 — Tangani pengecualian:** Pengguna dapat retry aman atau menyerahkan kasus ke operator. **Acceptance:** kegagalan dapat diidentifikasi, tidak membuat duplikasi, dan meninggalkan riwayat yang dapat ditelusuri.
+4. **P1 — Observability:** Operator dapat mencari status proses dan event penting. **Acceptance:** event memiliki actor, action, resource, waktu, dan correlation identifier tanpa secret.
+
+## Key User Journeys & UX States
+- **Journey utama:** Masuk/identifikasi → masukkan kebutuhan → validasi → proses → tinjau hasil → konfirmasi atau koreksi.
+- **Loading:** tampilkan status proses dan cegah submit ganda; sediakan cancel bila operasi mendukung pembatalan.
+- **Empty:** jelaskan belum ada data dan tampilkan aksi pertama yang relevan.
+- **Error:** jelaskan dampak dan langkah pemulihan; jangan tampilkan stack trace, token, atau data sensitif.
+
+## Domain/Data Entities & Relationships
+- **User/Actor:** identitas dan peran; memiliki banyak session atau request.
+- **Workspace/Organization:** batas kepemilikan dan akses; memiliki banyak user dan resource.
+- **Request/Task:** input, status, actor, timestamps, dan idempotency key; terkait satu workspace.
+- **Result/Event:** keluaran atau perubahan status; terkait request dan dicatat dalam audit trail.
+- Relationship dan cardinality final harus dikonfirmasi sebelum migrasi schema.
+
+## Integration & API Assumptions
+- Endpoint menggunakan kontrak versioned, schema validation, auth context, idempotency untuk mutasi, dan error code yang stabil.
+- Provider eksternal dianggap unavailable atau partial-failure; timeout, rate limit, retry policy, dan webhook signature harus ditetapkan per integrasi.
+- Jangan menganggap delivery webhook, ordering event, atau format provider sebagai guaranteed tanpa dokumentasi/contract test.
+
+## Non-Functional Requirements
+- **Security/privacy:** least privilege, TLS saat transit, secret di secret store, validasi input, audit akses, minimisasi data, retention dan deletion policy yang terdokumentasi.
+- **Accessibility:** keyboard support, focus yang terlihat, semantic labels, kontras memadai, dan pesan error yang terhubung ke field.
+- **Performance:** ukur latency dan error rate pada alur inti; hindari pekerjaan blocking dan sediakan pagination untuk collection.
+- **Reliability:** operasi mutasi idempotent, observability tanpa data sensitif, dan recovery path yang terdokumentasi.
+
+## Analytics & Success Metrics
+- Instrument event request_started, request_completed, request_failed, handoff_or_retry, dan outcome utama dengan actor/resource yang dianonimkan bila perlu.
+- Success metrics: completion rate alur inti, time-to-complete, failure/recovery rate, repeat usage, dan operator resolution rate.
+- Tetapkan baseline, target, window pengukuran, dan privacy review sebelum dashboard dianggap authoritative.
+
+## Risks & Dependencies
+- **Risks:** kebutuhan brief belum tervalidasi, kualitas input bervariasi, provider timeout/rate limit, akses data berlebih, dan scope creep.
+- **Dependencies:** keputusan auth/roles, schema dan retention, provider contract, observability, serta owner untuk support dan incident response.
+- Mitigasi awal: spike kontrak, threat modeling, fixture edge case, feature flag, dan runbook pemulihan.
+
+## Open Questions & Assumptions
+- Siapa decision maker dan owner operasi setelah launch?
+- Data apa yang sensitif, berapa lama disimpan, dan di wilayah mana diproses?
+- Apakah integrasi/provider, SLA, volume, dan kebutuhan offline sudah ditentukan?
+- Asumsi saat ini: MVP memakai satu alur utama, satu deployment region, dan operator dapat menangani pengecualian secara manual.
+
+## Release & Rollout Considerations
+- Rilis bertahap di balik feature flag dengan migration yang backward-compatible dan rollback plan yang diuji.
+- Mulai dari internal/pilot cohort, pantau error, completion, latency, dan feedback; perluas akses hanya setelah acceptance dan privacy checks lulus.
+- Siapkan support runbook, audit/log retention, incident owner, changelog, dan komunikasi perubahan sebelum general availability.
+
+## Summary Fields
+**Project Name:** ${name}
+**Operating model:** ${monetizationModel}
+**Constraints:**
 ${mvpConstraints}
-
-## 5. Operational & Monetization Strategy
-${monetizationModel}
-
-## 6. Architecture & Security Standards
-- Enkripsi data transit (HTTPS / TLS 1.3) dan session token yang aman.
-- Error handling defensif dengan logging komprehensif tanpa mengekspos kredensial internal.
-- Type-safe interface dan skema data konsisten di seluruh lapisan sistem.
 `;
 
   return {
     name,
     description,
-    targetUser: 'Pengguna umum dan administrator sistem yang membutuhkan solusi terstruktur.',
+    targetUser,
     coreFeatures,
     mvpConstraints,
     monetizationModel,
@@ -299,25 +405,44 @@ async function callQwen(
 
 
 export async function generatePRD(chatHistory: string) {
-  const systemPrompt = `You are an expert Product Manager and System Architect. 
-Your task is to analyze the provided interview transcript and generate a structured, production-ready Product Requirements Document (PRD).
-CRITICAL RULE: If the interview transcript is brief or if the user generated early without answering every single question, you MUST use your senior architectural expertise to intelligently fill in sensible, industry-standard assumptions, best practices, user personas, MVP features, database needs, and edge cases.
-Keep each section high-density, clear, and concise without bloated repetition so generation completes rapidly.
+  const systemPrompt = `You are an expert Product Manager and System Architect. Analyze the interview transcript and produce a concise, production-ready PRD.
 
-You MUST return ONLY a valid JSON object. Do not include markdown \`\`\`json codeblocks, just the raw JSON object starting with { and ending with }.
-The JSON object must follow this exact schema:
+Use direct Indonesian or neutral English. Ground decisions in the transcript. If information is missing, state a practical assumption or open question; do not invent customer evidence, numbers, SLAs, legal claims, or implementation details as facts. Make requirements testable and prioritize them as P0/P1/P2. Keep every section high-density and avoid filler.
+
+Return ONLY one valid JSON object: no markdown code fence, commentary, or extra keys. Preserve this exact schema and keep the two list fields as Markdown strings, not arrays:
 {
-  "name": "A short, catchy name for the project (max 3 words)",
-  "description": "A 1-sentence punchy description",
-  "targetUser": "Who this is for (detailed target audience)",
-  "coreFeatures": "A Markdown bullet-list STRING of MVP features with specifications (must be a string, not a JSON array)",
-  "mvpConstraints": "A Markdown bullet-list STRING of technical or scope constraints (must be a string, not a JSON array)",
-  "monetizationModel": "How it makes money (or operating model if free/internal)",
-  "documentContent": "A detailed Markdown PRD document covering overview, user personas, user stories, architecture requirements, security, and edge cases. Make it comprehensive, professional, and compact."
-}`;
+  "name": "Short project name, max 3 words",
+  "description": "One-sentence problem/value description",
+  "targetUser": "Detailed target audience",
+  "coreFeatures": "Markdown bullet-list STRING of prioritized MVP features",
+  "mvpConstraints": "Markdown bullet-list STRING of scope and technical constraints",
+  "monetizationModel": "Monetization or operating model; state if undecided",
+  "documentContent": "Markdown PRD using the required sections below"
+}
+
+documentContent MUST contain these exact, standalone level-2 Markdown headings, each followed by concrete, brief content (put guidance in the body, not on the heading line):
+## Problem & Context — problem, evidence/context available, and boundaries.
+## Goals & Non-Goals — outcomes and explicit exclusions.
+## Target Users & Jobs — primary/secondary users and jobs to be done.
+## Scope, MVP & Out of Scope — MVP capabilities and exclusions.
+## Prioritized Functional Requirements & Acceptance Criteria — numbered P0/P1/P2 requirements; each has observable acceptance criteria.
+## Key User Journeys & UX States — key journeys plus explicit loading, empty, and error behavior.
+## Domain/Data Entities & Relationships — entities, ownership, lifecycle, and relationships/cardinality where known.
+## Integration & API Assumptions — endpoint/provider boundaries, payload/auth/idempotency/error assumptions, and unknowns.
+## Non-Functional Requirements — actionable security, privacy, accessibility, performance, reliability, and observability requirements without fake targets.
+## Analytics & Success Metrics — events, metric definitions, baseline/target gaps, and privacy considerations.
+## Risks & Dependencies — risk, impact, mitigation, and external/internal dependencies.
+## Open Questions & Assumptions — unresolved decisions and clearly labeled assumptions.
+## Release & Rollout Considerations — readiness checks, migration/rollback, feature flags, pilot/rollout, and operations.
+
+Do not omit a required heading because the transcript is short. The document may be compact, but it must be actionable for design, engineering, QA, security review, analytics, and release planning.`;
 
   try {
-    return await callQwen(systemPrompt, chatHistory, { maxTokens: 4096 });
+    const result = await callQwen(systemPrompt, chatHistory, { maxTokens: 4096 });
+    if (!isProductionReadyPRD(result)) {
+      throw new Error('AI provider returned a PRD without the required contract or sections.');
+    }
+    return result;
   } catch (err) {
     console.warn('generatePRD primary LLM failed, using intelligent fallback synthesizer:', err);
     return synthesizeFallbackPRD(chatHistory);

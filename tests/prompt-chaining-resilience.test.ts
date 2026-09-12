@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  REQUIRED_PRD_SECTIONS,
   synthesizeFallbackPRD,
   synthesizeFallbackFlowchart,
   synthesizeFallbackADR,
@@ -25,6 +26,30 @@ User: Bot cerdas FAQ SOP, auto-resolve tiket, dan tombol handover instan ke agen
   assert.ok(prd.mvpConstraints && prd.mvpConstraints.includes('-'), 'Should have bulleted mvpConstraints');
   assert.ok(prd.monetizationModel && prd.monetizationModel.length > 0, 'Should have monetizationModel');
   assert.ok(prd.documentContent && prd.documentContent.includes('# Product Requirements Document'), 'Should have markdown PRD document');
+  assert.deepEqual(Object.keys(prd).sort(), [
+    'name',
+    'description',
+    'targetUser',
+    'coreFeatures',
+    'mvpConstraints',
+    'monetizationModel',
+    'documentContent',
+  ].sort(), 'PRD top-level contract must remain unchanged');
+  for (const section of REQUIRED_PRD_SECTIONS) {
+    assert.ok(prd.documentContent.includes(`## ${section}`), `PRD must include required section: ${section}`);
+  }
+});
+
+test('synthesizeFallbackPRD keeps required production sections for a minimal brief', () => {
+  const prd = synthesizeFallbackPRD('User: Catatan tugas bersama untuk tim kecil.');
+
+  for (const section of REQUIRED_PRD_SECTIONS) {
+    assert.match(prd.documentContent, new RegExp(`^## ${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'), `Missing heading: ${section}`);
+  }
+  assert.match(prd.documentContent, /Loading:/, 'Must define loading UX state');
+  assert.match(prd.documentContent, /Empty:/, 'Must define empty UX state');
+  assert.match(prd.documentContent, /Error:/, 'Must define error UX state');
+  assert.match(prd.documentContent, /Acceptance:/, 'Must include acceptance criteria');
 });
 
 test('synthesizeFallbackFlowchart generates a fully connected, valid AppFlowchart', () => {
